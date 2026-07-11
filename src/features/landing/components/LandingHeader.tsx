@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { buttonVariants } from '../../../components/ui'
+import { cn } from '../../../lib/cn'
 
 const navLinks = [
   { href: '#funcionalidades', label: 'Funcionalidades' },
@@ -9,8 +12,25 @@ const navLinks = [
 ]
 
 export function LandingHeader() {
+  const [scrolled, setScrolled] = useState(false)
+  const { scrollY } = useScroll()
+
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    setScrolled(latest > 8)
+  })
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
+    <motion.header
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={cn(
+        'sticky top-0 z-40 border-b transition-all duration-300',
+        scrolled
+          ? 'border-border bg-background/75 shadow-[var(--shadow-level-1)] backdrop-blur-lg'
+          : 'border-transparent bg-transparent',
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-[var(--container-page)] items-center justify-between px-6">
         <span className="text-lg font-bold text-text-primary">Praxis</span>
 
@@ -19,7 +39,7 @@ export function LandingHeader() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-text-secondary hover:text-text-primary"
+              className="relative text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
             >
               {link.label}
             </a>
@@ -30,11 +50,17 @@ export function LandingHeader() {
           <Link to="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
             Entrar
           </Link>
-          <Link to="/signup" className={buttonVariants({ size: 'sm' })}>
+          <Link
+            to="/signup"
+            className={cn(
+              buttonVariants({ size: 'sm' }),
+              'shadow-[0_0_0_0_rgba(37,99,235,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(37,99,235,0.45)]',
+            )}
+          >
             Criar conta
           </Link>
         </div>
       </div>
-    </header>
+    </motion.header>
   )
 }

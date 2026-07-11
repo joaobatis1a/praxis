@@ -6,10 +6,12 @@ import { HowItWorksSection } from './components/HowItWorksSection'
 import { SocialProofSection } from './components/SocialProofSection'
 import { FinalCtaSection } from './components/FinalCtaSection'
 import { LandingFooter } from './components/LandingFooter'
+import { ScrollProgressBar } from './components/ScrollProgressBar'
 
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      <ScrollProgressBar />
       <LandingHeader />
       <main>
         <HeroSection />
