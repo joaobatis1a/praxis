@@ -1,0 +1,63 @@
+import type { ReactNode } from 'react'
+import { Search, Bell } from 'lucide-react'
+import { cn } from '../../lib/cn'
+
+export interface HeaderProps {
+  onSearch?: (value: string) => void
+  notificationCount?: number
+  onNotificationsClick?: () => void
+  rightSlot?: ReactNode
+  avatar?: ReactNode
+}
+
+export function Header({
+  onSearch,
+  notificationCount = 0,
+  onNotificationsClick,
+  rightSlot,
+  avatar,
+}: HeaderProps) {
+  return (
+    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface-card px-6">
+      <div className="relative w-full max-w-md">
+        <Search
+          size={18}
+          strokeWidth={2}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+        />
+        <input
+          type="text"
+          placeholder="Buscar..."
+          onChange={(e) => onSearch?.(e.target.value)}
+          className="h-10 w-full rounded-md border border-border bg-surface pl-10 pr-16 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+        />
+        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-sm border border-border bg-surface-card px-1.5 py-0.5 text-xs text-text-muted">
+          ⌘K
+        </kbd>
+      </div>
+
+      <div className="ml-auto flex items-center gap-3">
+        {rightSlot}
+
+        <button
+          type="button"
+          onClick={onNotificationsClick}
+          aria-label="Notificações"
+          className="relative rounded-md p-2 text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+        >
+          <Bell size={20} />
+          {notificationCount > 0 && (
+            <span
+              className={cn(
+                'absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-primary',
+                'ring-2 ring-surface-card',
+              )}
+            />
+          )}
+        </button>
+
+        {avatar}
+      </div>
+    </header>
+  )
+}

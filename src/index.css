@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+/* dark mode toggled via a `.dark` class on <html>, set by ThemeProvider */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --surface: #f9fafb;
+  --surface-card: #ffffff;
+  --surface-hover: #f3f4f6;
+
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  --text-primary: #111827;
+  --text-secondary: #1f2937;
+  --text-muted: #6b7280;
+  --text-inverse: #ffffff;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --ring: #2563eb;
+
+  --secondary: #505f76;
+  --secondary-foreground: #ffffff;
+
+  --success: #16a34a;
+  --success-bg: #dcfce7;
+  --success-foreground: #14532d;
+
+  --warning: #d97706;
+  --warning-bg: #fef3c7;
+  --warning-foreground: #78350f;
+
+  --error: #ba1a1a;
+  --error-bg: #ffdad6;
+  --error-foreground: #93000a;
+  --on-error: #ffffff;
+
+  --shadow-color: 220 3% 15%;
+}
+
+.dark {
+  --background: #0b1220;
+  --surface: #111827;
+  --surface-card: #1a2333;
+  --surface-hover: #202b3d;
+
+  --border: #27313f;
+  --border-strong: #384151;
+
+  --text-primary: #eaf1ff;
+  --text-secondary: #c3c6d7;
+  --text-muted: #8b90a0;
+  --text-inverse: #111827;
+
+  --primary: #4f7df9;
+  --primary-hover: #6d94fa;
+  --primary-foreground: #04122f;
+  --ring: #4f7df9;
+
+  --secondary: #b7c8e1;
+  --secondary-foreground: #0b1c30;
+
+  --success: #4ade80;
+  --success-bg: #14532d;
+  --success-foreground: #dcfce7;
+
+  --warning: #fbbf24;
+  --warning-bg: #78350f;
+  --warning-foreground: #fef3c7;
+
+  --error: #ffb4ab;
+  --error-bg: #93000a;
+  --error-foreground: #ffdad6;
+  --on-error: #690005;
+
+  --shadow-color: 220 40% 2%;
+}
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-card: var(--surface-card);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-error-foreground: var(--error-foreground);
+  --color-on-error: var(--on-error);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --spacing-sidebar: 260px;
+  --container-page: 1280px;
+
+  --shadow-level-1: 0 1px 3px hsl(var(--shadow-color) / 0.08);
+  --shadow-level-2: 0 4px 12px hsl(var(--shadow-color) / 0.14);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-text-secondary);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-text-primary);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
