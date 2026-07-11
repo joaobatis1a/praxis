@@ -1,27 +1,31 @@
 import { LandingHeader } from './components/LandingHeader'
+import { LandingBackground } from './components/LandingBackground'
 import { HeroSection } from './components/HeroSection'
-import { ProblemsSection } from './components/ProblemsSection'
-import { FeaturesSection } from './components/FeaturesSection'
+import { NarrativeSection } from './components/NarrativeSection'
+import { ProductTourSection } from './components/ProductTourSection'
+import { RolesSection } from './components/RolesSection'
 import { HowItWorksSection } from './components/HowItWorksSection'
-import { SocialProofSection } from './components/SocialProofSection'
 import { FinalCtaSection } from './components/FinalCtaSection'
 import { LandingFooter } from './components/LandingFooter'
 import { ScrollProgressBar } from './components/ScrollProgressBar'
+import { BackToTopButton } from './components/BackToTopButton'
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div id="top" className="dark relative min-h-screen">
+      <LandingBackground />
       <ScrollProgressBar />
       <LandingHeader />
-      <main>
+      <main className="relative z-10">
         <HeroSection />
-        <ProblemsSection />
-        <FeaturesSection />
+        <NarrativeSection />
+        <ProductTourSection />
+        <RolesSection />
         <HowItWorksSection />
-        <SocialProofSection />
         <FinalCtaSection />
       </main>
-      <LandingFooter />
+      <LandingFooter className="relative z-10" />
+      <BackToTopButton />
     </div>
   )
 }

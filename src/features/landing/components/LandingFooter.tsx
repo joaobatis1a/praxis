@@ -1,7 +1,7 @@
 const columns = [
   {
     title: 'Produto',
-    links: ['Funcionalidades', 'Planos', 'Segurança'],
+    links: ['Solução', 'Como funciona', 'Segurança'],
   },
   {
     title: 'Empresa',
@@ -13,9 +13,9 @@ const columns = [
   },
 ]
 
-export function LandingFooter() {
+export function LandingFooter({ className }: { className?: string }) {
   return (
-    <footer id="contato" className="border-t border-border">
+    <footer id="contato" className={`border-t border-white/10 ${className ?? ''}`}>
       <div className="mx-auto max-w-[var(--container-page)] px-6 py-12">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
           <div>
@@ -41,7 +41,7 @@ export function LandingFooter() {
           ))}
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-sm text-text-muted">
+        <div className="mt-10 border-t border-white/10 pt-6 text-sm text-text-muted">
           © {new Date().getFullYear()} Praxis. Todos os direitos reservados.
         </div>
       </div>

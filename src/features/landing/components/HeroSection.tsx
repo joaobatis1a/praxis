@@ -1,26 +1,18 @@
 import { Link } from 'react-router-dom'
-import { motion, type Variants } from 'framer-motion'
-import { ArrowRight, BookOpen, CheckCircle2, FileText, GraduationCap, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowRight, BookOpen, CheckCircle2, FileText, GraduationCap } from 'lucide-react'
 import { Badge, buttonVariants } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { useCountUp } from '../../../lib/useCountUp'
 
-const container: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-}
-
-const item: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] } },
-}
+const headline = ['Onde o conhecimento', 'da sua empresa', 'ganha memória.']
 
 function Stat({ label, target, suffix = '' }: { label: string; target: number; suffix?: string }) {
   const { ref, value } = useCountUp(target)
   return (
-    <div ref={ref} className="rounded-md bg-surface p-3">
-      <p className="text-xs text-text-muted">{label}</p>
-      <p className="text-xl font-bold text-text-primary">
+    <div ref={ref} className="rounded-md bg-white/5 p-3">
+      <p className="text-xs text-white/50">{label}</p>
+      <p className="text-xl font-bold text-white">
         {value}
         {suffix}
       </p>
@@ -30,119 +22,109 @@ function Stat({ label, target, suffix = '' }: { label: string; target: number; s
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-grid mask-fade-b opacity-[0.4] dark:opacity-[0.25]"
-      />
-      <div
-        aria-hidden
-        className="animate-drift pointer-events-none absolute -top-32 left-1/4 -z-10 h-[32rem] w-[32rem] rounded-full bg-primary/25 blur-[110px]"
-      />
-      <div
-        aria-hidden
-        className="animate-drift pointer-events-none absolute -top-10 right-0 -z-10 h-[26rem] w-[26rem] rounded-full bg-[#7c6bff]/20 blur-[110px]"
-        style={{ animationDelay: '-6s' }}
-      />
+    <section className="relative flex min-h-[92vh] flex-col justify-center overflow-hidden pt-16">
+      <div className="relative z-10 mx-auto grid w-full max-w-[var(--container-page)] gap-16 px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium uppercase tracking-[0.15em] text-white/60"
+          >
+            Gestão do conhecimento corporativo
+          </motion.div>
 
-      <div className="mx-auto max-w-[var(--container-page)] px-6 py-20 md:py-28">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid items-center gap-12 md:grid-cols-2"
-        >
-          <div>
-            <motion.span
-              variants={item}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-card/80 px-3 py-1 text-xs font-semibold text-text-secondary backdrop-blur"
-            >
-              <Sparkles size={14} className="text-primary" />
-              Gestão do conhecimento, reinventada
-              <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-primary" />
-            </motion.span>
+          <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            {headline.map((line, i) => (
+              <span key={line} className="block overflow-hidden">
+                <motion.span
+                  initial={{ y: '110%' }}
+                  animate={{ y: '0%' }}
+                  transition={{ duration: 0.8, delay: 0.15 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  className={cn('block', i === 2 && 'text-white/40')}
+                >
+                  {line}
+                </motion.span>
+              </span>
+            ))}
+          </h1>
 
-            <motion.h1
-              variants={item}
-              className="mt-5 text-4xl font-bold leading-tight tracking-tight text-text-primary md:text-5xl"
-            >
-              Centralize o <span className="text-gradient animate-gradient">conhecimento</span> da
-              sua empresa em um só lugar
-            </motion.h1>
-
-            <motion.p variants={item} className="mt-5 text-lg text-text-secondary">
-              Documentação, procedimentos e treinamentos organizados e acessíveis — sem depender da
-              memória de ninguém.
-            </motion.p>
-
-            <motion.div variants={item} className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                to="/signup"
-                className={cn(
-                  buttonVariants({ size: 'lg' }),
-                  'group shadow-[0_0_0_0_rgba(37,99,235,0.5)] transition-all hover:shadow-[0_0_28px_4px_rgba(37,99,235,0.4)]',
-                )}
-              >
-                Começar agora
-                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-              <a href="#como-funciona" className={buttonVariants({ variant: 'secondary', size: 'lg' })}>
-                Ver como funciona
-              </a>
-            </motion.div>
-          </div>
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="mt-8 max-w-md text-lg text-white/60"
+          >
+            Documentação, procedimentos e treinamentos, conectados em um único sistema — para que
+            o que sua equipe sabe não desapareça quando ela sai da sala.
+          </motion.p>
 
           <motion.div
-            variants={item}
-            className="relative"
-            whileHover={{ rotateX: -2, rotateY: 3 }}
-            style={{ perspective: 1000 }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.85 }}
+            className="mt-10 flex flex-wrap items-center gap-4"
           >
-            <div className="animate-float rounded-xl border border-border bg-surface-card/90 p-4 shadow-[var(--shadow-level-2)] backdrop-blur">
-              <div className="flex items-center gap-1.5 border-b border-border pb-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-error" />
-                <span className="h-2.5 w-2.5 rounded-full bg-warning" />
-                <span className="h-2.5 w-2.5 rounded-full bg-success" />
-                <span className="ml-3 text-xs text-text-muted">app.praxis.com/dashboard</span>
-              </div>
+            <Link
+              to="/signup"
+              className={cn(
+                buttonVariants({ size: 'lg' }),
+                'group shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',
+              )}
+            >
+              Começar agora
+              <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+            </Link>
+            <a
+              href="#solucao"
+              className="text-sm font-medium text-white/70 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white hover:decoration-white/60"
+            >
+              Ver como funciona
+            </a>
+          </motion.div>
+        </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <Stat label="Documentos" target={312} />
-                <Stat label="Treinamentos" target={16} />
-                <Stat label="Progresso" target={73} suffix="%" />
-              </div>
-
-              <div className="mt-3 space-y-2 rounded-md border border-border p-3">
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <FileText size={16} className="shrink-0 text-primary" />
-                  <span className="min-w-0 truncate">Manual de Onboarding</span>
-                  <Badge variant="success" className="ml-auto shrink-0">Publicado</Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <BookOpen size={16} className="shrink-0 text-primary" />
-                  <span className="min-w-0 truncate">Política de Segurança</span>
-                  <Badge variant="primary" className="ml-auto shrink-0">Em revisão</Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <GraduationCap size={16} className="shrink-0 text-primary" />
-                  <span className="min-w-0 truncate">Treinamento de Compliance</span>
-                  <Badge variant="neutral" className="ml-auto shrink-0">
-                    <CheckCircle2 size={12} /> Concluído
-                  </Badge>
-                </div>
-              </div>
+        <motion.div
+          initial={{ opacity: 0, y: 40, rotateX: 8 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          style={{ perspective: 1200 }}
+          className="relative"
+        >
+          <div className="animate-float rounded-xl border border-white/10 bg-white/[0.04] p-4 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="flex items-center gap-1.5 border-b border-white/10 pb-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b6b]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ffd166]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#4ade80]" />
+              <span className="ml-3 text-xs text-white/40">app.praxis.com/dashboard</span>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.5 }}
-              className="absolute -left-6 top-full mt-4 hidden rounded-lg border border-border bg-surface-card p-3 shadow-[var(--shadow-level-2)] md:block"
-            >
-              <p className="text-xs text-text-muted">Progresso da equipe</p>
-              <p className="text-lg font-bold text-success">+18% este mês</p>
-            </motion.div>
-          </motion.div>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <Stat label="Documentos" target={312} />
+              <Stat label="Treinamentos" target={16} />
+              <Stat label="Progresso" target={73} suffix="%" />
+            </div>
+
+            <div className="mt-3 space-y-2 rounded-md border border-white/10 p-3">
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <FileText size={16} className="shrink-0 text-[#6d94fa]" />
+                <span className="min-w-0 truncate">Manual de Onboarding</span>
+                <Badge variant="success" className="ml-auto shrink-0">Publicado</Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <BookOpen size={16} className="shrink-0 text-[#6d94fa]" />
+                <span className="min-w-0 truncate">Política de Segurança</span>
+                <Badge variant="primary" className="ml-auto shrink-0">Em revisão</Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <GraduationCap size={16} className="shrink-0 text-[#6d94fa]" />
+                <span className="min-w-0 truncate">Treinamento de Compliance</span>
+                <Badge variant="neutral" className="ml-auto shrink-0">
+                  <CheckCircle2 size={12} /> Concluído
+                </Badge>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

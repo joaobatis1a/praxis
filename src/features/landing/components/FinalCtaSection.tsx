@@ -6,26 +6,20 @@ import { Reveal } from './Reveal'
 
 export function FinalCtaSection() {
   return (
-    <section className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="animate-gradient absolute inset-0 bg-gradient-to-br from-primary via-[#4338ca] to-[#0891b2]"
-      />
-      <div
-        aria-hidden
-        className="bg-grid absolute inset-0 opacity-[0.08] mix-blend-overlay"
-      />
-
-      <Reveal className="relative mx-auto max-w-[var(--container-page)] px-6 py-16 text-center">
-        <h2 className="text-3xl font-bold text-white">
-          Pronto para organizar o conhecimento da sua empresa?
+    <section className="relative py-36">
+      <Reveal className="relative z-10 mx-auto max-w-3xl px-6 text-center">
+        <h2 className="text-4xl font-bold leading-tight text-white sm:text-5xl">
+          Sua empresa não deveria depender da{' '}
+          <span className="bg-gradient-to-r from-[#6d94fa] to-[#8b95ff] bg-clip-text text-transparent">
+            memória de ninguém.
+          </span>
         </h2>
-        <p className="mt-3 text-white/80">Comece gratuitamente, sem cartão de crédito.</p>
+        <p className="mt-5 text-lg text-white/60">Comece gratuitamente, sem cartão de crédito.</p>
         <Link
           to="/signup"
           className={cn(
-            buttonVariants({ variant: 'secondary', size: 'lg' }),
-            'group mt-8 inline-flex border-0 bg-white text-primary shadow-lg transition-transform hover:scale-105 hover:bg-white/90',
+            buttonVariants({ size: 'lg' }),
+            'group mt-10 inline-flex shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',
           )}
         >
           Criar conta gratuita

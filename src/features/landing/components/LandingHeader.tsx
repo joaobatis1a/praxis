@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useMotionValueEvent, useScroll } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { buttonVariants } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 
 const navLinks = [
-  { href: '#funcionalidades', label: 'Funcionalidades' },
+  { href: '#top', label: 'Home' },
+  { href: '#solucao', label: 'Solução' },
+  { href: '#produto', label: 'Produto' },
+  { href: '#equipe', label: 'Equipe' },
   { href: '#como-funciona', label: 'Como funciona' },
-  { href: '#planos', label: 'Planos' },
-  { href: '#contato', label: 'Contato' },
 ]
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false)
+  const [hovered, setHovered] = useState<number | null>(null)
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
@@ -21,40 +23,62 @@ export function LandingHeader() {
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: -16 }}
+      initial={{ opacity: 0, y: -24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className={cn(
-        'sticky top-0 z-40 border-b transition-all duration-300',
-        scrolled
-          ? 'border-border bg-background/75 shadow-[var(--shadow-level-1)] backdrop-blur-lg'
-          : 'border-transparent bg-transparent',
-      )}
+      className="fixed inset-x-0 top-4 z-40 flex justify-center px-4"
     >
-      <div className="mx-auto flex h-16 max-w-[var(--container-page)] items-center justify-between px-6">
-        <span className="text-lg font-bold text-text-primary">Praxis</span>
+      <div
+        className={cn(
+          'flex h-14 w-full items-center justify-between gap-4 rounded-full border px-4 backdrop-blur-xl transition-all duration-300 sm:px-5',
+          scrolled
+            ? 'max-w-4xl border-border bg-surface-card/85 shadow-[var(--shadow-level-2)]'
+            : 'max-w-6xl border-border/50 bg-surface-card/60 shadow-[var(--shadow-level-1)]',
+        )}
+      >
+        <Link to="/" className="group inline-block shrink-0 text-lg font-bold transition-transform hover:scale-105">
+          <span className="bg-clip-text text-text-primary transition-colors duration-300 group-hover:bg-gradient-to-r group-hover:from-primary group-hover:via-[#7c6bff] group-hover:to-[#22d3ee] group-hover:text-transparent">
+            Praxis
+          </span>
+        </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
+        <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setHovered(null)}>
+          {navLinks.map((link, i) => (
             <a
               key={link.href}
               href={link.href}
-              className="relative text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+              onMouseEnter={() => setHovered(i)}
+              className="relative rounded-full px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
             >
-              {link.label}
+              <AnimatePresence>
+                {hovered === i && (
+                  <motion.span
+                    layoutId="nav-hover-pill"
+                    className="absolute inset-0 z-0 rounded-full bg-surface-hover"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  />
+                )}
+              </AnimatePresence>
+              <span className="relative z-10">{link.label}</span>
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Link to="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            to="/login"
+            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'rounded-full')}
+          >
             Entrar
           </Link>
           <Link
             to="/signup"
             className={cn(
               buttonVariants({ size: 'sm' }),
-              'shadow-[0_0_0_0_rgba(37,99,235,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(37,99,235,0.45)]',
+              'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
             )}
           >
             Criar conta

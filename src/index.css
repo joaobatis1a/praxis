@@ -135,6 +135,13 @@
 
   html {
     color-scheme: light;
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   html.dark {
@@ -147,6 +154,7 @@
     color: var(--color-text-secondary);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
 
   h1,
@@ -171,8 +179,8 @@
 
   .bg-grid {
     background-image:
-      linear-gradient(to right, var(--color-border) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px);
     background-size: 44px 44px;
   }
 
@@ -190,6 +198,16 @@
     }
     50% {
       transform: translateY(-14px);
+    }
+  }
+
+  @keyframes float-sm {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
     }
   }
 
@@ -236,6 +254,10 @@
 
   .animate-float {
     animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-sm {
+    animation: float-sm 5s ease-in-out infinite;
   }
 
   .animate-drift {
