@@ -11,6 +11,7 @@ import { UsersPage } from './features/users/UsersPage'
 import { RequireRole } from './features/auth/RequireRole'
 import { RolesPermissionsPage } from './features/roles/RolesPermissionsPage'
 import { LibraryPage } from './features/library/LibraryPage'
+import { ProceduresPage } from './features/procedures/ProceduresPage'
 
 function App() {
   return (
@@ -31,7 +32,7 @@ function App() {
             <Route path="/cargos" element={<RolesPermissionsPage />} />
           </Route>
           <Route path="/biblioteca" element={<LibraryPage />} />
-          <Route path="/procedimentos" element={<ComingSoonPage title="Procedimentos Operacionais" />} />
+          <Route path="/procedimentos" element={<ProceduresPage />} />
           <Route path="/treinamentos" element={<ComingSoonPage title="Treinamentos" />} />
           <Route path="/trilhas" element={<ComingSoonPage title="Trilhas de Aprendizagem" />} />
           <Route path="/avaliacoes" element={<ComingSoonPage title="Avaliações" />} />
