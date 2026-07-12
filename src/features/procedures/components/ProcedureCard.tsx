@@ -1,4 +1,4 @@
-import { ClipboardList, Clock, Pencil, Trash2, UserCheck } from 'lucide-react'
+import { ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
 import { Badge, Card, ProgressBar } from '../../../components/ui'
 import type { Procedure } from '../../../mocks/procedures'
 
@@ -51,6 +51,12 @@ export function ProcedureCard({ procedure, onOpen, onEdit, onDelete }: Procedure
         <Badge variant={procedure.status === 'publicado' ? 'success' : 'warning'}>
           {procedure.status === 'publicado' ? 'Publicado' : 'Rascunho'}
         </Badge>
+        {procedure.videoUrl && (
+          <Badge variant="primary">
+            <Video size={11} />
+            Vídeo
+          </Badge>
+        )}
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-xs text-text-muted">

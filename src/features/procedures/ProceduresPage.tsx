@@ -84,6 +84,8 @@ export function ProceduresPage() {
           status: formState.procedure.status,
           estimatedMinutes: formState.procedure.estimatedMinutes,
           steps: formState.procedure.steps.map((s) => s.text),
+          videoUrl: formState.procedure.videoUrl,
+          videoName: formState.procedure.videoName,
         }
       : undefined
 

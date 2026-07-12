@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GripVertical, Plus, X } from 'lucide-react'
+import { GripVertical, Plus, Video, X } from 'lucide-react'
 import { Button, Input, Modal, Select } from '../../../components/ui'
 import { departments, type ProcedureStatus } from '../../../mocks/procedures'
 
@@ -18,6 +18,8 @@ export interface ProcedureFormValues {
   status: ProcedureStatus
   estimatedMinutes: number
   steps: string[]
+  videoUrl?: string
+  videoName?: string
 }
 
 interface ProcedureFormModalProps {
@@ -34,16 +36,41 @@ const emptyForm: ProcedureFormValues = {
   status: 'rascunho',
   estimatedMinutes: 10,
   steps: [''],
+  videoUrl: undefined,
+  videoName: undefined,
 }
 
 export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: ProcedureFormModalProps) {
   const isEditing = !!initialData
   const [form, setForm] = useState<ProcedureFormValues>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const createdObjectUrl = useRef<string | null>(null)
 
   useEffect(() => {
     if (open) setForm(initialData ?? emptyForm)
   }, [open, initialData])
+
+  useEffect(() => {
+    return () => {
+      if (createdObjectUrl.current) URL.revokeObjectURL(createdObjectUrl.current)
+    }
+  }, [])
+
+  function handleVideoChange(file: File | undefined) {
+    if (!file) return
+    if (createdObjectUrl.current) URL.revokeObjectURL(createdObjectUrl.current)
+    const url = URL.createObjectURL(file)
+    createdObjectUrl.current = url
+    setForm((prev) => ({ ...prev, videoUrl: url, videoName: file.name }))
+  }
+
+  function removeVideo() {
+    if (createdObjectUrl.current) URL.revokeObjectURL(createdObjectUrl.current)
+    createdObjectUrl.current = null
+    setForm((prev) => ({ ...prev, videoUrl: undefined, videoName: undefined }))
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }
 
   function updateStep(index: number, text: string) {
     setForm((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === index ? text : s)) }))
@@ -167,6 +194,44 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
             <Plus size={14} />
             Adicionar etapa
           </button>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-text-primary">
+            Vídeo do passo a passo <span className="font-normal text-text-muted">(opcional)</span>
+          </label>
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => handleVideoChange(e.target.files?.[0])}
+          />
+          {form.videoName ? (
+            <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5">
+              <span className="flex min-w-0 items-center gap-2 truncate text-sm text-text-primary">
+                <Video size={16} className="shrink-0 text-primary" />
+                <span className="truncate">{form.videoName}</span>
+              </span>
+              <button
+                type="button"
+                onClick={removeVideo}
+                aria-label="Remover vídeo"
+                className="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-text-primary"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => videoInputRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border-strong bg-surface py-6 text-text-muted transition-colors hover:border-primary hover:text-primary"
+            >
+              <Video size={20} />
+              <span className="text-sm">Clique para enviar um vídeo</span>
+            </button>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
