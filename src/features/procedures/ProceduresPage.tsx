@@ -62,15 +62,20 @@ export function ProceduresPage() {
   }
 
   async function handleFormSubmit(values: ProcedureFormValues) {
-    if (formState?.mode === 'edit') {
-      const updated = await updateProcedure(formState.procedure.id, values)
-      setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-      setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
-      toast(`${updated.title} foi atualizado.`)
-    } else {
-      const newProcedure = await createProcedure({ ...values, author: user?.name ?? 'Você' })
-      setProcedures((prev) => [newProcedure, ...prev])
-      toast(`${newProcedure.title} foi criado.`)
+    try {
+      if (formState?.mode === 'edit') {
+        const updated = await updateProcedure(formState.procedure.id, values)
+        setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+        setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
+        toast(`${updated.title} foi atualizado.`)
+      } else {
+        const newProcedure = await createProcedure({ ...values, author: user?.name ?? 'Você' })
+        setProcedures((prev) => [newProcedure, ...prev])
+        toast(`${newProcedure.title} foi criado.`)
+      }
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível salvar o procedimento.', 'error')
+      throw err
     }
   }
 

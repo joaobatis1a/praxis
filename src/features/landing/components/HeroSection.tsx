@@ -22,7 +22,7 @@ function Stat({ label, target, suffix = '' }: { label: string; target: number; s
 
 export function HeroSection() {
   return (
-    <section className="relative flex min-h-[92vh] flex-col justify-center overflow-hidden pt-16">
+    <section className="relative flex min-h-[92vh] flex-col justify-center overflow-hidden pt-28 sm:pt-24">
       <div className="relative z-10 mx-auto grid w-full max-w-[var(--container-page)] gap-16 px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div>
           <motion.div
