@@ -1,5 +1,6 @@
 import { procedures as initialProcedures, type Procedure, type ProcedureStatus, type ProcedureStep } from '../../mocks/procedures'
 import { procedureCompletions as initialCompletions, type ProcedureCompletion } from '../../mocks/procedureCompletions'
+import { notify } from '../notifications/api'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -71,6 +72,16 @@ export function createProcedure(input: CreateProcedureInput): Promise<Procedure>
     completed: false,
   }
   procedures = [newProcedure, ...procedures]
+  if (newProcedure.status === 'publicado') {
+    notify({
+      type: 'procedimento-publicado',
+      title: 'Novo procedimento publicado',
+      description: `"${newProcedure.title}" foi publicado para ${newProcedure.department}`,
+      targetDepartment: newProcedure.department,
+      targetRoles: ['admin'],
+      linkTo: '/procedimentos',
+    })
+  }
   return delay(newProcedure)
 }
 
@@ -128,5 +139,12 @@ export function completeProcedure(procedureId: string, userId: string, userName:
   proc.completed = true
   proc.completedAt = completedAt
   proc.completedBy = userName
+  notify({
+    type: 'procedimento-concluido',
+    title: 'Procedimento concluído',
+    description: `${userName} concluiu "${proc.title}"`,
+    targetRoles: ['gestor', 'admin'],
+    linkTo: '/procedimentos',
+  })
   return delay({ procedure: proc, completion })
 }

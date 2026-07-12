@@ -13,6 +13,7 @@ import { RolesPermissionsPage } from './features/roles/RolesPermissionsPage'
 import { LibraryPage } from './features/library/LibraryPage'
 import { ProceduresPage } from './features/procedures/ProceduresPage'
 import { NoticesPage } from './features/notices/NoticesPage'
+import { NotificationsPage } from './features/notifications/NotificationsPage'
 
 function App() {
   return (
@@ -35,7 +36,7 @@ function App() {
           <Route path="/biblioteca" element={<LibraryPage />} />
           <Route path="/procedimentos" element={<ProceduresPage />} />
           <Route path="/avisos" element={<NoticesPage />} />
-          <Route path="/notificacoes" element={<ComingSoonPage title="Central de Notificações" />} />
+          <Route path="/notificacoes" element={<NotificationsPage />} />
           <Route path="/configuracoes" element={<ComingSoonPage title="Configurações" />} />
         </Route>
       </Route>

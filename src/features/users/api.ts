@@ -1,5 +1,6 @@
 import { teamMembers, type TeamMember, type UserStatus } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
+import { notify } from '../notifications/api'
 
 function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -25,6 +26,13 @@ export function createUser(input: CreateUserInput) {
     ...input,
   }
   members = [newUser, ...members]
+  notify({
+    type: 'novo-usuario',
+    title: 'Novo colaborador',
+    description: `${newUser.name} entrou para a equipe de ${newUser.department}`,
+    targetRoles: ['admin', 'gestor'],
+    linkTo: '/usuarios',
+  })
   return delay(newUser)
 }
 

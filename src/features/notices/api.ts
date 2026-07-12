@@ -1,4 +1,5 @@
 import { notices as initialNotices, type Notice, type NoticeRecipientType } from '../../mocks/notices'
+import { notify } from '../notifications/api'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -29,6 +30,13 @@ export function createNotice(input: CreateNoticeInput): Promise<Notice> {
     ...input,
   }
   notices = [newNotice, ...notices]
+  notify({
+    type: 'aviso',
+    title: 'Novo aviso',
+    description: `${input.authorName} enviou um aviso sobre "${input.procedureTitle}"`,
+    ...(input.recipientType === 'user' ? { targetUserId: input.recipientId } : { targetDepartment: input.recipientId }),
+    linkTo: '/avisos',
+  })
   return delay(newNotice)
 }
 

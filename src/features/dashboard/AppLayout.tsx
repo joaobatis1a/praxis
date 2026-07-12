@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, Settings } from 'lucide-react'
 import { Header, Sidebar, ThemeToggle } from '../../components/ui'
+import { teamMembers } from '../../mocks/teamMembers'
 import { useAuth } from '../auth/AuthContext'
+import { listNotifications } from '../notifications/api'
 import { getNavItemsForRole } from './navigation'
 
 const roleLabels: Record<string, string> = {
@@ -14,8 +16,19 @@ const roleLabels: Record<string, string> = {
 export function AppLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const department = useMemo(() => teamMembers.find((m) => m.id === user?.id)?.department, [user])
+
+  useEffect(() => {
+    if (!user) return
+    listNotifications({ id: user.id, role: user.role, department }).then((data) => {
+      setUnreadCount(data.filter((n) => !n.read).length)
+    })
+  }, [user, department, location.pathname])
 
   if (!user) return null
 
@@ -51,7 +64,7 @@ export function AppLayout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
-          notificationCount={3}
+          notificationCount={unreadCount}
           onNotificationsClick={() => navigate('/notificacoes')}
           onMenuClick={() => setSidebarOpen(true)}
           rightSlot={<ThemeToggle />}
