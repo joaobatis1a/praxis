@@ -4,6 +4,7 @@ import { FolderPlus, Plus, Search } from 'lucide-react'
 import type { FolderNode, LibraryDocument } from '../../mocks/library'
 import { Button, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
+import { useAuth } from '../auth/AuthContext'
 import {
   addCategory,
   addFolder,
@@ -30,9 +31,10 @@ import { DocumentFormModal, type DocumentFormValues } from './components/Documen
 type DocFormState = { mode: 'create' } | { mode: 'edit'; doc: LibraryDocument } | null
 
 export function LibraryPage() {
+  const { user } = useAuth()
   const { toast } = useToast()
   const [docs, setDocs] = useState<LibraryDocument[]>([])
-  const [tree, setTree] = useState<FolderNode[]>(getFolderTree())
+  const [tree, setTree] = useState<FolderNode[]>([])
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [openDoc, setOpenDoc] = useState<LibraryDocument | null>(null)
@@ -43,8 +45,9 @@ export function LibraryPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    listDocuments().then((data) => {
-      setDocs(data)
+    Promise.all([listDocuments(), getFolderTree()]).then(([docsData, treeData]) => {
+      setDocs(docsData)
+      setTree(treeData)
       setLoading(false)
     })
   }, [])
@@ -53,7 +56,7 @@ export function LibraryPage() {
   const recent = [...docs].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)).slice(0, 6)
 
   const visibleDocs = useMemo(() => {
-    let base = selectedFolder ? getDocumentsInFolder(selectedFolder, tree) : docs
+    let base = selectedFolder ? getDocumentsInFolder(selectedFolder, tree, docs) : docs
     if (search.trim()) {
       base = base.filter((d) => d.title.toLowerCase().includes(search.toLowerCase()))
     }
@@ -75,7 +78,7 @@ export function LibraryPage() {
       setOpenDoc((prev) => (prev && prev.id === updated.id ? updated : prev))
       toast(`${updated.title} foi atualizado.`)
     } else {
-      const newDoc = await createDocument({ ...values, folderId: selectedFolder, author: 'Você' })
+      const newDoc = await createDocument({ ...values, folderId: selectedFolder, author: user?.name ?? 'Você' })
       setDocs((prev) => [newDoc, ...prev])
       toast(`${newDoc.title} foi criado.`)
     }
@@ -122,8 +125,8 @@ export function LibraryPage() {
     toast(`"${deletingFolder.name}" foi excluída.`, 'error')
   }
 
-  const impact = deletingFolder ? getFolderDeleteImpact(deletingFolder.id) : null
-  const breadcrumbPath = selectedFolder ? getFolderPath(selectedFolder) : []
+  const impact = deletingFolder ? getFolderDeleteImpact(deletingFolder.id, tree, docs) : null
+  const breadcrumbPath = selectedFolder ? getFolderPath(selectedFolder, tree) : []
   const locationLabel = breadcrumbPath.length ? breadcrumbPath.map((n) => n.name).join(' > ') : 'Biblioteca (raiz)'
 
   return (
