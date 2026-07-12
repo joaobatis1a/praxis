@@ -14,6 +14,8 @@ export interface CreateProcedureInput {
   estimatedMinutes: number
   author: string
   steps: string[]
+  videoUrl?: string
+  videoName?: string
 }
 
 export interface UpdateProcedureInput {
@@ -23,6 +25,8 @@ export interface UpdateProcedureInput {
   status: ProcedureStatus
   estimatedMinutes: number
   steps: string[]
+  videoUrl?: string
+  videoName?: string
 }
 
 export function listProcedures(): Promise<Procedure[]> {
@@ -52,6 +56,8 @@ export function createProcedure(input: CreateProcedureInput): Promise<Procedure>
     author: input.author,
     steps,
     completedStepIds: [],
+    videoUrl: input.videoUrl,
+    videoName: input.videoName,
   }
   procedures = [newProcedure, ...procedures]
   return delay(newProcedure)
@@ -75,6 +81,8 @@ export function updateProcedure(id: string, input: UpdateProcedureInput): Promis
     steps,
     completedStepIds: existing.completedStepIds.filter((stepId) => validStepIds.has(stepId)),
     updatedAt: new Date().toISOString().slice(0, 10),
+    videoUrl: input.videoUrl,
+    videoName: input.videoName,
   }
   procedures = procedures.map((p) => (p.id === id ? updated : p))
   return delay(updated)

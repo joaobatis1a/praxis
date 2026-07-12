@@ -16,6 +16,8 @@ export interface Procedure {
   author: string
   steps: ProcedureStep[]
   completedStepIds: string[]
+  videoUrl?: string
+  videoName?: string
 }
 
 export const departments = ['Diretoria', 'Operações', 'Suporte', 'Comercial', 'Financeiro', 'Recursos Humanos']

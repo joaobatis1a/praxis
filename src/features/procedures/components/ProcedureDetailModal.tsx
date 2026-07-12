@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ClipboardList, Clock, Pencil, Trash2, UserCheck } from 'lucide-react'
+import { ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
 import { Badge, Button, Checkbox, Modal, ProgressBar } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
@@ -55,6 +55,26 @@ export function ProcedureDetailModal({
         </span>
         <span>Atualizado em {formatDate(procedure.updatedAt)}</span>
       </div>
+
+      {procedure.videoUrl && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+          className="mt-5"
+        >
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
+            <Video size={14} />
+            Vídeo do passo a passo
+          </h3>
+          <video
+            key={procedure.videoUrl}
+            src={procedure.videoUrl}
+            controls
+            className="mt-2 aspect-video w-full rounded-md border border-border bg-black"
+          />
+        </motion.div>
+      )}
 
       <div className="mt-5">
         <div className="flex items-center justify-between text-xs text-text-muted">
