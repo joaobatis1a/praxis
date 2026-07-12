@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Bell, Building2, Save, User as UserIcon } from 'lucide-react'
-import { Badge, Button, Card, Input, Skeleton, Switch, useToast } from '../../components/ui'
+import { AlertTriangle, Bell, Building2, Save, Trash2, User as UserIcon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Badge, Button, Card, ConfirmDialog, Input, Skeleton, Switch, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
-import { teamMembers } from '../../mocks/teamMembers'
+import { teamMembers, type TeamMember } from '../../mocks/teamMembers'
 import type { NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
+import { deleteUser, listUsers } from '../users/api'
 import { getCompany, getNotificationPreferences, setNotificationPreference, updateCompany, updateProfile } from './api'
 
 const roleLabels: Record<Role, string> = {
@@ -37,8 +39,9 @@ const notificationTypeInfo: Record<NotificationType, { label: string; descriptio
 }
 
 export function SettingsPage() {
-  const { user, setSessionUser } = useAuth()
+  const { user, setSessionUser, logout } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const department = useMemo(() => teamMembers.find((m) => m.id === user?.id)?.department ?? '', [user])
 
   const [name, setName] = useState(user?.name ?? '')
@@ -49,6 +52,10 @@ export function SettingsPage() {
 
   const [companyName, setCompanyName] = useState('')
   const [savingCompany, setSavingCompany] = useState(false)
+
+  const [allMembers, setAllMembers] = useState<TeamMember[]>([])
+  const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   useEffect(() => {
     setName(user?.name ?? '')
@@ -68,6 +75,10 @@ export function SettingsPage() {
       setCompanyName(c.name)
     })
   }, [user])
+
+  useEffect(() => {
+    listUsers().then(setAllMembers)
+  }, [])
 
   const visibleTypes = (Object.keys(notificationTypeInfo) as NotificationType[]).filter((type) => {
     const roles = notificationTypeInfo[type].roles
@@ -100,10 +111,23 @@ export function SettingsPage() {
     toast('Dados da empresa atualizados.')
   }
 
+  async function handleDeleteAccount() {
+    if (!user) return
+    setDeleting(true)
+    await deleteUser(user.id)
+    setDeleting(false)
+    toast('Sua conta foi excluída.', 'error')
+    logout()
+    navigate('/login')
+  }
+
   if (!user) return null
 
+  const adminCount = allMembers.filter((m) => m.role === 'admin').length
+  const isOnlyAdmin = user.role === 'admin' && adminCount <= 1
+
   return (
-    <div className="mx-auto max-w-[720px] p-6 lg:p-8">
+    <div className="mx-auto max-w-[1040px] p-6 lg:p-8">
       <motion.h1 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-bold text-text-primary">
         Configurações
       </motion.h1>
@@ -117,8 +141,10 @@ export function SettingsPage() {
               <h2 className="text-base font-semibold text-text-primary">Meu perfil</h2>
             </div>
             <div className="mt-4 space-y-4">
-              <Input label="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input label="E-mail" value={user.email} disabled hint="O e-mail não pode ser alterado." />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input label="E-mail" value={user.email} disabled hint="O e-mail não pode ser alterado." />
+              </div>
               <div className="flex items-center gap-2">
                 <Badge variant="primary">{roleLabels[user.role]}</Badge>
                 <Badge variant="neutral">{department}</Badge>
@@ -181,7 +207,45 @@ export function SettingsPage() {
             </Card>
           </motion.div>
         )}
+
+        <motion.div variants={staggerItem}>
+          <Card className="border-error/30">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={18} className="text-error" />
+              <h2 className="text-base font-semibold text-text-primary">Zona de perigo</h2>
+            </div>
+            <p className="mt-1 text-sm text-text-muted">Excluir sua conta é permanente e não pode ser desfeito.</p>
+
+            {isOnlyAdmin ? (
+              <div className="mt-4 flex flex-col items-start gap-3 rounded-md border border-warning/30 bg-warning-bg/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-warning-foreground">
+                  Você é o único administrador da empresa. Promova outra pessoa a Admin antes de excluir sua conta.
+                </p>
+                <Button variant="secondary" onClick={() => navigate('/usuarios')} className="shrink-0">
+                  Ir para Usuários
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4 flex justify-end">
+                <Button variant="destructive" onClick={() => setConfirmingDelete(true)}>
+                  <Trash2 size={16} />
+                  Excluir minha conta
+                </Button>
+              </div>
+            )}
+          </Card>
+        </motion.div>
       </motion.div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        onConfirm={handleDeleteAccount}
+        title="Excluir sua conta"
+        description="Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita e você será desconectado."
+        confirmLabel={deleting ? 'Excluindo...' : 'Excluir conta'}
+        variant="destructive"
+      />
     </div>
   )
 }
