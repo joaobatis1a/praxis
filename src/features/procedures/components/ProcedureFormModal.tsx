@@ -20,6 +20,8 @@ export interface ProcedureFormValues {
   steps: string[]
   videoUrl?: string
   videoName?: string
+  /** only set when the user picks a new file in this session — absent means "keep existing video" on edit */
+  videoFile?: File
 }
 
 interface ProcedureFormModalProps {
@@ -62,13 +64,13 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
     if (createdObjectUrl.current) URL.revokeObjectURL(createdObjectUrl.current)
     const url = URL.createObjectURL(file)
     createdObjectUrl.current = url
-    setForm((prev) => ({ ...prev, videoUrl: url, videoName: file.name }))
+    setForm((prev) => ({ ...prev, videoUrl: url, videoName: file.name, videoFile: file }))
   }
 
   function removeVideo() {
     if (createdObjectUrl.current) URL.revokeObjectURL(createdObjectUrl.current)
     createdObjectUrl.current = null
-    setForm((prev) => ({ ...prev, videoUrl: undefined, videoName: undefined }))
+    setForm((prev) => ({ ...prev, videoUrl: undefined, videoName: undefined, videoFile: undefined }))
     if (videoInputRef.current) videoInputRef.current.value = ''
   }
 
