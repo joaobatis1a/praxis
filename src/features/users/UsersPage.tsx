@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
+import { Award, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -16,10 +16,14 @@ import {
   useToast,
 } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
+import type { ProcedureCompletion } from '../../mocks/procedureCompletions'
+import type { Procedure } from '../../mocks/procedures'
 import type { TeamMember } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
+import { listCompletions, listProcedures } from '../procedures/api'
 import { createUser, deleteUser, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
 import { UserFormModal } from './components/UserFormModal'
+import { UserProgressModal } from './components/UserProgressModal'
 
 const MotionTableRow = motion(TableRow)
 const MotionTableBody = motion(TableBody)
@@ -56,10 +60,15 @@ export function UsersPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null)
+  const [progressMember, setProgressMember] = useState<TeamMember | null>(null)
+  const [procedures, setProcedures] = useState<Procedure[]>([])
+  const [completions, setCompletions] = useState<ProcedureCompletion[]>([])
 
   useEffect(() => {
-    listUsers().then((data) => {
-      setMembers(data)
+    Promise.all([listUsers(), listProcedures(), listCompletions()]).then(([users, procs, comps]) => {
+      setMembers(users)
+      setProcedures(procs)
+      setCompletions(comps)
       setLoading(false)
     })
   }, [])
@@ -231,6 +240,16 @@ export function UsersPage() {
                       type="button"
                       whileHover={{ scale: 1.15 }}
                       whileTap={{ scale: 0.85 }}
+                      onClick={() => setProgressMember(member)}
+                      aria-label={`Ver progresso de ${member.name}`}
+                      className="rounded-md p-2 text-text-muted hover:bg-amber-400/15 hover:text-amber-500"
+                    >
+                      <Award size={16} />
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
                       onClick={() => {
                         setEditingMember(member)
                         setModalOpen(true)
@@ -292,6 +311,13 @@ export function UsersPage() {
         description={`Tem certeza que deseja excluir ${deletingMember?.name}? Essa ação não pode ser desfeita.`}
         confirmLabel="Excluir"
         variant="destructive"
+      />
+
+      <UserProgressModal
+        member={progressMember}
+        procedures={procedures}
+        completions={completions}
+        onClose={() => setProgressMember(null)}
       />
     </div>
   )
