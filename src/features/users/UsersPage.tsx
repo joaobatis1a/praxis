@@ -15,13 +15,15 @@ import {
   TableRow,
   useToast,
 } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import type { ProcedureCompletion } from '../../mocks/procedureCompletions'
 import type { Procedure } from '../../mocks/procedures'
 import type { TeamMember } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
 import { listCompletions, listProcedures } from '../procedures/api'
-import { createUser, deleteUser, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
+import { createUser, deleteUser, generateInviteCode, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
+import { InviteCodeModal } from './components/InviteCodeModal'
 import { UserFormModal } from './components/UserFormModal'
 import { UserProgressModal } from './components/UserProgressModal'
 
@@ -63,6 +65,7 @@ export function UsersPage() {
   const [progressMember, setProgressMember] = useState<TeamMember | null>(null)
   const [procedures, setProcedures] = useState<Procedure[]>([])
   const [completions, setCompletions] = useState<ProcedureCompletion[]>([])
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([listUsers(), listProcedures(), listCompletions()]).then(([users, procs, comps]) => {
@@ -85,6 +88,11 @@ export function UsersPage() {
   })
 
   async function handleCreate(input: CreateUserInput) {
+    if (isSupabase) {
+      const code = await generateInviteCode({ role: input.role, department: input.department })
+      setGeneratedCode(code)
+      return
+    }
     const newUser = await createUser(input)
     setMembers((prev) => [newUser, ...prev])
     toast(`${newUser.name} foi adicionado à equipe.`)
@@ -319,6 +327,8 @@ export function UsersPage() {
         completions={completions}
         onClose={() => setProgressMember(null)}
       />
+
+      <InviteCodeModal code={generatedCode} onClose={() => setGeneratedCode(null)} />
     </div>
   )
 }
