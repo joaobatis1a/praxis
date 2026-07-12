@@ -133,7 +133,7 @@ export function NoticesPage() {
                     notice={notice}
                     variant={tab === 'received' ? 'received' : 'sent'}
                     onMarkRead={tab === 'received' ? () => handleMarkRead(notice.id) : undefined}
-                    onDelete={tab === 'sent' ? () => setDeleting(notice) : undefined}
+                    onDelete={() => setDeleting(notice)}
                   />
                 </motion.div>
               ))}

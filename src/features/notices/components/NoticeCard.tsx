@@ -21,8 +21,11 @@ export function NoticeCard({ notice, variant, onMarkRead, onDelete }: NoticeCard
   return (
     <motion.div
       layout
+      whileHover={{ y: -4, scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 26 }}
       className={cn(
-        'group relative rounded-lg border bg-surface-card p-4 shadow-[var(--shadow-level-1)] transition-colors',
+        'group relative rounded-lg border bg-surface-card p-4 shadow-[var(--shadow-level-1)] transition-shadow hover:shadow-[var(--shadow-level-2)]',
         unread ? 'border-primary/40' : 'border-border',
       )}
     >
@@ -60,15 +63,17 @@ export function NoticeCard({ notice, variant, onMarkRead, onDelete }: NoticeCard
               Marcar como lida
             </Button>
           )}
-          {variant === 'sent' && onDelete && (
-            <button
+          {onDelete && (
+            <motion.button
               type="button"
               onClick={onDelete}
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.85 }}
               aria-label="Excluir aviso"
               className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-error-bg hover:text-error hover:opacity-100 group-hover:opacity-100"
             >
               <Trash2 size={14} />
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
