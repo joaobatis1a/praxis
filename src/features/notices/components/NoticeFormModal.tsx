@@ -4,9 +4,10 @@ import { Building2, User } from 'lucide-react'
 import { Button, Modal, Select } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { departments } from '../../../mocks/procedures'
-import { teamMembers } from '../../../mocks/teamMembers'
 import type { NoticeRecipientType } from '../../../mocks/notices'
+import type { TeamMember } from '../../../mocks/teamMembers'
 import { listProcedures } from '../../procedures/api'
+import { listUsers } from '../../users/api'
 
 const departmentOptions = departments.map((d) => ({ value: d, label: d }))
 
@@ -33,8 +34,9 @@ export function NoticeFormModal({ open, onClose, onSubmit, currentUserId }: Noti
   const [recipientType, setRecipientType] = useState<NoticeRecipientType>('user')
   const [recipientId, setRecipientId] = useState('')
   const [saving, setSaving] = useState(false)
+  const [members, setMembers] = useState<TeamMember[]>([])
 
-  const memberOptions = teamMembers
+  const memberOptions = members
     .filter((m) => m.id !== currentUserId && m.status === 'ativo')
     .map((m) => ({ value: m.id, label: `${m.name} · ${m.department}` }))
 
@@ -45,6 +47,7 @@ export function NoticeFormModal({ open, onClose, onSubmit, currentUserId }: Noti
       setProcedureOptions(options)
       setProcedureId(options[0]?.value ?? '')
     })
+    listUsers().then(setMembers)
     setDescription('')
     setRecipientType('user')
     setRecipientId('')
