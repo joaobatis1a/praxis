@@ -33,7 +33,7 @@ export function DocumentDetailModal({
 
   return (
     <Modal open={!!document} onClose={onClose} className="max-w-xl">
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 pr-8">
         <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-surface', color)}>
           <Icon size={24} />
         </div>
