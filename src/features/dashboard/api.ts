@@ -63,8 +63,8 @@ export async function getAdminDashboard() {
         supabase!.from('library_documents').select('*', { count: 'exact', head: true }),
         listCompletions(),
         supabase!.from('procedures').select('id, title, status, completed, created_at').order('created_at', { ascending: false }),
-        supabase!.from('profiles').select('id, name, department, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase!.from('library_documents').select('id, title, author, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase!.from('profiles').select('id, name, department, created_at').order('created_at', { ascending: false }).limit(30),
+        supabase!.from('library_documents').select('id, title, author, created_at').order('created_at', { ascending: false }).limit(30),
       ])
 
     const procedures = procRows ?? []
@@ -94,14 +94,14 @@ export async function getAdminDashboard() {
       at: p.created_at,
       time: formatRelativeTime(p.created_at),
     }))
-    const procedureActivity: RawActivityItem[] = procedures.slice(0, 5).map((p) => ({
+    const procedureActivity: RawActivityItem[] = procedures.slice(0, 30).map((p) => ({
       id: `proc-${p.id}`,
       type: 'procedure',
       description: `Procedimento "${p.title}" foi atualizado`,
       at: p.created_at,
       time: formatRelativeTime(p.created_at),
     }))
-    const completionActivity: RawActivityItem[] = completions.slice(0, 5).map((c) => ({
+    const completionActivity: RawActivityItem[] = completions.slice(0, 30).map((c) => ({
       id: c.id,
       type: 'procedure',
       description: `${c.userName} concluiu o procedimento "${c.procedureTitle}"`,
@@ -111,7 +111,7 @@ export async function getAdminDashboard() {
 
     const activity: ActivityItem[] = [...documentActivity, ...userActivity, ...procedureActivity, ...completionActivity]
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-      .slice(0, 8)
+      .slice(0, 60)
       .map(({ id, type, description, time }) => ({ id, type, description, time }))
 
     const stats: DashboardStats = {
