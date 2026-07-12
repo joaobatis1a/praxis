@@ -15,6 +15,7 @@ export function AppLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (!user) return null
 
@@ -29,6 +30,8 @@ export function AppLayout() {
   return (
     <div className="flex h-screen bg-background">
       <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         header={<span className="text-lg font-bold text-text-primary">Praxis</span>}
         sections={[
           {
@@ -50,6 +53,7 @@ export function AppLayout() {
         <Header
           notificationCount={3}
           onNotificationsClick={() => navigate('/notificacoes')}
+          onMenuClick={() => setSidebarOpen(true)}
           rightSlot={<ThemeToggle />}
           avatar={
             <div className="relative">

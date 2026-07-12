@@ -50,11 +50,14 @@ const swatches = [
 
 export function DesignSystemPage() {
   const [modalOpen, setModalOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar
         sections={sections}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         header={<span className="text-lg font-bold text-text-primary">Praxis</span>}
         footer={<span className="px-3 text-xs text-text-muted">v0.1 · design system</span>}
       />
@@ -62,6 +65,7 @@ export function DesignSystemPage() {
       <div className="flex flex-1 flex-col">
         <Header
           notificationCount={3}
+          onMenuClick={() => setSidebarOpen(true)}
           rightSlot={<ThemeToggle />}
           avatar={
             <div className="h-8 w-8 rounded-full bg-primary/20 text-center text-sm font-semibold leading-8 text-primary">
