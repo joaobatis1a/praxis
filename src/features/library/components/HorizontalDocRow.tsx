@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, FileText, FileSpreadsheet, FileImage, Video } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, FileSpreadsheet, FileImage, Video, Star, Pencil, Trash2 } from 'lucide-react'
 import type { DocType, LibraryDocument } from '../../../mocks/library'
 import { cn } from '../../../lib/cn'
 
@@ -26,10 +26,16 @@ export function HorizontalDocRow({
   title,
   documents,
   onOpen,
+  onToggleFavorite,
+  onEdit,
+  onDelete,
 }: {
   title: string
   documents: LibraryDocument[]
   onOpen: (doc: LibraryDocument) => void
+  onToggleFavorite: (id: string) => void
+  onEdit: (doc: LibraryDocument) => void
+  onDelete: (doc: LibraryDocument) => void
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [hovering, setHovering] = useState(false)
@@ -59,22 +65,59 @@ export function HorizontalDocRow({
           {documents.map((doc) => {
             const { icon: Icon, color, bg } = typeConfig[doc.type]
             return (
-              <motion.button
+              <motion.div
                 key={doc.id}
                 variants={item}
                 whileHover={{ y: -6, scale: 1.04, rotate: -0.75 }}
-                whileTap={{ scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-                onClick={() => onOpen(doc)}
-                className="relative w-60 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-card p-4 text-left shadow-[var(--shadow-level-1)] hover:shadow-[var(--shadow-level-2)]"
+                className="group/card relative w-60 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-card p-4 text-left shadow-[var(--shadow-level-1)] hover:shadow-[var(--shadow-level-2)]"
               >
                 <span className={cn('absolute inset-x-0 top-0 h-1', bg)} />
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg bg-surface', color)}>
-                  <Icon size={20} />
+                <div className="flex items-start justify-between">
+                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg bg-surface', color)}>
+                    <Icon size={20} />
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <motion.button
+                      type="button"
+                      onClick={() => onToggleFavorite(doc.id)}
+                      whileTap={{ scale: 0.8 }}
+                      aria-label={doc.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      className="rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-warning"
+                    >
+                      <motion.span
+                        key={doc.favorite ? 'fav-on' : 'fav-off'}
+                        initial={{ scale: 0.5, rotate: -30 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                        className="block"
+                      >
+                        <Star size={14} className={cn(doc.favorite && 'fill-warning text-warning')} />
+                      </motion.span>
+                    </motion.button>
+                    <button
+                      type="button"
+                      onClick={() => onEdit(doc)}
+                      aria-label={`Editar ${doc.title}`}
+                      className="rounded-md p-1 text-text-muted opacity-50 transition-all hover:bg-surface-hover hover:text-primary hover:opacity-100 group-hover/card:opacity-100"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(doc)}
+                      aria-label={`Excluir ${doc.title}`}
+                      className="rounded-md p-1 text-text-muted opacity-50 transition-all hover:bg-error-bg hover:text-error hover:opacity-100 group-hover/card:opacity-100"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <p className="mt-3 line-clamp-2 text-sm font-semibold text-text-primary">{doc.title}</p>
-                <p className="mt-1 truncate text-xs text-text-muted">{doc.author}</p>
-              </motion.button>
+                <button type="button" onClick={() => onOpen(doc)} className="mt-3 block w-full text-left">
+                  <p className="line-clamp-2 text-sm font-semibold text-text-primary">{doc.title}</p>
+                  <p className="mt-1 truncate text-xs text-text-muted">{doc.author}</p>
+                </button>
+              </motion.div>
             )
           })}
         </motion.div>
