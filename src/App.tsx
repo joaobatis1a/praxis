@@ -8,6 +8,7 @@ import { AppLayout } from './features/dashboard/AppLayout'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { UsersPage } from './features/users/UsersPage'
 import { RequireRole } from './features/auth/RequireRole'
+import { RolesPermissionsPage } from './features/roles/RolesPermissionsPage'
 
 function App() {
   return (
@@ -24,7 +25,7 @@ function App() {
             <Route path="/usuarios" element={<UsersPage />} />
           </Route>
           <Route element={<RequireRole roles={['admin']} />}>
-            <Route path="/cargos" element={<ComingSoonPage title="Cargos e Permissões" />} />
+            <Route path="/cargos" element={<RolesPermissionsPage />} />
           </Route>
           <Route path="/biblioteca" element={<ComingSoonPage title="Biblioteca de Conhecimento" />} />
           <Route path="/procedimentos" element={<ComingSoonPage title="Procedimentos Operacionais" />} />
