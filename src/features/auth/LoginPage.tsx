@@ -32,7 +32,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="dark relative flex h-screen overflow-hidden bg-[#050810]">
+    <div className="dark relative flex h-dvh overflow-hidden bg-[#050810]">
       <Link
         to="/"
         className="absolute left-6 top-6 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-white/60 transition-colors hover:text-white"

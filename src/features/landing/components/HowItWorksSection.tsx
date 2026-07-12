@@ -60,7 +60,7 @@ export function HowItWorksSection() {
     <section id="como-funciona" className="relative py-28">
       <div className="mx-auto max-w-[var(--container-page)] px-6">
         <div className="grid items-center gap-16 lg:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <Reveal>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#6d94fa]">Em três passos</p>
               <h2 className="mt-3 text-4xl font-bold leading-tight text-white">
@@ -94,7 +94,7 @@ export function HowItWorksSection() {
             </div>
           </div>
 
-          <Reveal delay={0.15}>
+          <Reveal delay={0.15} className="min-w-0">
             <StepsMock />
           </Reveal>
         </div>

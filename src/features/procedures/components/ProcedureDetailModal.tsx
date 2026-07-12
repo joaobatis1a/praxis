@@ -149,7 +149,7 @@ export function ProcedureDetailModal({
         })}
       </motion.ol>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+      <div className="mt-6 flex flex-wrap items-start justify-between gap-3 border-t border-border pt-4">
         <div>
           {!procedure.completed && (
             <>

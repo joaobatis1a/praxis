@@ -42,7 +42,7 @@ export function AppLayout() {
     .toUpperCase()
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh bg-background">
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

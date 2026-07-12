@@ -131,7 +131,7 @@ export function ProductTourSection() {
                 row.reverse && 'lg:[&>*:first-child]:order-2',
               )}
             >
-              <Reveal>
+              <Reveal className="min-w-0">
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#4f7df9]/15 text-[#6d94fa]">
                   <row.icon size={20} />
                 </div>
@@ -142,7 +142,9 @@ export function ProductTourSection() {
                 <p className="mt-4 max-w-md text-white/55">{row.description}</p>
               </Reveal>
 
-              <Reveal delay={0.1}>{row.eyebrow.includes('Biblioteca') ? <LibraryMock /> : <ProcedureMock />}</Reveal>
+              <Reveal delay={0.1} className="min-w-0">
+                {row.eyebrow.includes('Biblioteca') ? <LibraryMock /> : <ProcedureMock />}
+              </Reveal>
             </div>
           ))}
         </div>
