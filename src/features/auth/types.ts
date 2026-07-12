@@ -5,4 +5,7 @@ export interface AuthUser {
   name: string
   email: string
   role: Role
+  /** only populated when VITE_DATA_SOURCE=supabase — mock mode looks this up separately via teamMembers */
+  companyId?: string
+  department?: string
 }
