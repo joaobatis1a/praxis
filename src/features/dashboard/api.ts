@@ -1,7 +1,12 @@
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { adminStats, colaboradorProgress, favoriteDocuments, progressHistory, recentActivity, recentProcedures } from '../../mocks/dashboard'
+import { notices as mockNotices } from '../../mocks/notices'
+import { procedures as mockProcedures } from '../../mocks/procedures'
+import { teamMembers as mockTeamMembers } from '../../mocks/teamMembers'
+import type { Role } from '../auth/types'
 import { listDocuments } from '../library/api'
+import { listNotices } from '../notices/api'
 import { listCompletions } from '../procedures/api'
 
 function delay<T>(value: T, ms = 300): Promise<T> {
@@ -43,6 +48,18 @@ interface DashboardStats {
   progressoMedio: StatValue
 }
 
+interface RecentNotice {
+  id: string
+  description: string
+  authorName: string
+  recipientLabel: string
+  time: string
+}
+
+function emptyRoleBreakdown(): Record<Role, number> {
+  return { admin: 0, gestor: 0, colaborador: 0 }
+}
+
 function lastNMonths(n: number): { start: Date; end: Date; label: string }[] {
   const now = new Date()
   const months = []
@@ -57,19 +74,43 @@ function lastNMonths(n: number): { start: Date; end: Date; label: string }[] {
 
 export async function getAdminDashboard() {
   if (isSupabase) {
-    const [{ count: colaboradoresCount }, { count: documentosCount }, completions, { data: procRows }, { data: profileRows }, { data: docRows }] =
-      await Promise.all([
-        supabase!.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase!.from('library_documents').select('*', { count: 'exact', head: true }),
-        listCompletions(),
-        supabase!.from('procedures').select('id, title, status, completed, created_at').order('created_at', { ascending: false }),
-        supabase!.from('profiles').select('id, name, department, created_at').order('created_at', { ascending: false }).limit(30),
-        supabase!.from('library_documents').select('id, title, author, created_at').order('created_at', { ascending: false }).limit(30),
-      ])
+    const [
+      { count: colaboradoresCount },
+      { count: documentosCount },
+      completions,
+      { data: procRows },
+      { data: profileRows },
+      { data: docRows },
+      { data: roleRows },
+      notices,
+    ] = await Promise.all([
+      supabase!.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase!.from('library_documents').select('*', { count: 'exact', head: true }),
+      listCompletions(),
+      supabase!.from('procedures').select('id, title, status, completed, created_at').order('created_at', { ascending: false }),
+      supabase!.from('profiles').select('id, name, department, created_at').order('created_at', { ascending: false }).limit(30),
+      supabase!.from('library_documents').select('id, title, author, created_at').order('created_at', { ascending: false }).limit(30),
+      supabase!.from('profiles').select('role'),
+      listNotices(),
+    ])
 
     const procedures = procRows ?? []
     const published = procedures.filter((p) => p.status === 'publicado')
     const progressoMedio = published.length ? Math.round((published.filter((p) => p.completed).length / published.length) * 100) : 0
+    const draftProcedures = procedures.filter((p) => p.status === 'rascunho').length
+
+    const roleBreakdown = emptyRoleBreakdown()
+    for (const row of (roleRows as { role: Role }[] | null) ?? []) {
+      roleBreakdown[row.role] = (roleBreakdown[row.role] ?? 0) + 1
+    }
+
+    const recentNotices: RecentNotice[] = notices.slice(0, 5).map((n) => ({
+      id: n.id,
+      description: n.description,
+      authorName: n.authorName,
+      recipientLabel: n.recipientLabel,
+      time: formatRelativeTime(n.createdAt),
+    }))
 
     const months = lastNMonths(6)
     const progressHistoryReal = months.map(({ start, end, label }) => ({
@@ -121,7 +162,7 @@ export async function getAdminDashboard() {
       progressoMedio: { value: progressoMedio },
     }
 
-    return { stats, progressHistory: progressHistoryReal, activity }
+    return { stats, progressHistory: progressHistoryReal, activity, draftProcedures, roleBreakdown, recentNotices }
   }
 
   const completions = await listCompletions()
@@ -135,7 +176,30 @@ export async function getAdminDashboard() {
     ...adminStats,
     procedimentosConcluidos: { value: completions.length, change: 8 },
   }
-  return delay({ stats, progressHistory, activity: [...completionActivity, ...recentActivity] })
+  const draftProcedures = mockProcedures.filter((p) => p.status === 'rascunho').length
+  const roleBreakdown = emptyRoleBreakdown()
+  for (const member of mockTeamMembers) {
+    roleBreakdown[member.role] = (roleBreakdown[member.role] ?? 0) + 1
+  }
+  const recentNotices: RecentNotice[] = [...mockNotices]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 5)
+    .map((n) => ({
+      id: n.id,
+      description: n.description,
+      authorName: n.authorName,
+      recipientLabel: n.recipientLabel,
+      time: formatRelativeTime(n.createdAt),
+    }))
+
+  return delay({
+    stats,
+    progressHistory,
+    activity: [...completionActivity, ...recentActivity],
+    draftProcedures,
+    roleBreakdown,
+    recentNotices,
+  })
 }
 
 export async function getColaboradorDashboard(userId: string) {

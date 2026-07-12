@@ -34,7 +34,7 @@ export function ProgressChart({ data }: ProgressChartProps) {
           </div>
         </div>
 
-        <div className="mt-4 h-64 w-full">
+        <div className="mt-4 h-110 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
