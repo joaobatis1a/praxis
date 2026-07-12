@@ -219,38 +219,38 @@ export function ProcedureDetailModal({
         })}
       </motion.ol>
 
-      <div className="mt-6 flex flex-wrap items-start justify-between gap-3 border-t border-border pt-4">
-        <div>
-          {!procedure.completed && (
-            <>
+      <div className="mt-6 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            {!procedure.completed && (
               <Button variant="primary" disabled={!canComplete} onClick={() => onComplete(procedure)}>
                 <CheckCircle2 size={16} />
                 Concluir procedimento
               </Button>
-              {!canComplete && (
-                <p className="mt-1.5 text-xs text-text-muted">
-                  {!allStepsDone
-                    ? 'Marque todas as etapas para concluir.'
-                    : videoPending
-                      ? fileKind === 'video'
-                        ? 'Confirme que assistiu o vídeo para concluir.'
-                        : 'Confirme que revisou o arquivo para concluir.'
-                      : null}
-                </p>
-              )}
-            </>
-          )}
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => onEdit(procedure)}>
+              <Pencil size={16} />
+              Editar
+            </Button>
+            <Button variant="destructive" onClick={() => onDelete(procedure)}>
+              <Trash2 size={16} />
+              Excluir procedimento
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => onEdit(procedure)}>
-            <Pencil size={16} />
-            Editar
-          </Button>
-          <Button variant="destructive" onClick={() => onDelete(procedure)}>
-            <Trash2 size={16} />
-            Excluir procedimento
-          </Button>
-        </div>
+        {!procedure.completed && !canComplete && (
+          <p className="mt-1.5 text-xs text-text-muted">
+            {!allStepsDone
+              ? 'Marque todas as etapas para concluir.'
+              : videoPending
+                ? fileKind === 'video'
+                  ? 'Confirme que assistiu o vídeo para concluir.'
+                  : 'Confirme que revisou o arquivo para concluir.'
+                : null}
+          </p>
+        )}
       </div>
 
       {lightboxOpen &&
