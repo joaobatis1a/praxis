@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '../../lib/cn'
+
+const MotionNavLink = motion(NavLink)
 
 export interface SidebarItem {
   to: string
@@ -64,28 +67,63 @@ export function Sidebar({ sections, header, footer, open = false, onClose }: Sid
               <ul className="flex flex-col gap-0.5">
                 {section.items.map((item) => (
                   <li key={item.to}>
-                    <NavLink
+                    <MotionNavLink
                       to={item.to}
                       end
                       onClick={onClose}
+                      whileHover="hover"
+                      whileTap={{ scale: 0.97 }}
                       className={({ isActive }) =>
                         cn(
                           'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-text-secondary transition-colors',
-                          'hover:bg-surface-hover hover:text-text-primary',
-                          isActive && 'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary',
+                          'hover:text-text-primary',
+                          isActive && 'text-primary hover:text-primary',
                         )
                       }
                     >
                       {({ isActive }) => (
                         <>
-                          {isActive && (
-                            <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary" />
+                          {isActive ? (
+                            <motion.span
+                              layoutId="sidebar-active-bg"
+                              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                              className="absolute inset-0 z-0 rounded-md bg-primary/10"
+                            />
+                          ) : (
+                            <motion.span
+                              variants={{ hover: { opacity: 1 }, initial: { opacity: 0 } }}
+                              initial="initial"
+                              animate="initial"
+                              className="absolute inset-0 z-0 rounded-md bg-surface-hover"
+                            />
                           )}
-                          <span className="shrink-0">{item.icon}</span>
-                          {item.label}
+                          {isActive && (
+                            <motion.span
+                              layoutId="sidebar-active-indicator"
+                              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                              className="absolute left-0 top-1/2 z-0 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary"
+                            />
+                          )}
+                          <motion.span
+                            variants={{ hover: { scale: 1.15, rotate: -6 }, initial: { scale: 1, rotate: 0 } }}
+                            initial="initial"
+                            animate="initial"
+                            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                            className="relative z-10 shrink-0"
+                          >
+                            {item.icon}
+                          </motion.span>
+                          <motion.span
+                            variants={{ hover: { x: 2 }, initial: { x: 0 } }}
+                            initial="initial"
+                            animate="initial"
+                            className="relative z-10"
+                          >
+                            {item.label}
+                          </motion.span>
                         </>
                       )}
-                    </NavLink>
+                    </MotionNavLink>
                   </li>
                 ))}
               </ul>

@@ -3,6 +3,23 @@
 /* dark mode toggled via a `.dark` class on <html>, set by ThemeProvider */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* light/dark theme switch: a circular "fill" wipe from the toggle button,
+   driven by the View Transition API (see theme-provider.tsx). We disable the
+   browser's default cross-fade so only our clip-path circle animation shows. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
 :root {
   --background: #ffffff;
   --surface: #f9fafb;
