@@ -1,9 +1,21 @@
-import { motion } from 'framer-motion'
-import { Award, CheckCircle2, ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Award, CheckCircle2, ClipboardList, Clock, Download, ExternalLink, Maximize2, Paperclip, Pencil, Trash2, UserCheck, Video, X } from 'lucide-react'
 import { Badge, Button, Checkbox, Modal, ProgressBar } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
 import type { Procedure } from '../../../mocks/procedures'
+
+type FileKind = 'video' | 'image' | 'pdf' | 'other'
+
+function inferFileKind(name: string | undefined): FileKind {
+  const ext = name?.split('.').pop()?.toLowerCase() ?? ''
+  if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) return 'video'
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) return 'image'
+  if (ext === 'pdf') return 'pdf'
+  return 'other'
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -26,6 +38,8 @@ export function ProcedureDetailModal({
   onDelete: (procedure: Procedure) => void
   onComplete: (procedure: Procedure) => void
 }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+
   if (!procedure) return null
   const total = procedure.steps.length
   const done = procedure.completedStepIds.length
@@ -33,6 +47,7 @@ export function ProcedureDetailModal({
   const allStepsDone = total > 0 && done === total
   const videoPending = !!procedure.videoUrl && !procedure.videoWatched
   const canComplete = allStepsDone && !videoPending && !procedure.completed
+  const fileKind = inferFileKind(procedure.videoName)
 
   return (
     <Modal open={!!procedure} onClose={onClose} className="max-w-xl">
@@ -86,27 +101,82 @@ export function ProcedureDetailModal({
           className="mt-5"
         >
           <h3 className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
-            <Video size={14} />
-            Vídeo do passo a passo
+            {fileKind === 'video' ? <Video size={14} /> : <Paperclip size={14} />}
+            {fileKind === 'video' ? 'Vídeo do passo a passo' : 'Arquivo de apoio'}
           </h3>
-          <video
-            key={procedure.videoUrl}
-            src={procedure.videoUrl}
-            controls
-            className="mt-2 aspect-video w-full rounded-md border border-border bg-black"
-          />
+
+          {fileKind === 'video' && (
+            <video
+              key={procedure.videoUrl}
+              src={procedure.videoUrl}
+              controls
+              className="mt-2 aspect-video w-full rounded-md border border-border bg-black"
+            />
+          )}
+
+          {fileKind === 'image' && (
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              className="mt-2 block w-full cursor-zoom-in overflow-hidden rounded-md border border-border"
+              aria-label="Ver imagem em tamanho maior"
+            >
+              <img key={procedure.videoUrl} src={procedure.videoUrl} alt={procedure.videoName} className="max-h-72 w-full object-contain" />
+            </button>
+          )}
+
+          {fileKind === 'pdf' && (
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              className="group relative mt-2 block w-full overflow-hidden rounded-md border border-border"
+              aria-label="Ver PDF completo"
+            >
+              <iframe key={procedure.videoUrl} src={procedure.videoUrl} title={procedure.videoName} className="h-64 w-full" />
+              <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40">
+                <span className="flex items-center gap-1.5 rounded-md bg-black/70 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  <Maximize2 size={12} />
+                  Ver completo
+                </span>
+              </span>
+            </button>
+          )}
+
+          {fileKind === 'other' && (
+            <a
+              href={procedure.videoUrl}
+              download={procedure.videoName}
+              className="mt-2 flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5 text-sm text-text-primary hover:bg-surface-hover"
+            >
+              <span className="truncate">{procedure.videoName}</span>
+              <Download size={16} className="shrink-0 text-text-muted" />
+            </a>
+          )}
+
           <div className="mt-2 flex items-center gap-2">
             <Checkbox
               id={`${procedure.id}-video-watched`}
               checked={procedure.videoWatched}
               onChange={() => onToggleVideoWatched(procedure.id)}
-              aria-label="Já assisti esse vídeo"
+              aria-label={fileKind === 'video' ? 'Já assisti esse vídeo' : 'Já revisei este arquivo'}
             />
             <label htmlFor={`${procedure.id}-video-watched`} className="cursor-pointer text-sm text-text-secondary">
-              Já assisti esse vídeo
+              {fileKind === 'video' ? 'Já assisti esse vídeo' : 'Já revisei este arquivo'}
             </label>
           </div>
         </motion.div>
+      )}
+
+      {procedure.externalUrl && (
+        <a
+          href={procedure.externalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex items-center gap-2 rounded-md border border-border-strong bg-surface px-3 py-2.5 text-sm font-medium text-primary hover:bg-surface-hover"
+        >
+          <ExternalLink size={16} className="shrink-0" />
+          <span className="truncate">{procedure.externalUrl}</span>
+        </a>
       )}
 
       <div className="mt-5">
@@ -162,7 +232,9 @@ export function ProcedureDetailModal({
                   {!allStepsDone
                     ? 'Marque todas as etapas para concluir.'
                     : videoPending
-                      ? 'Confirme que assistiu o vídeo para concluir.'
+                      ? fileKind === 'video'
+                        ? 'Confirme que assistiu o vídeo para concluir.'
+                        : 'Confirme que revisou o arquivo para concluir.'
                       : null}
                 </p>
               )}
@@ -180,6 +252,50 @@ export function ProcedureDetailModal({
           </Button>
         </div>
       </div>
+
+      {lightboxOpen &&
+        procedure.videoUrl &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(0,0,0,0.85)] p-6"
+              onClick={() => setLightboxOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(false)}
+                aria-label="Fechar"
+                className="absolute right-4 top-4 rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
+              >
+                <X size={22} />
+              </button>
+              {fileKind === 'image' ? (
+                <motion.img
+                  initial={{ scale: 0.95 }}
+                  animate={{ scale: 1 }}
+                  src={procedure.videoUrl}
+                  alt={procedure.videoName}
+                  className="max-h-full max-w-full rounded-md object-contain"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <motion.iframe
+                  initial={{ scale: 0.97, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  src={procedure.videoUrl}
+                  title={procedure.videoName}
+                  className="h-full max-h-[85vh] w-full max-w-4xl rounded-md bg-white"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>,
+          window.document.body,
+        )}
     </Modal>
   )
 }

@@ -3,6 +3,8 @@ import { FileUp, X } from 'lucide-react'
 import { Button, Modal } from '../../../components/ui'
 import type { DocType } from '../../../mocks/library'
 
+const UPLOADABLE_TYPES: DocType[] = ['video', 'image', 'pdf']
+
 function inferTypeFromFilename(filename: string): DocType {
   const ext = filename.split('.').pop()?.toLowerCase() ?? ''
   if (ext === 'pdf') return 'pdf'
@@ -19,6 +21,9 @@ function stripExtension(filename: string) {
 export interface DocumentFormValues {
   title: string
   type: DocType
+  fileName?: string
+  file?: File
+  externalUrl?: string
 }
 
 interface DocumentFormModalProps {
@@ -35,6 +40,8 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
   const [title, setTitle] = useState('')
   const [type, setType] = useState<DocType>('doc')
   const [fileName, setFileName] = useState<string | null>(null)
+  const [file, setFile] = useState<File | undefined>(undefined)
+  const [externalUrl, setExternalUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -42,26 +49,42 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
     if (open) {
       setTitle(initialData?.title ?? '')
       setType(initialData?.type ?? 'doc')
-      setFileName(null)
+      setFileName(initialData?.fileName ?? null)
+      setFile(undefined)
+      setExternalUrl(initialData?.externalUrl ?? '')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData])
 
-  function handleFileChange(file: File | undefined) {
-    if (!file) return
-    setFileName(file.name)
-    setType(inferTypeFromFilename(file.name))
-    setTitle((current) => (isEditing ? current : current || stripExtension(file.name)))
+  function handleFileChange(picked: File | undefined) {
+    if (!picked) return
+    setFileName(picked.name)
+    setFile(picked)
+    setType(inferTypeFromFilename(picked.name))
+    setTitle((current) => (isEditing ? current : current || stripExtension(picked.name)))
+  }
+
+  function removeFile() {
+    setFileName(null)
+    setFile(undefined)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (disabled) return
     setSaving(true)
-    await onSubmit({ title, type })
-    setSaving(false)
-    onClose()
+    try {
+      await onSubmit({ title, type, fileName: fileName ?? undefined, file, externalUrl: externalUrl.trim() || undefined })
+      onClose()
+    } catch {
+      // the parent already surfaced the error via toast — keep the modal open so the user can retry
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const canPreviewInApp = UPLOADABLE_TYPES.includes(type)
 
   return (
     <Modal
@@ -81,10 +104,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
               <span className="truncate text-sm text-text-primary">{fileName}</span>
               <button
                 type="button"
-                onClick={() => {
-                  setFileName(null)
-                  if (fileInputRef.current) fileInputRef.current.value = ''
-                }}
+                onClick={removeFile}
                 aria-label="Remover arquivo"
                 className="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-text-primary"
               >
@@ -101,6 +121,27 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
               <span className="text-sm">Clique para escolher um arquivo</span>
             </button>
           )}
+          <p className="text-xs text-text-muted">
+            {canPreviewInApp
+              ? 'Vídeo, imagem e PDF ficam disponíveis para visualizar direto na página do documento.'
+              : 'Este tipo de arquivo ainda não pode ser visualizado dentro do site — só o nome fica salvo, como referência. Use o link externo abaixo se quiser que dê para abrir o conteúdo.'}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-text-primary">
+            Link externo <span className="font-normal text-text-muted">(opcional)</span>
+          </label>
+          <input
+            type="url"
+            value={externalUrl}
+            onChange={(e) => setExternalUrl(e.target.value)}
+            className="h-10 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+            placeholder="https://drive.google.com/... ou https://youtube.com/..."
+          />
+          <p className="text-xs text-text-muted">
+            Útil para vídeos grandes demais para o upload direto, ou para manter o arquivo hospedado fora do Praxis.
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">

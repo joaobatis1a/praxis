@@ -88,21 +88,31 @@ export function UsersPage() {
   })
 
   async function handleCreate(input: CreateUserInput) {
-    if (isSupabase) {
-      const code = await generateInviteCode({ role: input.role, department: input.department })
-      setGeneratedCode(code)
-      return
+    try {
+      if (isSupabase) {
+        const code = await generateInviteCode({ role: input.role, department: input.department })
+        setGeneratedCode(code)
+        return
+      }
+      const newUser = await createUser(input)
+      setMembers((prev) => [newUser, ...prev])
+      toast(`${newUser.name} foi adicionado à equipe.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar o usuário.', 'error')
+      throw err
     }
-    const newUser = await createUser(input)
-    setMembers((prev) => [newUser, ...prev])
-    toast(`${newUser.name} foi adicionado à equipe.`)
   }
 
   async function handleUpdate(input: CreateUserInput) {
     if (!editingMember) return
-    const updated = await updateUser(editingMember.id, input)
-    setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
-    toast(`${updated.name} foi atualizado.`)
+    try {
+      const updated = await updateUser(editingMember.id, input)
+      setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+      toast(`${updated.name} foi atualizado.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível atualizar o usuário.', 'error')
+      throw err
+    }
   }
 
   async function toggleStatus(member: TeamMember) {

@@ -23,6 +23,11 @@ export interface LibraryDocument {
   folderId?: string
   favorite: boolean
   history: DocVersion[]
+  /** only set for type 'video'/'image'/'pdf' when a real file was uploaded (Supabase mode) */
+  fileUrl?: string
+  fileName?: string
+  /** optional link (Drive, YouTube, etc.) shown alongside — or instead of — an uploaded file */
+  externalUrl?: string
 }
 
 export const folderTree: FolderNode[] = [

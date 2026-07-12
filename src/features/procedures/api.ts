@@ -27,6 +27,7 @@ interface ProcedureRow {
   completed_step_ids: string[]
   video_path: string | null
   video_name: string | null
+  external_url: string | null
   video_watched: boolean
   completed: boolean
   completed_at: string | null
@@ -61,6 +62,7 @@ async function rowToProcedure(row: ProcedureRow): Promise<Procedure> {
     completedStepIds: row.completed_step_ids,
     videoUrl,
     videoName: row.video_name ?? undefined,
+    externalUrl: row.external_url ?? undefined,
     videoWatched: row.video_watched,
     completed: row.completed,
     completedAt: row.completed_at ?? undefined,
@@ -90,7 +92,7 @@ async function uploadVideo(procedureId: string, file: File): Promise<{ path: str
   const ext = file.name.split('.').pop()
   const path = `${companyId}/${procedureId}-${Date.now()}${ext ? `.${ext}` : ''}`
   const { error } = await supabase!.storage.from(VIDEO_BUCKET).upload(path, file, { contentType: file.type })
-  if (error) throw new Error('Não foi possível enviar o vídeo.')
+  if (error) throw new Error(`Não foi possível enviar o arquivo: ${error.message}`)
   return { path, name: file.name }
 }
 
@@ -109,6 +111,7 @@ export interface CreateProcedureInput {
   videoUrl?: string
   videoName?: string
   videoFile?: File
+  externalUrl?: string
 }
 
 export interface UpdateProcedureInput {
@@ -121,6 +124,7 @@ export interface UpdateProcedureInput {
   videoUrl?: string
   videoName?: string
   videoFile?: File
+  externalUrl?: string
 }
 
 export async function listProcedures(): Promise<Procedure[]> {
@@ -195,6 +199,7 @@ export async function createProcedure(input: CreateProcedureInput): Promise<Proc
         estimated_minutes: input.estimatedMinutes,
         author: input.author,
         steps,
+        external_url: input.externalUrl || null,
         updated_at: new Date().toISOString().slice(0, 10),
       })
       .select()
@@ -241,6 +246,7 @@ export async function createProcedure(input: CreateProcedureInput): Promise<Proc
     completedStepIds: [],
     videoUrl: input.videoUrl,
     videoName: input.videoName,
+    externalUrl: input.externalUrl,
     videoWatched: false,
     completed: false,
   }
@@ -279,6 +285,7 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
       status: input.status,
       estimated_minutes: input.estimatedMinutes,
       steps,
+      external_url: input.externalUrl || null,
       // editing invalidates any in-progress or completed execution, so it always resets
       completed_step_ids: [],
       video_watched: false,
@@ -327,6 +334,7 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
     updatedAt: new Date().toISOString().slice(0, 10),
     videoUrl: input.videoUrl,
     videoName: input.videoName,
+    externalUrl: input.externalUrl,
   }
   procedures = procedures.map((p) => (p.id === id ? updated : p))
   return delay(updated)

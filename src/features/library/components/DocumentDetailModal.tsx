@@ -1,4 +1,7 @@
-import { Clock, FileText, FileSpreadsheet, FileImage, Video, Star, Trash2, Pencil } from 'lucide-react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Clock, ExternalLink, FileText, FileSpreadsheet, FileImage, Maximize2, Video, Star, Trash2, Pencil, X } from 'lucide-react'
 import { Badge, Button, Modal } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import type { DocType, LibraryDocument } from '../../../mocks/library'
@@ -28,6 +31,8 @@ export function DocumentDetailModal({
   onEdit: (id: string) => void
   onDelete: (id: string) => void
 }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+
   if (!document) return null
   const { icon: Icon, color, label } = typeConfig[document.type]
 
@@ -59,6 +64,91 @@ export function DocumentDetailModal({
           </div>
         </div>
       </div>
+
+      {document.fileUrl && document.type === 'video' && (
+        <video key={document.fileUrl} src={document.fileUrl} controls className="mt-5 aspect-video w-full rounded-md border border-border bg-black" />
+      )}
+      {document.fileUrl && document.type === 'image' && (
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="mt-5 block w-full cursor-zoom-in overflow-hidden rounded-md border border-border"
+          aria-label="Ver imagem em tamanho maior"
+        >
+          <img key={document.fileUrl} src={document.fileUrl} alt={document.title} className="max-h-96 w-full object-contain" />
+        </button>
+      )}
+      {document.fileUrl && document.type === 'pdf' && (
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="group relative mt-5 block w-full overflow-hidden rounded-md border border-border"
+          aria-label="Ver PDF completo"
+        >
+          <iframe key={document.fileUrl} src={document.fileUrl} title={document.title} className="h-96 w-full" />
+          <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40">
+            <span className="flex items-center gap-1.5 rounded-md bg-black/70 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <Maximize2 size={12} />
+              Ver completo
+            </span>
+          </span>
+        </button>
+      )}
+      {document.externalUrl && (
+        <a
+          href={document.externalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex items-center gap-2 rounded-md border border-border-strong bg-surface px-3 py-2.5 text-sm font-medium text-primary hover:bg-surface-hover"
+        >
+          <ExternalLink size={16} className="shrink-0" />
+          <span className="truncate">{document.externalUrl}</span>
+        </a>
+      )}
+
+      {lightboxOpen &&
+        document.fileUrl &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(0,0,0,0.85)] p-6"
+              onClick={() => setLightboxOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(false)}
+                aria-label="Fechar"
+                className="absolute right-4 top-4 rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
+              >
+                <X size={22} />
+              </button>
+              {document.type === 'image' ? (
+                <motion.img
+                  initial={{ scale: 0.95 }}
+                  animate={{ scale: 1 }}
+                  src={document.fileUrl}
+                  alt={document.title}
+                  className="max-h-full max-w-full rounded-md object-contain"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <motion.iframe
+                  initial={{ scale: 0.97, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  src={document.fileUrl}
+                  title={document.title}
+                  className="h-full max-h-[85vh] w-full max-w-4xl rounded-md bg-white"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>,
+          window.document.body,
+        )}
 
       <div className="mt-6">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">

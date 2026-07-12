@@ -72,15 +72,20 @@ export function LibraryPage() {
   }
 
   async function handleDocFormSubmit(values: DocumentFormValues) {
-    if (docForm?.mode === 'edit') {
-      const updated = await updateDocument(docForm.doc.id, values)
-      setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
-      setOpenDoc((prev) => (prev && prev.id === updated.id ? updated : prev))
-      toast(`${updated.title} foi atualizado.`)
-    } else {
-      const newDoc = await createDocument({ ...values, folderId: selectedFolder, author: user?.name ?? 'Você' })
-      setDocs((prev) => [newDoc, ...prev])
-      toast(`${newDoc.title} foi criado.`)
+    try {
+      if (docForm?.mode === 'edit') {
+        const updated = await updateDocument(docForm.doc.id, values)
+        setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+        setOpenDoc((prev) => (prev && prev.id === updated.id ? updated : prev))
+        toast(`${updated.title} foi atualizado.`)
+      } else {
+        const newDoc = await createDocument({ ...values, folderId: selectedFolder, author: user?.name ?? 'Você' })
+        setDocs((prev) => [newDoc, ...prev])
+        toast(`${newDoc.title} foi criado.`)
+      }
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível salvar o documento.', 'error')
+      throw err
     }
   }
 
@@ -93,27 +98,44 @@ export function LibraryPage() {
   }
 
   async function handleFolderFormSubmit(name: string) {
-    const updated = selectedFolder ? await addFolder(selectedFolder, name) : await addCategory(name)
-    setTree(updated)
-    toast(`Pasta "${name}" criada.`)
+    try {
+      const updated = selectedFolder ? await addFolder(selectedFolder, name) : await addCategory(name)
+      setTree(updated)
+      toast(`Pasta "${name}" criada.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar a pasta.', 'error')
+      throw err
+    }
   }
 
   async function handleAddCategory(name: string) {
-    const updated = await addCategory(name)
-    setTree(updated)
-    toast(`Categoria "${name}" criada.`)
+    try {
+      const updated = await addCategory(name)
+      setTree(updated)
+      toast(`Categoria "${name}" criada.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar a categoria.', 'error')
+    }
   }
 
   async function handleAddFolder(parentId: string, name: string) {
-    const updated = await addFolder(parentId, name)
-    setTree(updated)
-    toast(`Pasta "${name}" criada.`)
+    try {
+      const updated = await addFolder(parentId, name)
+      setTree(updated)
+      toast(`Pasta "${name}" criada.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar a pasta.', 'error')
+    }
   }
 
   async function handleRenameFolder(id: string, name: string) {
-    const updated = await renameFolder(id, name)
-    setTree(updated)
-    toast(`Pasta renomeada para "${name}".`)
+    try {
+      const updated = await renameFolder(id, name)
+      setTree(updated)
+      toast(`Pasta renomeada para "${name}".`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível renomear a pasta.', 'error')
+    }
   }
 
   async function handleDeleteFolder() {
@@ -259,7 +281,16 @@ export function LibraryPage() {
         onClose={() => setDocForm(null)}
         onSubmit={handleDocFormSubmit}
         folderLabel={locationLabel}
-        initialData={docForm?.mode === 'edit' ? { title: docForm.doc.title, type: docForm.doc.type } : undefined}
+        initialData={
+          docForm?.mode === 'edit'
+            ? {
+                title: docForm.doc.title,
+                type: docForm.doc.type,
+                fileName: docForm.doc.fileName,
+                externalUrl: docForm.doc.externalUrl,
+              }
+            : undefined
+        }
       />
 
       <FolderFormModal

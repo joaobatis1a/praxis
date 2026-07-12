@@ -60,16 +60,21 @@ export function NoticeFormModal({ open, onClose, onSubmit, currentUserId }: Noti
     const recipientLabel =
       recipientType === 'department' ? recipientId : (memberOptions.find((m) => m.value === recipientId)?.label.split(' · ')[0] ?? '')
     setSaving(true)
-    await onSubmit({
-      procedureId,
-      procedureTitle,
-      description: description.trim(),
-      recipientType,
-      recipientId,
-      recipientLabel,
-    })
-    setSaving(false)
-    onClose()
+    try {
+      await onSubmit({
+        procedureId,
+        procedureTitle,
+        description: description.trim(),
+        recipientType,
+        recipientId,
+        recipientLabel,
+      })
+      onClose()
+    } catch {
+      // the parent already surfaced the error via toast — keep the modal open so the user can retry
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

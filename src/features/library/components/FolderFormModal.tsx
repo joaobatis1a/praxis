@@ -20,9 +20,14 @@ export function FolderFormModal({ open, onClose, onSubmit, locationLabel }: Fold
     e.preventDefault()
     if (!name.trim()) return
     setSaving(true)
-    await onSubmit(name.trim())
-    setSaving(false)
-    onClose()
+    try {
+      await onSubmit(name.trim())
+      onClose()
+    } catch {
+      // the parent already surfaced the error via toast — keep the modal open so the user can retry
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

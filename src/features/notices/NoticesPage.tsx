@@ -50,9 +50,14 @@ export function NoticesPage() {
 
   async function handleCreate(values: NoticeFormValues) {
     if (!user) return
-    const newNotice = await createNotice({ ...values, authorId: user.id, authorName: user.name })
-    setNotices((prev) => [newNotice, ...prev])
-    toast(`Aviso enviado para ${newNotice.recipientLabel}.`)
+    try {
+      const newNotice = await createNotice({ ...values, authorId: user.id, authorName: user.name })
+      setNotices((prev) => [newNotice, ...prev])
+      toast(`Aviso enviado para ${newNotice.recipientLabel}.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar o aviso.', 'error')
+      throw err
+    }
   }
 
   async function handleDelete() {
