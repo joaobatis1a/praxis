@@ -6,7 +6,7 @@ import { departments } from '../../mocks/procedures'
 import { Button, ConfirmDialog, Select, Skeleton, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
-import { createProcedure, deleteProcedure, listProcedures, toggleStep, updateProcedure } from './api'
+import { completeProcedure, createProcedure, deleteProcedure, listProcedures, toggleStep, toggleVideoWatched, updateProcedure } from './api'
 import { ProcedureCard } from './components/ProcedureCard'
 import { ProcedureDetailModal } from './components/ProcedureDetailModal'
 import { ProcedureFormModal, type ProcedureFormValues } from './components/ProcedureFormModal'
@@ -31,6 +31,7 @@ export function ProceduresPage() {
   const [openProcedure, setOpenProcedure] = useState<Procedure | null>(null)
   const [formState, setFormState] = useState<FormState>(null)
   const [deleting, setDeleting] = useState<Procedure | null>(null)
+  const [completing, setCompleting] = useState<Procedure | null>(null)
 
   useEffect(() => {
     listProcedures().then((data) => {
@@ -54,6 +55,12 @@ export function ProceduresPage() {
     setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
   }
 
+  async function handleToggleVideoWatched(procedureId: string) {
+    const updated = await toggleVideoWatched(procedureId)
+    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+    setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
+  }
+
   async function handleFormSubmit(values: ProcedureFormValues) {
     if (formState?.mode === 'edit') {
       const updated = await updateProcedure(formState.procedure.id, values)
@@ -73,6 +80,14 @@ export function ProceduresPage() {
     setProcedures((prev) => prev.filter((p) => p.id !== deleting.id))
     setOpenProcedure(null)
     toast(`${deleting.title} foi excluído.`, 'error')
+  }
+
+  async function handleComplete() {
+    if (!completing || !user) return
+    const { procedure: updated } = await completeProcedure(completing.id, user.id, user.name)
+    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+    setOpenProcedure(null)
+    toast(`${completing.title} foi concluído! Isso já apareceu no dashboard.`)
   }
 
   const editingInitialData: ProcedureFormValues | undefined =
@@ -155,8 +170,10 @@ export function ProceduresPage() {
         procedure={openProcedure}
         onClose={() => setOpenProcedure(null)}
         onToggleStep={handleToggleStep}
+        onToggleVideoWatched={handleToggleVideoWatched}
         onEdit={(procedure) => setFormState({ mode: 'edit', procedure })}
         onDelete={setDeleting}
+        onComplete={setCompleting}
       />
 
       <ProcedureFormModal
@@ -173,6 +190,16 @@ export function ProceduresPage() {
         title="Excluir procedimento"
         description={`Tem certeza que deseja excluir "${deleting?.title}"? Essa ação não pode ser desfeita.`}
         confirmLabel="Excluir"
+      />
+
+      <ConfirmDialog
+        open={!!completing}
+        onClose={() => setCompleting(null)}
+        onConfirm={handleComplete}
+        title="Concluir procedimento"
+        description={`Isso marca "${completing?.title}" como concluído, destaca o card e registra a conclusão no dashboard.`}
+        confirmLabel="Concluir"
+        variant="primary"
       />
     </div>
   )
