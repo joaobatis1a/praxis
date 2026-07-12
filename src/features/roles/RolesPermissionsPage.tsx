@@ -19,10 +19,14 @@ export function RolesPermissionsPage() {
   const { toast } = useToast()
   const [selectedRole, setSelectedRole] = useState<Role>('gestor')
   const [permissions, setPermissions] = useState<Record<Role, Record<string, boolean>> | null>(null)
+  const [counts, setCounts] = useState<Record<Role, number> | null>(null)
   const modules = getModules()
 
   useEffect(() => {
     getPermissions().then(setPermissions)
+    Promise.all(roleOrder.map((role) => countByRole(role))).then((values) =>
+      setCounts(Object.fromEntries(roleOrder.map((role, i) => [role, values[i]])) as Record<Role, number>),
+    )
   }, [])
 
   async function handleToggle(moduleKey: string, enabled: boolean) {
@@ -83,7 +87,7 @@ export function RolesPermissionsPage() {
                 </motion.div>
                 <h3 className="mt-3 text-base font-semibold text-text-primary">{info.label}</h3>
                 <p className="mt-1 text-sm text-text-muted">{info.description}</p>
-                <p className="mt-3 text-xs font-medium text-text-muted">{countByRole(role)} colaboradores</p>
+                <p className="mt-3 text-xs font-medium text-text-muted">{counts?.[role] ?? '–'} colaboradores</p>
               </div>
             </motion.button>
           )
