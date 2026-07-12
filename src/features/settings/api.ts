@@ -1,3 +1,5 @@
+import { isSupabase } from '../../lib/dataSource'
+import { supabase } from '../../lib/supabaseClient'
 import { company as initialCompany, type Company } from '../../mocks/company'
 import type { NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
@@ -10,11 +12,33 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 
 let companyState: Company = structuredClone(initialCompany)
 
-export function getCompany(): Promise<Company> {
+interface CompanyRow {
+  id: string
+  name: string
+}
+
+export async function getCompany(): Promise<Company> {
+  if (isSupabase) {
+    const { data, error } = await supabase!.from('companies').select('name').single()
+    if (error || !data) throw new Error('Não foi possível carregar os dados da empresa.')
+    return { name: (data as CompanyRow).name }
+  }
   return delay({ ...companyState })
 }
 
-export function updateCompany(input: Company): Promise<Company> {
+export async function updateCompany(input: Company): Promise<Company> {
+  if (isSupabase) {
+    const { data: current, error: fetchError } = await supabase!.from('companies').select('id').single()
+    if (fetchError || !current) throw new Error('Não foi possível carregar a empresa.')
+    const { data, error } = await supabase!
+      .from('companies')
+      .update({ name: input.name })
+      .eq('id', (current as { id: string }).id)
+      .select('name')
+      .single()
+    if (error || !data) throw new Error('Não foi possível atualizar a empresa.')
+    return { name: (data as CompanyRow).name }
+  }
   companyState = { ...input }
   return delay({ ...companyState })
 }
