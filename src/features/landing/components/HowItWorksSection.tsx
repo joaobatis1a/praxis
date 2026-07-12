@@ -10,13 +10,13 @@ const steps = [
   },
   {
     number: '02',
-    title: 'Crie treinamentos e procedimentos',
-    description: 'Monte cursos, checklists e SOPs a partir do conteúdo já centralizado.',
+    title: 'Crie procedimentos e avise a equipe',
+    description: 'Monte checklists e SOPs com vídeo a partir do conteúdo já centralizado, e deixe avisos de passagem de turno.',
   },
   {
     number: '03',
-    title: 'Acompanhe a evolução da equipe',
-    description: 'Veja o progresso de cada colaborador e identifique lacunas de conhecimento.',
+    title: 'Acompanhe quem fez o quê',
+    description: 'Veja os procedimentos concluídos por cada colaborador e receba notificações do que importa pra você.',
   },
 ]
 
@@ -48,7 +48,7 @@ function StepsMock() {
         ))}
       </div>
       <div className="mt-4 rounded-lg bg-[#4f7df9]/10 p-3">
-        <p className="text-xs text-white/50">Tempo médio até a primeira trilha publicada</p>
+        <p className="text-xs text-white/50">Tempo médio até o primeiro procedimento publicado</p>
         <p className="mt-1 text-2xl font-bold text-white">2 dias</p>
       </div>
     </div>
@@ -64,7 +64,7 @@ export function HowItWorksSection() {
             <Reveal>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#6d94fa]">Em três passos</p>
               <h2 className="mt-3 text-4xl font-bold leading-tight text-white">
-                Do documento perdido à equipe treinada.
+                Do documento perdido à equipe alinhada.
               </h2>
             </Reveal>
 

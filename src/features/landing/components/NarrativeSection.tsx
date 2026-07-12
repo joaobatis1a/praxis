@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { BookOpen, ClipboardList, GraduationCap, Route } from 'lucide-react'
+import { Bell, BookOpen, ClipboardList, Megaphone } from 'lucide-react'
 import { Reveal } from './Reveal'
 
 const shifts = [
@@ -16,16 +16,16 @@ const shifts = [
     icon: ClipboardList,
   },
   {
-    problem: 'Treinamentos espalhados em pastas e e-mails',
-    solution: 'Treinamentos estruturados',
-    description: 'Vídeos, PDFs e questionários organizados, com certificado ao final.',
-    icon: GraduationCap,
+    problem: 'Contexto perdido na troca de turno',
+    solution: 'Avisos entre a equipe',
+    description: 'Deixe um recado sobre onde parou, para a pessoa certa ou o setor inteiro.',
+    icon: Megaphone,
   },
   {
-    problem: 'Onboarding sem direção nem sequência',
-    solution: 'Trilhas de Aprendizagem',
-    description: 'Sequências guiadas com progresso acompanhado do início ao fim.',
-    icon: Route,
+    problem: 'Atualizações que se perdem no meio do caminho',
+    solution: 'Central de Notificações',
+    description: 'Cada pessoa é avisada só do que importa pra ela, na hora certa.',
+    icon: Bell,
   },
 ]
 

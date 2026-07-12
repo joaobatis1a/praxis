@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
-import { BookOpen, ClipboardList, GraduationCap, Route } from 'lucide-react'
+import { Bell, BookOpen, ClipboardList, Megaphone } from 'lucide-react'
 
 const highlights = [
   { icon: BookOpen, label: 'Biblioteca de Conhecimento', description: 'Documentos versionados e organizados.' },
-  { icon: ClipboardList, label: 'Procedimentos Operacionais', description: 'Checklists com etapas e responsáveis.' },
-  { icon: GraduationCap, label: 'Treinamentos', description: 'Vídeos, PDFs e certificados.' },
-  { icon: Route, label: 'Trilhas de Aprendizagem', description: 'Progresso guiado, do início ao fim.' },
+  { icon: ClipboardList, label: 'Procedimentos Operacionais', description: 'Checklists com etapas, vídeo e responsáveis.' },
+  { icon: Megaphone, label: 'Avisos', description: 'Passagem de turno sem perder contexto.' },
+  { icon: Bell, label: 'Central de Notificações', description: 'Cada pessoa avisada só do que importa.' },
 ]
 
 export function LoginShowcasePanel() {
@@ -34,7 +34,7 @@ export function LoginShowcasePanel() {
           transition={{ duration: 0.6, delay: 0.15 }}
           className="mt-3 max-w-sm text-white/60"
         >
-          Tudo o que sua equipe documenta, aprende e acompanha, em um só lugar.
+          Tudo o que sua equipe documenta, executa e comunica, em um só lugar.
         </motion.p>
 
         <div className="mt-12 grid grid-cols-2 gap-3">

@@ -1,5 +1,5 @@
 import { motion, type Variants } from 'framer-motion'
-import { GraduationCap, ShieldCheck, UsersRound } from 'lucide-react'
+import { ClipboardCheck, ShieldCheck, UsersRound } from 'lucide-react'
 import { cn } from '../../../lib/cn'
 import { Reveal } from './Reveal'
 
@@ -17,19 +17,19 @@ const roles = [
     icon: UsersRound,
     title: 'Gestor',
     description: 'Comanda a equipe no dia a dia.',
-    items: ['Cria treinamentos e procedimentos', 'Gerencia a própria equipe', 'Acompanha desempenho e progresso'],
+    items: ['Cria procedimentos e envia avisos', 'Gerencia a própria equipe', 'Acompanha desempenho e progresso'],
     entrance: { hidden: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } } satisfies Variants,
-    hover: { scale: 1.02 },
-    cardClass: 'transition-colors hover:border-[#4f7df9]/50',
+    hover: { y: -6 },
+    cardClass: 'transition-shadow hover:shadow-[0_20px_60px_-15px_rgba(79,125,249,0.35)]',
   },
   {
-    icon: GraduationCap,
+    icon: ClipboardCheck,
     title: 'Colaborador',
-    description: 'Aprende e consulta o que precisa.',
-    items: ['Consulta documentos e procedimentos', 'Realiza treinamentos e avaliações', 'Acompanha a própria evolução'],
+    description: 'Executa e consulta o que precisa.',
+    items: ['Consulta documentos e procedimentos', 'Executa procedimentos e troca avisos com a equipe', 'Acompanha o que já concluiu'],
     entrance: { hidden: { opacity: 0, x: 32 }, show: { opacity: 1, x: 0 } } satisfies Variants,
-    hover: {},
-    cardClass: 'group',
+    hover: { y: -6 },
+    cardClass: 'transition-shadow hover:shadow-[0_20px_60px_-15px_rgba(79,125,249,0.35)]',
   },
 ]
 
@@ -59,7 +59,7 @@ export function RolesSection() {
                 className={cn('h-full animate-float-sm rounded-xl border border-white/10 bg-white/[0.03] p-6', role.cardClass)}
                 style={{ animationDelay: `${-i * 1.5}s` }}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[#4f7df9]/15 text-[#6d94fa] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[#4f7df9]/15 text-[#6d94fa]">
                   <role.icon size={22} />
                 </div>
                 <h3 className="mt-5 text-xl font-semibold text-white">{role.title}</h3>
