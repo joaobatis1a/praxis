@@ -186,6 +186,30 @@
     font-weight: 700;
     letter-spacing: -0.02em;
   }
+
+  /* thin, theme-aware scrollbar for desktop — mobile browsers already use a slim overlay scrollbar by default */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-text-muted);
+  }
 }
 
 @layer utilities {

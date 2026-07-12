@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, ClipboardCheck, TrendingUp, Users } from 'lucide-react'
+import { BookOpen, ClipboardCheck, FileEdit, TrendingUp, Users } from 'lucide-react'
 import { getAdminDashboard } from './api'
 import { StatCard } from './components/StatCard'
 import { ProgressChart } from './components/ProgressChart'
 import { ActivityFeed } from './components/ActivityFeed'
+import { RoleBreakdownCard } from './components/RoleBreakdownCard'
+import { RecentNoticesCard } from './components/RecentNoticesCard'
 import { useAuth } from '../auth/AuthContext'
 import { Skeleton } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
@@ -32,14 +34,18 @@ export function AdminDashboardPage() {
 
       {!data ? (
         <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+          <div className="mt-4 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
             <Skeleton className="h-80" />
             <Skeleton className="h-80" />
+          </div>
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
           </div>
         </>
       ) : (
@@ -48,7 +54,7 @@ export function AdminDashboardPage() {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
           >
             <motion.div variants={staggerItem}>
               <StatCard
@@ -83,11 +89,19 @@ export function AdminDashboardPage() {
                 icon={TrendingUp}
               />
             </motion.div>
+            <motion.div variants={staggerItem}>
+              <StatCard label="Procedimentos em rascunho" value={data.draftProcedures} icon={FileEdit} />
+            </motion.div>
           </motion.div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+          <div className="mt-4 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
             <ProgressChart data={data.progressHistory} />
             <ActivityFeed activity={data.activity} />
+          </div>
+
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <RoleBreakdownCard breakdown={data.roleBreakdown} />
+            <RecentNoticesCard notices={data.recentNotices} />
           </div>
         </>
       )}
