@@ -32,8 +32,22 @@ export function DocumentDetailModal({
   const { icon: Icon, color, label } = typeConfig[document.type]
 
   return (
-    <Modal open={!!document} onClose={onClose} className="max-w-xl">
-      <div className="flex items-start gap-4 pr-8">
+    <Modal
+      open={!!document}
+      onClose={onClose}
+      className="max-w-xl"
+      headerAction={
+        <button
+          type="button"
+          onClick={() => onToggleFavorite(document.id)}
+          aria-label={document.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+          className="rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-warning"
+        >
+          <Star size={18} className={cn(document.favorite && 'fill-warning text-warning')} />
+        </button>
+      }
+    >
+      <div className="flex items-start gap-4 pr-16">
         <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-surface', color)}>
           <Icon size={24} />
         </div>
@@ -44,14 +58,6 @@ export function DocumentDetailModal({
             <span>Autor: {document.author}</span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onToggleFavorite(document.id)}
-          aria-label={document.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-          className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-warning"
-        >
-          <Star size={18} className={cn(document.favorite && 'fill-warning text-warning')} />
-        </button>
       </div>
 
       <div className="mt-6">
