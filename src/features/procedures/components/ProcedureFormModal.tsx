@@ -91,9 +91,14 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
     const steps = form.steps.map((s) => s.trim()).filter(Boolean)
     if (!form.title.trim() || steps.length === 0) return
     setSaving(true)
-    await onSubmit({ ...form, title: form.title.trim(), responsible: form.responsible.trim(), steps })
-    setSaving(false)
-    onClose()
+    try {
+      await onSubmit({ ...form, title: form.title.trim(), responsible: form.responsible.trim(), steps })
+      onClose()
+    } catch {
+      // the parent already surfaced the error via toast — keep the modal open so the user can retry
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
