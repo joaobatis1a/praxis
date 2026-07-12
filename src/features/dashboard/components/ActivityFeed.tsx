@@ -1,9 +1,9 @@
-import { FileText, GraduationCap, ListChecks, UserPlus, type LucideIcon } from 'lucide-react'
+import { FileText, ListChecks, UserPlus, type LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Card } from '../../../components/ui'
 import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
 
-type ActivityType = 'document' | 'training' | 'user' | 'procedure'
+type ActivityType = 'document' | 'user' | 'procedure'
 
 interface Activity {
   id: string
@@ -14,7 +14,6 @@ interface Activity {
 
 const iconByType: Record<ActivityType, LucideIcon> = {
   document: FileText,
-  training: GraduationCap,
   user: UserPlus,
   procedure: ListChecks,
 }

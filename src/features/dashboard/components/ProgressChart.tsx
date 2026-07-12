@@ -8,10 +8,13 @@ interface ProgressChartProps {
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null
+  const count = payload[0].value
   return (
     <div className="rounded-md border border-border bg-surface-card px-3 py-2 shadow-[var(--shadow-level-2)]">
       <p className="text-xs text-text-muted">{label}</p>
-      <p className="text-sm font-semibold text-text-primary">{payload[0].value}% de progresso</p>
+      <p className="text-sm font-semibold text-text-primary">
+        {count} procedimento{count === 1 ? '' : 's'} concluído{count === 1 ? '' : 's'}
+      </p>
     </div>
   )
 }
@@ -27,7 +30,7 @@ export function ProgressChart({ data }: ProgressChartProps) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold text-text-primary">Progresso da equipe</h3>
-            <p className="text-sm text-text-muted">Média de conclusão de treinamentos por mês</p>
+            <p className="text-sm text-text-muted">Procedimentos concluídos por mês</p>
           </div>
         </div>
 
@@ -50,9 +53,9 @@ export function ProgressChart({ data }: ProgressChartProps) {
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                width={42}
+                width={32}
+                allowDecimals={false}
                 tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
-                tickFormatter={(v) => `${v}%`}
               />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--color-border-strong)', strokeDasharray: '4 4' }} />
               <Area

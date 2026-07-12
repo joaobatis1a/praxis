@@ -5,12 +5,12 @@ export const adminStats = {
 }
 
 export const progressHistory = [
-  { month: 'Fev', progresso: 48 },
-  { month: 'Mar', progresso: 52 },
-  { month: 'Abr', progresso: 58 },
-  { month: 'Mai', progresso: 61 },
-  { month: 'Jun', progresso: 68 },
-  { month: 'Jul', progresso: 73 },
+  { month: 'Fev', progresso: 6 },
+  { month: 'Mar', progresso: 9 },
+  { month: 'Abr', progresso: 11 },
+  { month: 'Mai', progresso: 14 },
+  { month: 'Jun', progresso: 17 },
+  { month: 'Jul', progresso: 21 },
 ]
 
 export const recentActivity = [
@@ -31,12 +31,6 @@ export const recentActivity = [
     type: 'procedure' as const,
     description: 'Procedimento "Abertura de chamado" foi atualizado para v3',
     time: 'há 1 dia',
-  },
-  {
-    id: 'act-5',
-    type: 'training' as const,
-    description: 'Nova trilha "Onboarding Comercial" foi publicada',
-    time: 'há 2 dias',
   },
 ]
 
