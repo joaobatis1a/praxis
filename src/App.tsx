@@ -4,7 +4,6 @@ import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { DesignSystemPage } from './pages/DesignSystemPage'
-import { ComingSoonPage } from './pages/ComingSoonPage'
 import { AppLayout } from './features/dashboard/AppLayout'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { UsersPage } from './features/users/UsersPage'
@@ -14,6 +13,7 @@ import { LibraryPage } from './features/library/LibraryPage'
 import { ProceduresPage } from './features/procedures/ProceduresPage'
 import { NoticesPage } from './features/notices/NoticesPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
+import { SettingsPage } from './features/settings/SettingsPage'
 
 function App() {
   return (
@@ -37,7 +37,7 @@ function App() {
           <Route path="/procedimentos" element={<ProceduresPage />} />
           <Route path="/avisos" element={<NoticesPage />} />
           <Route path="/notificacoes" element={<NotificationsPage />} />
-          <Route path="/configuracoes" element={<ComingSoonPage title="Configurações" />} />
+          <Route path="/configuracoes" element={<SettingsPage />} />
         </Route>
       </Route>
     </Routes>
