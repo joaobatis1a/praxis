@@ -4,7 +4,8 @@ import { AlertTriangle, Bell, Building2, Save, Trash2, User as UserIcon } from '
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, ConfirmDialog, Input, Skeleton, Switch, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
-import { teamMembers, type TeamMember } from '../../mocks/teamMembers'
+import { getUserDepartment } from '../../lib/userDepartment'
+import type { TeamMember } from '../../mocks/teamMembers'
 import type { NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
@@ -42,7 +43,7 @@ export function SettingsPage() {
   const { user, setSessionUser, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
-  const department = useMemo(() => teamMembers.find((m) => m.id === user?.id)?.department ?? '', [user])
+  const department = useMemo(() => getUserDepartment(user) ?? '', [user])
 
   const [name, setName] = useState(user?.name ?? '')
   const [savingProfile, setSavingProfile] = useState(false)

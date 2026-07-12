@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { Button, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
-import { teamMembers } from '../../mocks/teamMembers'
+import { getUserDepartment } from '../../lib/userDepartment'
 import type { Notice } from '../../mocks/notices'
 import { useAuth } from '../auth/AuthContext'
 import { createNotice, deleteNotice, listNotices, markAsRead } from './api'
@@ -22,7 +22,7 @@ export function NoticesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [deleting, setDeleting] = useState<Notice | null>(null)
 
-  const department = useMemo(() => teamMembers.find((m) => m.id === user?.id)?.department, [user])
+  const department = useMemo(() => getUserDepartment(user), [user])
 
   useEffect(() => {
     listNotices().then((data) => {

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Skeleton } from '../../components/ui'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
-import { teamMembers } from '../../mocks/teamMembers'
+import { getUserDepartment } from '../../lib/userDepartment'
 import type { AppNotification, NotificationType } from '../../mocks/notifications'
 import { useAuth } from '../auth/AuthContext'
 import { listNotifications, markAllAsRead, markAsRead } from './api'
@@ -29,7 +29,7 @@ export function NotificationsPage() {
   const [notifications, setNotifications] = useState<(AppNotification & { read: boolean })[]>([])
   const [loading, setLoading] = useState(true)
 
-  const department = useMemo(() => teamMembers.find((m) => m.id === user?.id)?.department, [user])
+  const department = useMemo(() => getUserDepartment(user), [user])
 
   useEffect(() => {
     if (!user) return

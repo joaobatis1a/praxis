@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronUp, LogOut, Settings } from 'lucide-react'
 import { Header, Sidebar, ThemeToggle } from '../../components/ui'
-import { teamMembers } from '../../mocks/teamMembers'
+import { getUserDepartment } from '../../lib/userDepartment'
 import { useAuth } from '../auth/AuthContext'
 import { listNotifications } from '../notifications/api'
 import { getNavItemsForRole } from './navigation'
@@ -22,7 +22,7 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
-  const department = useMemo(() => teamMembers.find((m) => m.id === user?.id)?.department, [user])
+  const department = useMemo(() => getUserDepartment(user), [user])
 
   useEffect(() => {
     if (!user) return
