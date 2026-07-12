@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { isSupabase } from '../../lib/dataSource'
+import { supabase } from '../../lib/supabaseClient'
 import { loginRequest } from './api'
 import type { AuthUser } from './types'
 
@@ -23,6 +25,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (isSupabase) {
+      supabase!.auth.getSession().then(async ({ data }) => {
+        if (data.session?.user) {
+          const { data: profile } = await supabase!.from('profiles').select('*').eq('id', data.session.user.id).single()
+          if (profile) {
+            setUser({
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              role: profile.role,
+              companyId: profile.company_id,
+              department: profile.department ?? undefined,
+            })
+          }
+        }
+        setIsLoading(false)
+      })
+
+      const { data: subscription } = supabase!.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') setUser(null)
+      })
+      return () => subscription.subscription.unsubscribe()
+    }
+
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
@@ -40,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const authUser = await loginRequest(email, password)
       setUser(authUser)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
+      if (!isSupabase) localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
       return authUser
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Não foi possível entrar.'
@@ -53,12 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function setSessionUser(authUser: AuthUser) {
     setUser(authUser)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
+    if (!isSupabase) localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
   }
 
   function logout() {
     setUser(null)
-    localStorage.removeItem(STORAGE_KEY)
+    if (isSupabase) {
+      supabase!.auth.signOut()
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
   }
 
   return (
