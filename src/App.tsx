@@ -10,6 +10,7 @@ import { DashboardPage } from './features/dashboard/DashboardPage'
 import { UsersPage } from './features/users/UsersPage'
 import { RequireRole } from './features/auth/RequireRole'
 import { RolesPermissionsPage } from './features/roles/RolesPermissionsPage'
+import { LibraryPage } from './features/library/LibraryPage'
 
 function App() {
   return (
@@ -29,7 +30,7 @@ function App() {
           <Route element={<RequireRole roles={['admin']} />}>
             <Route path="/cargos" element={<RolesPermissionsPage />} />
           </Route>
-          <Route path="/biblioteca" element={<ComingSoonPage title="Biblioteca de Conhecimento" />} />
+          <Route path="/biblioteca" element={<LibraryPage />} />
           <Route path="/procedimentos" element={<ComingSoonPage title="Procedimentos Operacionais" />} />
           <Route path="/treinamentos" element={<ComingSoonPage title="Treinamentos" />} />
           <Route path="/trilhas" element={<ComingSoonPage title="Trilhas de Aprendizagem" />} />
