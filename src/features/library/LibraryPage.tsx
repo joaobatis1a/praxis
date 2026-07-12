@@ -176,8 +176,22 @@ export function LibraryPage() {
 
         {!search && !selectedFolder && (
           <div className="mt-8 space-y-8">
-            <HorizontalDocRow title="Favoritos" documents={favorites} onOpen={setOpenDoc} />
-            <HorizontalDocRow title="Documentos recentes" documents={recent} onOpen={setOpenDoc} />
+            <HorizontalDocRow
+              title="Favoritos"
+              documents={favorites}
+              onOpen={setOpenDoc}
+              onToggleFavorite={handleToggleFavorite}
+              onEdit={(doc) => setDocForm({ mode: 'edit', doc })}
+              onDelete={setDeletingDoc}
+            />
+            <HorizontalDocRow
+              title="Documentos recentes"
+              documents={recent}
+              onOpen={setOpenDoc}
+              onToggleFavorite={handleToggleFavorite}
+              onEdit={(doc) => setDocForm({ mode: 'edit', doc })}
+              onDelete={setDeletingDoc}
+            />
           </div>
         )}
 

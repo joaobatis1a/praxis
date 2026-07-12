@@ -61,7 +61,7 @@ export function DocumentCard({ document, onOpen, onToggleFavorite, onEdit, onDel
             type="button"
             onClick={onEdit}
             aria-label={`Editar ${document.title}`}
-            className="rounded-md p-1.5 text-text-muted opacity-0 transition-all hover:bg-surface-hover hover:text-primary group-hover:opacity-100"
+            className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-surface-hover hover:text-primary hover:opacity-100 group-hover:opacity-100"
           >
             <Pencil size={16} />
           </button>
@@ -69,7 +69,7 @@ export function DocumentCard({ document, onOpen, onToggleFavorite, onEdit, onDel
             type="button"
             onClick={onDelete}
             aria-label={`Excluir ${document.title}`}
-            className="rounded-md p-1.5 text-text-muted opacity-0 transition-all hover:bg-error-bg hover:text-error group-hover:opacity-100"
+            className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-error-bg hover:text-error hover:opacity-100 group-hover:opacity-100"
           >
             <Trash2 size={16} />
           </button>
