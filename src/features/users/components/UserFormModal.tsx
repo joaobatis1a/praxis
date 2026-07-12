@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Button, Input, Modal } from '../../../components/ui'
+import { Button, Input, Modal, Select } from '../../../components/ui'
 import type { Role } from '../../auth/types'
 import type { CreateUserInput } from '../api'
 
@@ -62,32 +62,26 @@ export function UserFormModal({ open, onClose, onSubmit, initialData }: UserForm
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-text-primary">Cargo</label>
-            <select
+            <Select
               value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-              className="h-10 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
-            >
-              {roleOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm({ ...form, role: v as Role })}
+              options={roleOptions}
+              className="w-full"
+              triggerClassName="w-full"
+              aria-label="Cargo"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-text-primary">Departamento</label>
-            <select
+            <Select
               value={form.department}
-              onChange={(e) => setForm({ ...form, department: e.target.value })}
-              className="h-10 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
-            >
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm({ ...form, department: v })}
+              options={departments.map((dept) => ({ value: dept, label: dept }))}
+              className="w-full"
+              triggerClassName="w-full"
+              aria-label="Departamento"
+            />
           </div>
         </div>
 
