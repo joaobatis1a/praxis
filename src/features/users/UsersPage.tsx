@@ -1,20 +1,28 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
   Badge,
   Button,
   ConfirmDialog,
+  Select,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeaderCell,
   TableRow,
+  useToast,
 } from '../../components/ui'
+import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import type { TeamMember } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
 import { createUser, deleteUser, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
 import { UserFormModal } from './components/UserFormModal'
+
+const MotionTableRow = motion(TableRow)
+const MotionTableBody = motion(TableBody)
 
 const roleLabels: Record<Role, string> = {
   admin: 'Administrador',
@@ -38,6 +46,7 @@ function initialsOf(name: string) {
 }
 
 export function UsersPage() {
+  const { toast } = useToast()
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -69,36 +78,53 @@ export function UsersPage() {
   async function handleCreate(input: CreateUserInput) {
     const newUser = await createUser(input)
     setMembers((prev) => [newUser, ...prev])
+    toast(`${newUser.name} foi adicionado à equipe.`)
   }
 
   async function handleUpdate(input: CreateUserInput) {
     if (!editingMember) return
     const updated = await updateUser(editingMember.id, input)
     setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+    toast(`${updated.name} foi atualizado.`)
   }
 
   async function toggleStatus(member: TeamMember) {
     const nextStatus = member.status === 'ativo' ? 'inativo' : 'ativo'
     const updated = await setUserStatus(member.id, nextStatus)
     setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+    toast(nextStatus === 'ativo' ? `${updated.name} foi ativado.` : `${updated.name} foi desativado.`)
   }
 
   async function handleDelete() {
     if (!deletingMember) return
     await deleteUser(deletingMember.id)
     setMembers((prev) => prev.filter((m) => m.id !== deletingMember.id))
+    toast(`${deletingMember.name} foi excluído.`, 'error')
   }
 
-  const selectClass =
-    'h-10 rounded-md border border-border bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20'
+  const departmentOptions = [
+    { value: 'todos', label: 'Todos os departamentos' },
+    ...departments.map((dept) => ({ value: dept, label: dept })),
+  ]
+  const roleOptions = [
+    { value: 'todos', label: 'Todos os cargos' },
+    { value: 'admin', label: 'Administrador' },
+    { value: 'gestor', label: 'Gestor' },
+    { value: 'colaborador', label: 'Colaborador' },
+  ]
+  const statusOptions = [
+    { value: 'todos', label: 'Todos os status' },
+    { value: 'ativo', label: 'Ativo' },
+    { value: 'inativo', label: 'Inativo' },
+  ]
 
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-bold text-text-primary">Gestão de Usuários</h1>
           <p className="mt-1 text-sm text-text-muted">{members.length} colaboradores cadastrados</p>
-        </div>
+        </motion.div>
         <Button
           onClick={() => {
             setEditingMember(null)
@@ -121,27 +147,16 @@ export function UsersPage() {
           />
         </div>
 
-        <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className={selectClass}>
-          <option value="todos">Todos os departamentos</option>
-          {departments.map((dept) => (
-            <option key={dept} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={departmentFilter}
+          onChange={setDepartmentFilter}
+          options={departmentOptions}
+          aria-label="Filtrar por departamento"
+        />
 
-        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={selectClass}>
-          <option value="todos">Todos os cargos</option>
-          <option value="admin">Administrador</option>
-          <option value="gestor">Gestor</option>
-          <option value="colaborador">Colaborador</option>
-        </select>
+        <Select value={roleFilter} onChange={setRoleFilter} options={roleOptions} aria-label="Filtrar por cargo" />
 
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClass}>
-          <option value="todos">Todos os status</option>
-          <option value="ativo">Ativo</option>
-          <option value="inativo">Inativo</option>
-        </select>
+        <Select value={statusFilter} onChange={setStatusFilter} options={statusOptions} aria-label="Filtrar por status" />
       </div>
 
       <div className="mt-6">
@@ -156,7 +171,15 @@ export function UsersPage() {
               <TableHeaderCell className="text-right">Ações</TableHeaderCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <MotionTableBody variants={staggerContainer} initial="hidden" animate="show">
+            {loading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell colSpan={6}>
+                    <Skeleton className="h-9" />
+                  </TableCell>
+                </TableRow>
+              ))}
             {!loading && filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6}>
@@ -165,12 +188,16 @@ export function UsersPage() {
               </TableRow>
             )}
             {filtered.map((member) => (
-              <TableRow key={member.id}>
+              <MotionTableRow key={member.id} variants={staggerItem} layout>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: -4 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+                    >
                       {initialsOf(member.name)}
-                    </div>
+                    </motion.div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-text-primary">{member.name}</p>
                       <p className="truncate text-xs text-text-muted">{member.email}</p>
@@ -180,17 +207,30 @@ export function UsersPage() {
                 <TableCell>{roleLabels[member.role]}</TableCell>
                 <TableCell>{member.department}</TableCell>
                 <TableCell>
-                  <Badge variant={member.status === 'ativo' ? 'success' : 'neutral'}>
-                    {member.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                  </Badge>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={member.status}
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                      className="inline-block"
+                    >
+                      <Badge variant={member.status === 'ativo' ? 'success' : 'neutral'}>
+                        {member.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </motion.span>
+                  </AnimatePresence>
                 </TableCell>
                 <TableCell>
                   <Badge variant="primary">{permissionLabels[member.role]}</Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
-                    <button
+                    <motion.button
                       type="button"
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
                       onClick={() => {
                         setEditingMember(member)
                         setModalOpen(true)
@@ -199,28 +239,32 @@ export function UsersPage() {
                       className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary"
                     >
                       <Pencil size={16} />
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       type="button"
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
                       onClick={() => toggleStatus(member)}
                       aria-label={member.status === 'ativo' ? `Desativar ${member.name}` : `Ativar ${member.name}`}
                       className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary"
                     >
                       {member.status === 'ativo' ? <PowerOff size={16} /> : <UserCheck size={16} />}
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       type="button"
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.85 }}
                       onClick={() => setDeletingMember(member)}
                       aria-label={`Excluir ${member.name}`}
                       className="rounded-md p-2 text-text-muted hover:bg-error-bg hover:text-error"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </motion.button>
                   </div>
                 </TableCell>
-              </TableRow>
+              </MotionTableRow>
             ))}
-          </TableBody>
+          </MotionTableBody>
         </Table>
       </div>
 

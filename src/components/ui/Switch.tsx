@@ -22,7 +22,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(({ className, la
             className,
           )}
         />
-        <span className="pointer-events-none absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
+        <span className="pointer-events-none absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] peer-checked:translate-x-4" />
       </span>
       {label}
     </label>

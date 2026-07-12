@@ -19,7 +19,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             id={inputId}
             type="checkbox"
             className={cn(
-              'peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong bg-surface-card transition-colors',
+              'peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong bg-surface-card transition-all duration-150 active:scale-90',
               'checked:border-primary checked:bg-primary',
               'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/30',
               className,
@@ -29,7 +29,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           <Check
             size={12}
             strokeWidth={3}
-            className="pointer-events-none absolute text-primary-foreground opacity-0 peer-checked:opacity-100"
+            className="pointer-events-none absolute scale-0 text-primary-foreground opacity-0 transition-none peer-checked:scale-100 peer-checked:opacity-100 peer-checked:[animation:check-pop_0.35s_cubic-bezier(0.34,1.56,0.64,1)]"
           />
         </span>
         {label}

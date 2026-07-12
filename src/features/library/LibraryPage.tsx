@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { FolderPlus, Plus, Search } from 'lucide-react'
 import type { FolderNode, LibraryDocument } from '../../mocks/library'
-import { Button, ConfirmDialog } from '../../components/ui'
+import { Button, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
+import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import {
   addCategory,
   addFolder,
@@ -28,6 +30,7 @@ import { DocumentFormModal, type DocumentFormValues } from './components/Documen
 type DocFormState = { mode: 'create' } | { mode: 'edit'; doc: LibraryDocument } | null
 
 export function LibraryPage() {
+  const { toast } = useToast()
   const [docs, setDocs] = useState<LibraryDocument[]>([])
   const [tree, setTree] = useState<FolderNode[]>(getFolderTree())
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
@@ -37,9 +40,13 @@ export function LibraryPage() {
   const [folderFormOpen, setFolderFormOpen] = useState(false)
   const [deletingDoc, setDeletingDoc] = useState<LibraryDocument | null>(null)
   const [deletingFolder, setDeletingFolder] = useState<{ id: string; name: string } | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    listDocuments().then(setDocs)
+    listDocuments().then((data) => {
+      setDocs(data)
+      setLoading(false)
+    })
   }, [])
 
   const favorites = docs.filter((d) => d.favorite)
@@ -58,6 +65,7 @@ export function LibraryPage() {
     const updated = await toggleFavorite(id)
     setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
     setOpenDoc((prev) => (prev && prev.id === updated.id ? updated : prev))
+    toast(updated.favorite ? `${updated.title} adicionado aos favoritos.` : `${updated.title} removido dos favoritos.`)
   }
 
   async function handleDocFormSubmit(values: DocumentFormValues) {
@@ -65,9 +73,11 @@ export function LibraryPage() {
       const updated = await updateDocument(docForm.doc.id, values)
       setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
       setOpenDoc((prev) => (prev && prev.id === updated.id ? updated : prev))
+      toast(`${updated.title} foi atualizado.`)
     } else {
       const newDoc = await createDocument({ ...values, folderId: selectedFolder, author: 'Você' })
       setDocs((prev) => [newDoc, ...prev])
+      toast(`${newDoc.title} foi criado.`)
     }
   }
 
@@ -76,26 +86,31 @@ export function LibraryPage() {
     await deleteDocument(deletingDoc.id)
     setDocs((prev) => prev.filter((d) => d.id !== deletingDoc.id))
     setOpenDoc(null)
+    toast(`${deletingDoc.title} foi excluído.`, 'error')
   }
 
   async function handleFolderFormSubmit(name: string) {
     const updated = selectedFolder ? await addFolder(selectedFolder, name) : await addCategory(name)
     setTree(updated)
+    toast(`Pasta "${name}" criada.`)
   }
 
   async function handleAddCategory(name: string) {
     const updated = await addCategory(name)
     setTree(updated)
+    toast(`Categoria "${name}" criada.`)
   }
 
   async function handleAddFolder(parentId: string, name: string) {
     const updated = await addFolder(parentId, name)
     setTree(updated)
+    toast(`Pasta "${name}" criada.`)
   }
 
   async function handleRenameFolder(id: string, name: string) {
     const updated = await renameFolder(id, name)
     setTree(updated)
+    toast(`Pasta renomeada para "${name}".`)
   }
 
   async function handleDeleteFolder() {
@@ -104,6 +119,7 @@ export function LibraryPage() {
     setTree(updatedTree)
     setDocs(updatedDocs)
     if (selectedFolder === deletingFolder.id) setSelectedFolder(null)
+    toast(`"${deletingFolder.name}" foi excluída.`, 'error')
   }
 
   const impact = deletingFolder ? getFolderDeleteImpact(deletingFolder.id) : null
@@ -173,21 +189,42 @@ export function LibraryPage() {
                 ? 'Resultados da busca'
                 : 'Todos os documentos'}
           </h2>
-          {visibleDocs.length === 0 ? (
-            <p className="mt-6 text-sm text-text-muted">Nenhum documento encontrado.</p>
-          ) : (
+          {loading ? (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {visibleDocs.map((doc) => (
-                <DocumentCard
-                  key={doc.id}
-                  document={doc}
-                  onOpen={() => setOpenDoc(doc)}
-                  onToggleFavorite={() => handleToggleFavorite(doc.id)}
-                  onEdit={() => setDocForm({ mode: 'edit', doc })}
-                  onDelete={() => setDeletingDoc(doc)}
-                />
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-36" />
               ))}
             </div>
+          ) : visibleDocs.length === 0 ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-6 text-sm text-text-muted"
+            >
+              Nenhum documento encontrado.
+            </motion.p>
+          ) : (
+            <motion.div
+              key={selectedFolder ?? search ?? 'all'}
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              <AnimatePresence mode="popLayout">
+                {visibleDocs.map((doc) => (
+                  <motion.div key={doc.id} variants={staggerItem} exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.15 } }} layout>
+                    <DocumentCard
+                      document={doc}
+                      onOpen={() => setOpenDoc(doc)}
+                      onToggleFavorite={() => handleToggleFavorite(doc.id)}
+                      onEdit={() => setDocForm({ mode: 'edit', doc })}
+                      onDelete={() => setDeletingDoc(doc)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       </div>

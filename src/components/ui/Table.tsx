@@ -1,4 +1,4 @@
-import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react'
+import { forwardRef, type HTMLAttributes, type TdHTMLAttributes, type ThHTMLAttributes } from 'react'
 import { cn } from '../../lib/cn'
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
@@ -13,13 +13,17 @@ export function TableHead({ className, ...props }: HTMLAttributes<HTMLTableSecti
   return <thead className={cn('bg-surface', className)} {...props} />
 }
 
-export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('divide-y divide-border', className)} {...props} />
-}
+export const TableBody = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
+  ({ className, ...props }, ref) => <tbody ref={ref} className={cn('divide-y divide-border', className)} {...props} />,
+)
+TableBody.displayName = 'TableBody'
 
-export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn('transition-colors hover:bg-surface-hover', className)} {...props} />
-}
+export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
+  ({ className, ...props }, ref) => (
+    <tr ref={ref} className={cn('transition-colors hover:bg-surface-hover', className)} {...props} />
+  ),
+)
+TableRow.displayName = 'TableRow'
 
 export function TableHeaderCell({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
