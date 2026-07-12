@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { BookOpen, Clock, FileClock, ListChecks, UserCheck } from 'lucide-react'
+import { Award, BookOpen, Clock, FileClock, ListChecks, UserCheck, Video } from 'lucide-react'
 import { Badge } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { Reveal } from './Reveal'
@@ -17,7 +17,7 @@ const rows = [
     eyebrow: 'Procedimentos Operacionais',
     title: 'Processos que sobrevivem à saída de alguém.',
     description:
-      'Checklists com etapas, responsável e status. Um SOP no Praxis não é um PDF esquecido — é um processo vivo que qualquer pessoa da equipe consegue seguir.',
+      'Checklists com etapas, vídeo do passo a passo e responsável definido. Um SOP no Praxis não é um PDF esquecido — é um processo vivo que qualquer pessoa da equipe consegue seguir e concluir.',
     icon: ListChecks,
     reverse: true,
   },
@@ -69,9 +69,16 @@ function ProcedureMock() {
         <p className="text-sm font-medium text-white/80">Abertura de chamado — SOP</p>
         <Badge variant="success" className="border-transparent">Publicado</Badge>
       </div>
-      <div className="mt-3 flex items-center gap-2 text-xs text-white/40">
-        <UserCheck size={14} /> Responsável: Time de Suporte
-        <Clock size={14} className="ml-3" /> ~15 min
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/40">
+        <span className="flex items-center gap-1.5">
+          <UserCheck size={14} /> Responsável: Time de Suporte
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Clock size={14} /> ~15 min
+        </span>
+        <span className="flex items-center gap-1.5 text-[#6d94fa]">
+          <Video size={14} /> Vídeo do passo a passo
+        </span>
       </div>
       <div className="mt-4 space-y-2.5">
         {steps.map((step, i) => (
@@ -97,6 +104,16 @@ function ProcedureMock() {
           </motion.div>
         ))}
       </div>
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.4, delay: steps.length * 0.12 + 0.15 }}
+        className="mt-4 flex items-center gap-2 rounded-md border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300"
+      >
+        <Award size={14} className="shrink-0 text-amber-400" />
+        Conclusão fica registrada com data e responsável
+      </motion.div>
     </div>
   )
 }

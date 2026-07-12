@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, BookOpen, CheckCircle2, FileText, GraduationCap } from 'lucide-react'
+import { ArrowRight, Award, BookOpen, FileText } from 'lucide-react'
 import { Badge, buttonVariants } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { useCountUp } from '../../../lib/useCountUp'
@@ -55,7 +55,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.7 }}
             className="mt-8 max-w-md text-lg text-white/60"
           >
-            Documentação, procedimentos e treinamentos, conectados em um único sistema — para que
+            Documentação, procedimentos e a comunicação da equipe, conectados em um único sistema — para que
             o que sua equipe sabe não desapareça quando ela sai da sala.
           </motion.p>
 
@@ -101,7 +101,7 @@ export function HeroSection() {
 
             <div className="mt-4 grid grid-cols-3 gap-3">
               <Stat label="Documentos" target={312} />
-              <Stat label="Treinamentos" target={16} />
+              <Stat label="Procedimentos" target={24} />
               <Stat label="Progresso" target={73} suffix="%" />
             </div>
 
@@ -117,10 +117,10 @@ export function HeroSection() {
                 <Badge variant="primary" className="ml-auto shrink-0">Em revisão</Badge>
               </div>
               <div className="flex items-center gap-2 text-sm text-white/70">
-                <GraduationCap size={16} className="shrink-0 text-[#6d94fa]" />
-                <span className="min-w-0 truncate">Treinamento de Compliance</span>
-                <Badge variant="neutral" className="ml-auto shrink-0">
-                  <CheckCircle2 size={12} /> Concluído
+                <Award size={16} className="shrink-0 text-amber-400" />
+                <span className="min-w-0 truncate">Abertura de chamado</span>
+                <Badge className="ml-auto shrink-0 border-amber-400/30 bg-amber-400/15 text-amber-300">
+                  <Award size={12} /> Concluído
                 </Badge>
               </div>
             </div>
