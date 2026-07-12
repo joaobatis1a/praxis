@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, PowerOff, Search, UserCheck } from 'lucide-react'
+import { Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   Table,
   TableBody,
   TableCell,
@@ -12,7 +13,7 @@ import {
 } from '../../components/ui'
 import type { TeamMember } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
-import { createUser, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
+import { createUser, deleteUser, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
 import { UserFormModal } from './components/UserFormModal'
 
 const roleLabels: Record<Role, string> = {
@@ -45,6 +46,7 @@ export function UsersPage() {
   const [statusFilter, setStatusFilter] = useState('todos')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
+  const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null)
 
   useEffect(() => {
     listUsers().then((data) => {
@@ -79,6 +81,12 @@ export function UsersPage() {
     const nextStatus = member.status === 'ativo' ? 'inativo' : 'ativo'
     const updated = await setUserStatus(member.id, nextStatus)
     setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+  }
+
+  async function handleDelete() {
+    if (!deletingMember) return
+    await deleteUser(deletingMember.id)
+    setMembers((prev) => prev.filter((m) => m.id !== deletingMember.id))
   }
 
   const selectClass =
@@ -200,6 +208,14 @@ export function UsersPage() {
                     >
                       {member.status === 'ativo' ? <PowerOff size={16} /> : <UserCheck size={16} />}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingMember(member)}
+                      aria-label={`Excluir ${member.name}`}
+                      className="rounded-md p-2 text-text-muted hover:bg-error-bg hover:text-error"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -222,6 +238,16 @@ export function UsersPage() {
               }
             : undefined
         }
+      />
+
+      <ConfirmDialog
+        open={!!deletingMember}
+        onClose={() => setDeletingMember(null)}
+        onConfirm={handleDelete}
+        title="Excluir usuário"
+        description={`Tem certeza que deseja excluir ${deletingMember?.name}? Essa ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        variant="destructive"
       />
     </div>
   )

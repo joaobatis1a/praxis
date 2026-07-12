@@ -37,3 +37,8 @@ export function updateUser(id: string, input: CreateUserInput) {
   members = members.map((m) => (m.id === id ? { ...m, ...input } : m))
   return delay(members.find((m) => m.id === id)!)
 }
+
+export function deleteUser(id: string) {
+  members = members.filter((m) => m.id !== id)
+  return delay(undefined)
+}
