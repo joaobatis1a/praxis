@@ -18,6 +18,10 @@ export interface Procedure {
   completedStepIds: string[]
   videoUrl?: string
   videoName?: string
+  videoWatched: boolean
+  completed: boolean
+  completedAt?: string
+  completedBy?: string
 }
 
 export const departments = ['Diretoria', 'Operações', 'Suporte', 'Comercial', 'Financeiro', 'Recursos Humanos']
@@ -39,6 +43,8 @@ export const procedures: Procedure[] = [
       { id: 'proc-1-s4', text: 'Enviar confirmação por e-mail' },
     ],
     completedStepIds: ['proc-1-s1', 'proc-1-s2'],
+    videoWatched: false,
+    completed: false,
   },
   {
     id: 'proc-2',
@@ -56,6 +62,8 @@ export const procedures: Procedure[] = [
       { id: 'proc-2-s4', text: 'Registrar assinatura de fechamento' },
     ],
     completedStepIds: [],
+    videoWatched: false,
+    completed: false,
   },
   {
     id: 'proc-3',
@@ -74,6 +82,8 @@ export const procedures: Procedure[] = [
       { id: 'proc-3-s5', text: 'Configurar e-mail corporativo' },
     ],
     completedStepIds: ['proc-3-s1', 'proc-3-s2', 'proc-3-s3'],
+    videoWatched: false,
+    completed: false,
   },
   {
     id: 'proc-4',
@@ -91,6 +101,8 @@ export const procedures: Procedure[] = [
       { id: 'proc-4-s4', text: 'Processar pagamento' },
     ],
     completedStepIds: [],
+    videoWatched: false,
+    completed: false,
   },
   {
     id: 'proc-5',
@@ -109,6 +121,8 @@ export const procedures: Procedure[] = [
       { id: 'proc-5-s5', text: 'Atualizar ficha técnica' },
     ],
     completedStepIds: ['proc-5-s1'],
+    videoWatched: false,
+    completed: false,
   },
   {
     id: 'proc-6',
@@ -126,6 +140,8 @@ export const procedures: Procedure[] = [
       { id: 'proc-6-s4', text: 'Arquivar via digital' },
     ],
     completedStepIds: [],
+    videoWatched: false,
+    completed: false,
   },
   {
     id: 'proc-7',
@@ -142,6 +158,10 @@ export const procedures: Procedure[] = [
       { id: 'proc-7-s3', text: 'Registrar follow-up' },
     ],
     completedStepIds: ['proc-7-s1', 'proc-7-s2', 'proc-7-s3'],
+    videoWatched: false,
+    completed: true,
+    completedAt: '2026-07-11T15:20:00',
+    completedBy: 'Gustavo Ramos',
   },
   {
     id: 'proc-8',
@@ -159,5 +179,7 @@ export const procedures: Procedure[] = [
       { id: 'proc-8-s4', text: 'Enviar para diretoria' },
     ],
     completedStepIds: [],
+    videoWatched: false,
+    completed: false,
   },
 ]

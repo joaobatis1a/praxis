@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, GraduationCap, TrendingUp, Users } from 'lucide-react'
+import { BookOpen, ClipboardCheck, TrendingUp, Users } from 'lucide-react'
 import { getAdminDashboard } from './api'
 import { StatCard } from './components/StatCard'
 import { ProgressChart } from './components/ProgressChart'
@@ -60,10 +60,10 @@ export function AdminDashboardPage() {
             </motion.div>
             <motion.div variants={staggerItem}>
               <StatCard
-                label="Treinamentos ativos"
-                value={data.stats.treinamentosAtivos.value}
-                change={data.stats.treinamentosAtivos.change}
-                icon={GraduationCap}
+                label="Procedimentos concluídos"
+                value={data.stats.procedimentosConcluidos.value}
+                change={data.stats.procedimentosConcluidos.change}
+                icon={ClipboardCheck}
               />
             </motion.div>
             <motion.div variants={staggerItem}>

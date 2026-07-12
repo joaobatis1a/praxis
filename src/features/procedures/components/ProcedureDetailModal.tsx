@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
+import { Award, CheckCircle2, ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
 import { Badge, Button, Checkbox, Modal, ProgressBar } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
@@ -13,19 +13,26 @@ export function ProcedureDetailModal({
   procedure,
   onClose,
   onToggleStep,
+  onToggleVideoWatched,
   onEdit,
   onDelete,
+  onComplete,
 }: {
   procedure: Procedure | null
   onClose: () => void
   onToggleStep: (procedureId: string, stepId: string) => void
+  onToggleVideoWatched: (procedureId: string) => void
   onEdit: (procedure: Procedure) => void
   onDelete: (procedure: Procedure) => void
+  onComplete: (procedure: Procedure) => void
 }) {
   if (!procedure) return null
   const total = procedure.steps.length
   const done = procedure.completedStepIds.length
   const progress = total > 0 ? Math.round((done / total) * 100) : 0
+  const allStepsDone = total > 0 && done === total
+  const videoPending = !!procedure.videoUrl && !procedure.videoWatched
+  const canComplete = allStepsDone && !videoPending && !procedure.completed
 
   return (
     <Modal open={!!procedure} onClose={onClose} className="max-w-xl">
@@ -56,6 +63,21 @@ export function ProcedureDetailModal({
         <span>Atualizado em {formatDate(procedure.updatedAt)}</span>
       </div>
 
+      {procedure.completed && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+          className="mt-4 flex items-center gap-2 rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-300"
+        >
+          <Award size={16} className="shrink-0 text-amber-500" />
+          <span>
+            Concluído por {procedure.completedBy}
+            {procedure.completedAt && ` em ${formatDate(procedure.completedAt)}`}.
+          </span>
+        </motion.div>
+      )}
+
       {procedure.videoUrl && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -73,6 +95,17 @@ export function ProcedureDetailModal({
             controls
             className="mt-2 aspect-video w-full rounded-md border border-border bg-black"
           />
+          <div className="mt-2 flex items-center gap-2">
+            <Checkbox
+              id={`${procedure.id}-video-watched`}
+              checked={procedure.videoWatched}
+              onChange={() => onToggleVideoWatched(procedure.id)}
+              aria-label="Já assisti esse vídeo"
+            />
+            <label htmlFor={`${procedure.id}-video-watched`} className="cursor-pointer text-sm text-text-secondary">
+              Já assisti esse vídeo
+            </label>
+          </div>
         </motion.div>
       )}
 
@@ -116,15 +149,36 @@ export function ProcedureDetailModal({
         })}
       </motion.ol>
 
-      <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
-        <Button variant="secondary" onClick={() => onEdit(procedure)}>
-          <Pencil size={16} />
-          Editar
-        </Button>
-        <Button variant="destructive" onClick={() => onDelete(procedure)}>
-          <Trash2 size={16} />
-          Excluir procedimento
-        </Button>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+        <div>
+          {!procedure.completed && (
+            <>
+              <Button variant="primary" disabled={!canComplete} onClick={() => onComplete(procedure)}>
+                <CheckCircle2 size={16} />
+                Concluir procedimento
+              </Button>
+              {!canComplete && (
+                <p className="mt-1.5 text-xs text-text-muted">
+                  {!allStepsDone
+                    ? 'Marque todas as etapas para concluir.'
+                    : videoPending
+                      ? 'Confirme que assistiu o vídeo para concluir.'
+                      : null}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => onEdit(procedure)}>
+            <Pencil size={16} />
+            Editar
+          </Button>
+          <Button variant="destructive" onClick={() => onDelete(procedure)}>
+            <Trash2 size={16} />
+            Excluir procedimento
+          </Button>
+        </div>
       </div>
     </Modal>
   )

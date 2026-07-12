@@ -1,5 +1,6 @@
-import { ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
+import { Award, ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
 import { Badge, Card, ProgressBar } from '../../../components/ui'
+import { cn } from '../../../lib/cn'
 import type { Procedure } from '../../../mocks/procedures'
 
 interface ProcedureCardProps {
@@ -13,12 +14,23 @@ export function ProcedureCard({ procedure, onOpen, onEdit, onDelete }: Procedure
   const total = procedure.steps.length
   const done = procedure.completedStepIds.length
   const progress = total > 0 ? Math.round((done / total) * 100) : 0
+  const isCompleted = procedure.completed
 
   return (
-    <Card className="group flex flex-col">
+    <Card
+      className={cn(
+        'group flex flex-col',
+        isCompleted && 'border border-amber-400/50 bg-amber-400/[0.04] shadow-[0_0_0_1px_rgba(251,191,36,0.25),0_12px_28px_-14px_rgba(217,119,6,0.35)]',
+      )}
+    >
       <div className="flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface text-primary transition-transform duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 group-hover:-rotate-6">
-          <ClipboardList size={20} />
+        <div
+          className={cn(
+            'flex h-10 w-10 items-center justify-center rounded-md bg-surface text-primary transition-transform duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 group-hover:-rotate-6',
+            isCompleted && 'bg-amber-400/15 text-amber-500 dark:text-amber-400',
+          )}
+        >
+          {isCompleted ? <Award size={20} /> : <ClipboardList size={20} />}
         </div>
         <div className="flex items-center gap-0.5">
           <button
@@ -55,6 +67,12 @@ export function ProcedureCard({ procedure, onOpen, onEdit, onDelete }: Procedure
           <Badge variant="primary">
             <Video size={11} />
             Vídeo
+          </Badge>
+        )}
+        {isCompleted && (
+          <Badge className="border-amber-400/40 bg-amber-400/15 text-amber-700 dark:text-amber-300">
+            <Award size={11} />
+            Concluído
           </Badge>
         )}
       </div>

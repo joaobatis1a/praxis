@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Bookmark, CalendarClock, ClipboardList, PlayCircle } from 'lucide-react'
-import { getColaboradorDashboard } from './api'
+import { Bookmark, CheckCircle2, ClipboardList } from 'lucide-react'
+import { formatRelativeTime, getColaboradorDashboard } from './api'
 import { CircularProgress } from './components/CircularProgress'
-import { Badge, Card, ProgressBar, Skeleton } from '../../components/ui'
+import { Card, Skeleton } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
 
@@ -14,8 +14,8 @@ export function ColaboradorDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
 
   useEffect(() => {
-    getColaboradorDashboard().then(setData)
-  }, [])
+    if (user) getColaboradorDashboard(user.id).then(setData)
+  }, [user])
 
   return (
     <div className="mx-auto max-w-[1400px] p-6 lg:p-8">
@@ -37,7 +37,6 @@ export function ColaboradorDashboardPage() {
           <div className="space-y-6">
             <Skeleton className="h-48" />
             <Skeleton className="h-40" />
-            <Skeleton className="h-40" />
           </div>
         </div>
       ) : (
@@ -51,20 +50,25 @@ export function ColaboradorDashboardPage() {
             <motion.div variants={staggerItem}>
               <Card>
                 <div className="flex items-center gap-2">
-                  <PlayCircle size={18} className="text-primary" />
-                  <h3 className="text-base font-semibold text-text-primary">Cursos em andamento</h3>
+                  <CheckCircle2 size={18} className="text-primary" />
+                  <h3 className="text-base font-semibold text-text-primary">Procedimentos concluídos</h3>
                 </div>
-                <div className="mt-4 space-y-4">
-                  {data.courses.map((course) => (
-                    <div key={course.id}>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-text-secondary">{course.title}</span>
-                        <span className="text-text-muted">{course.progress}%</span>
-                      </div>
-                      <ProgressBar value={course.progress} className="mt-2" />
-                    </div>
-                  ))}
-                </div>
+                {data.completions.length === 0 ? (
+                  <p className="mt-4 text-sm text-text-muted">Você ainda não concluiu nenhum procedimento.</p>
+                ) : (
+                  <ul className="mt-4 divide-y divide-border">
+                    {data.completions.map((c) => (
+                      <motion.li
+                        key={c.id}
+                        whileHover={{ x: 4 }}
+                        className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                      >
+                        <span className="text-sm text-text-secondary">{c.procedureTitle}</span>
+                        <span className="text-xs text-text-muted">{formatRelativeTime(c.completedAt)}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                )}
               </Card>
             </motion.div>
 
@@ -97,23 +101,6 @@ export function ColaboradorDashboardPage() {
                 <div className="mt-4">
                   <CircularProgress value={data.overallProgress} />
                 </div>
-              </Card>
-            </motion.div>
-
-            <motion.div variants={staggerItem}>
-              <Card>
-                <div className="flex items-center gap-2">
-                  <CalendarClock size={18} className="text-primary" />
-                  <h3 className="text-base font-semibold text-text-primary">Próximos treinamentos</h3>
-                </div>
-                <ul className="mt-4 space-y-3">
-                  {data.upcomingTrainings.map((t) => (
-                    <motion.li key={t.id} whileHover={{ x: 4 }} className="flex items-center justify-between">
-                      <span className="text-sm text-text-secondary">{t.title}</span>
-                      <Badge variant="primary">{t.date}</Badge>
-                    </motion.li>
-                  ))}
-                </ul>
               </Card>
             </motion.div>
 

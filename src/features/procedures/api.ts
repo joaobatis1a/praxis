@@ -1,10 +1,12 @@
 import { procedures as initialProcedures, type Procedure, type ProcedureStatus, type ProcedureStep } from '../../mocks/procedures'
+import { procedureCompletions as initialCompletions, type ProcedureCompletion } from '../../mocks/procedureCompletions'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
 }
 
 let procedures: Procedure[] = structuredClone(initialProcedures)
+let completions: ProcedureCompletion[] = structuredClone(initialCompletions)
 
 export interface CreateProcedureInput {
   title: string
@@ -42,6 +44,13 @@ export function toggleStep(procedureId: string, stepId: string): Promise<Procedu
   return delay(proc)
 }
 
+export function toggleVideoWatched(procedureId: string): Promise<Procedure> {
+  const proc = procedures.find((p) => p.id === procedureId)
+  if (!proc) throw new Error('Procedimento não encontrado')
+  proc.videoWatched = !proc.videoWatched
+  return delay(proc)
+}
+
 export function createProcedure(input: CreateProcedureInput): Promise<Procedure> {
   const id = `proc-${Date.now()}`
   const steps: ProcedureStep[] = input.steps.map((text, i) => ({ id: `${id}-s${i + 1}`, text }))
@@ -58,6 +67,8 @@ export function createProcedure(input: CreateProcedureInput): Promise<Procedure>
     completedStepIds: [],
     videoUrl: input.videoUrl,
     videoName: input.videoName,
+    videoWatched: false,
+    completed: false,
   }
   procedures = [newProcedure, ...procedures]
   return delay(newProcedure)
@@ -70,7 +81,6 @@ export function updateProcedure(id: string, input: UpdateProcedureInput): Promis
     const previous = existing.steps[i]
     return { id: previous?.id ?? `${id}-s${i + 1}`, text }
   })
-  const validStepIds = new Set(steps.map((s) => s.id))
   const updated: Procedure = {
     ...existing,
     title: input.title,
@@ -79,7 +89,12 @@ export function updateProcedure(id: string, input: UpdateProcedureInput): Promis
     status: input.status,
     estimatedMinutes: input.estimatedMinutes,
     steps,
-    completedStepIds: existing.completedStepIds.filter((stepId) => validStepIds.has(stepId)),
+    // editing invalidates any in-progress or completed execution, so it always resets
+    completedStepIds: [],
+    videoWatched: false,
+    completed: false,
+    completedAt: undefined,
+    completedBy: undefined,
     updatedAt: new Date().toISOString().slice(0, 10),
     videoUrl: input.videoUrl,
     videoName: input.videoName,
@@ -91,4 +106,27 @@ export function updateProcedure(id: string, input: UpdateProcedureInput): Promis
 export function deleteProcedure(id: string): Promise<void> {
   procedures = procedures.filter((p) => p.id !== id)
   return delay(undefined)
+}
+
+export function listCompletions(): Promise<ProcedureCompletion[]> {
+  return delay([...completions])
+}
+
+export function completeProcedure(procedureId: string, userId: string, userName: string): Promise<{ procedure: Procedure; completion: ProcedureCompletion }> {
+  const proc = procedures.find((p) => p.id === procedureId)
+  if (!proc) throw new Error('Procedimento não encontrado')
+  const completedAt = new Date().toISOString()
+  const completion: ProcedureCompletion = {
+    id: `comp-${Date.now()}`,
+    procedureId: proc.id,
+    procedureTitle: proc.title,
+    userId,
+    userName,
+    completedAt,
+  }
+  completions = [completion, ...completions]
+  proc.completed = true
+  proc.completedAt = completedAt
+  proc.completedBy = userName
+  return delay({ procedure: proc, completion })
 }
