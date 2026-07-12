@@ -12,6 +12,7 @@ import { RequireRole } from './features/auth/RequireRole'
 import { RolesPermissionsPage } from './features/roles/RolesPermissionsPage'
 import { LibraryPage } from './features/library/LibraryPage'
 import { ProceduresPage } from './features/procedures/ProceduresPage'
+import { NoticesPage } from './features/notices/NoticesPage'
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           </Route>
           <Route path="/biblioteca" element={<LibraryPage />} />
           <Route path="/procedimentos" element={<ProceduresPage />} />
+          <Route path="/avisos" element={<NoticesPage />} />
           <Route path="/treinamentos" element={<ComingSoonPage title="Treinamentos" />} />
           <Route path="/trilhas" element={<ComingSoonPage title="Trilhas de Aprendizagem" />} />
           <Route path="/avaliacoes" element={<ComingSoonPage title="Avaliações" />} />
