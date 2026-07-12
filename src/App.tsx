@@ -35,8 +35,6 @@ function App() {
           <Route path="/biblioteca" element={<LibraryPage />} />
           <Route path="/procedimentos" element={<ProceduresPage />} />
           <Route path="/avisos" element={<NoticesPage />} />
-          <Route path="/trilhas" element={<ComingSoonPage title="Trilhas de Aprendizagem" />} />
-          <Route path="/avaliacoes" element={<ComingSoonPage title="Avaliações" />} />
           <Route path="/notificacoes" element={<ComingSoonPage title="Central de Notificações" />} />
           <Route path="/configuracoes" element={<ComingSoonPage title="Configurações" />} />
         </Route>

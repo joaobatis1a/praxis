@@ -9,8 +9,7 @@ export interface ModulePermission {
 export const modules: ModulePermission[] = [
   { key: 'biblioteca', label: 'Biblioteca de Conhecimento', description: 'Consultar e editar documentos' },
   { key: 'procedimentos', label: 'Procedimentos Operacionais', description: 'Consultar e editar SOPs' },
-  { key: 'trilhas', label: 'Trilhas de Aprendizagem', description: 'Consultar e criar trilhas' },
-  { key: 'avaliacoes', label: 'Avaliações', description: 'Responder e criar avaliações' },
+  { key: 'avisos', label: 'Avisos', description: 'Enviar e consultar avisos de equipe' },
   { key: 'usuarios', label: 'Gestão de Usuários', description: 'Ver e gerenciar colaboradores' },
   { key: 'cargos', label: 'Cargos e Permissões', description: 'Ver e editar permissões do sistema' },
   { key: 'configuracoes', label: 'Configurações', description: 'Ajustes da empresa e da conta' },
@@ -21,8 +20,7 @@ export const defaultPermissions: Record<Role, Record<string, boolean>> = {
   admin: {
     biblioteca: true,
     procedimentos: true,
-    trilhas: true,
-    avaliacoes: true,
+    avisos: true,
     usuarios: true,
     cargos: true,
     configuracoes: true,
@@ -30,8 +28,7 @@ export const defaultPermissions: Record<Role, Record<string, boolean>> = {
   gestor: {
     biblioteca: true,
     procedimentos: true,
-    trilhas: true,
-    avaliacoes: true,
+    avisos: true,
     usuarios: true,
     cargos: false,
     configuracoes: false,
@@ -39,8 +36,7 @@ export const defaultPermissions: Record<Role, Record<string, boolean>> = {
   colaborador: {
     biblioteca: true,
     procedimentos: true,
-    trilhas: true,
-    avaliacoes: true,
+    avisos: true,
     usuarios: false,
     cargos: false,
     configuracoes: false,

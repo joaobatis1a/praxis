@@ -1,15 +1,4 @@
-import {
-  BookOpen,
-  ClipboardList,
-  LayoutDashboard,
-  ListChecks,
-  Megaphone,
-  Route as RouteIcon,
-  Settings,
-  ShieldCheck,
-  Users,
-  type LucideIcon,
-} from 'lucide-react'
+import { BookOpen, ClipboardList, LayoutDashboard, Megaphone, Settings, ShieldCheck, Users, type LucideIcon } from 'lucide-react'
 import type { Role } from '../auth/types'
 
 interface NavItem {
@@ -26,8 +15,6 @@ const allItems: NavItem[] = [
   { to: '/biblioteca', label: 'Biblioteca de Conhecimento', icon: BookOpen, roles: ['admin', 'gestor', 'colaborador'] },
   { to: '/procedimentos', label: 'Procedimentos', icon: ClipboardList, roles: ['admin', 'gestor', 'colaborador'] },
   { to: '/avisos', label: 'Avisos', icon: Megaphone, roles: ['admin', 'gestor', 'colaborador'] },
-  { to: '/trilhas', label: 'Trilhas', icon: RouteIcon, roles: ['admin', 'gestor', 'colaborador'] },
-  { to: '/avaliacoes', label: 'Avaliações', icon: ListChecks, roles: ['admin', 'gestor', 'colaborador'] },
   { to: '/configuracoes', label: 'Configurações', icon: Settings, roles: ['admin', 'gestor', 'colaborador'] },
 ]
 
