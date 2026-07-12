@@ -51,7 +51,7 @@ export function SignupPage() {
   }
 
   return (
-    <div className="dark relative flex h-screen overflow-hidden bg-[#050810]">
+    <div className="dark relative flex h-dvh overflow-hidden bg-[#050810]">
       <button
         type="button"
         onClick={() => {

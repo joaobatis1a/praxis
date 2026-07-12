@@ -49,7 +49,7 @@ export function Modal({ open, onClose, title, description, children, className }
             aria-modal="true"
             aria-labelledby={title ? 'modal-title' : undefined}
             className={cn(
-              'relative w-full max-w-lg rounded-lg bg-surface-card p-6 shadow-[var(--shadow-level-2)]',
+              'relative flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-surface-card shadow-[var(--shadow-level-2)]',
               className,
             )}
           >
@@ -57,17 +57,19 @@ export function Modal({ open, onClose, title, description, children, className }
               type="button"
               onClick={onClose}
               aria-label="Fechar"
-              className="absolute right-4 top-4 rounded-md p-1 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+              className="absolute right-4 top-4 z-10 rounded-md p-1 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
             >
               <X size={18} />
             </button>
-            {title && (
-              <h2 id="modal-title" className="text-lg font-semibold text-text-primary">
-                {title}
-              </h2>
-            )}
-            {description && <p className="mt-1 text-sm text-text-muted">{description}</p>}
-            <div className={cn(title || description ? 'mt-4' : undefined)}>{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              {title && (
+                <h2 id="modal-title" className="pr-8 text-lg font-semibold text-text-primary">
+                  {title}
+                </h2>
+              )}
+              {description && <p className="mt-1 pr-8 text-sm text-text-muted">{description}</p>}
+              <div className={cn(title || description ? 'mt-4' : undefined)}>{children}</div>
+            </div>
           </motion.div>
         </div>
       )}

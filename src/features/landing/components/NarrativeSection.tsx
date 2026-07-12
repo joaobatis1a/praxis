@@ -102,7 +102,7 @@ export function NarrativeSection() {
     <section id="solucao" className="relative py-28">
       <div className="mx-auto max-w-[var(--container-page)] px-6">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <div>
+          <div className="min-w-0">
             <Reveal>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#6d94fa]">
                 De disperso a conectado
@@ -115,7 +115,7 @@ export function NarrativeSection() {
             </div>
           </div>
 
-          <Reveal delay={0.2} className="lg:sticky lg:top-28">
+          <Reveal delay={0.2} className="min-w-0 lg:sticky lg:top-28">
             <TimelineVisual />
           </Reveal>
         </div>

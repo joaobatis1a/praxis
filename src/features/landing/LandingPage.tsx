@@ -12,7 +12,7 @@ import { BackToTopButton } from './components/BackToTopButton'
 
 export function LandingPage() {
   return (
-    <div id="top" className="dark relative min-h-screen">
+    <div id="top" className="dark relative min-h-screen overflow-x-clip">
       <LandingBackground />
       <ScrollProgressBar />
       <LandingHeader />

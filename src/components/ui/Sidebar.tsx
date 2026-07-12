@@ -39,7 +39,7 @@ export function Sidebar({ sections, header, footer, open = false, onClose }: Sid
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex h-screen w-sidebar shrink-0 -translate-x-full flex-col border-r border-border bg-surface transition-transform duration-200 ease-out',
+          'fixed inset-y-0 left-0 z-50 flex h-dvh w-sidebar shrink-0 -translate-x-full flex-col border-r border-border bg-surface transition-transform duration-200 ease-out',
           'md:static md:z-auto md:translate-x-0',
           open && 'translate-x-0',
         )}
