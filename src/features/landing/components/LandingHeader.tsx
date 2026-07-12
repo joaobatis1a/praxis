@@ -36,7 +36,7 @@ export function LandingHeader() {
             : 'max-w-6xl border-border/50 bg-surface-card/60 shadow-[var(--shadow-level-1)]',
         )}
       >
-        <Link to="/" className="group inline-block shrink-0 text-lg font-bold transition-transform hover:scale-105">
+        <Link to="/" className="group inline-block shrink-0 font-brand text-xl font-bold transition-transform hover:scale-105">
           <span className="bg-clip-text text-text-primary transition-colors duration-300 group-hover:bg-gradient-to-r group-hover:from-primary group-hover:via-[#7c6bff] group-hover:to-[#22d3ee] group-hover:text-transparent">
             Praxis
           </span>

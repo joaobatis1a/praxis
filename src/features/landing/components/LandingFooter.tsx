@@ -19,10 +19,8 @@ export function LandingFooter({ className }: { className?: string }) {
       <div className="mx-auto max-w-[var(--container-page)] px-6 py-12">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <span className="text-lg font-bold text-text-primary">Praxis</span>
-            <p className="mt-2 text-sm text-text-muted">
-              Gestão do conhecimento corporativo, em um só lugar.
-            </p>
+            <span className="font-brand text-lg font-bold text-text-primary">Praxis</span>
+            <p className="mt-2 text-sm text-text-muted">Práxis: da ação à execução.</p>
           </div>
 
           {columns.map((column) => (

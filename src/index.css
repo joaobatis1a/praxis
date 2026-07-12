@@ -99,6 +99,7 @@
 
 @theme inline {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-brand: 'Unbounded', 'Inter', system-ui, -apple-system, sans-serif;
 
   --color-background: var(--background);
   --color-surface: var(--surface);
