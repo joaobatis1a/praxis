@@ -18,6 +18,8 @@ export interface Procedure {
   completedStepIds: string[]
   videoUrl?: string
   videoName?: string
+  /** optional link (Drive, YouTube, etc.) shown alongside — or instead of — an uploaded video */
+  externalUrl?: string
   videoWatched: boolean
   completed: boolean
   completedAt?: string

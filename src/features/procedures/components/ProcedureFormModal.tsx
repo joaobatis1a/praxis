@@ -22,6 +22,7 @@ export interface ProcedureFormValues {
   videoName?: string
   /** only set when the user picks a new file in this session — absent means "keep existing video" on edit */
   videoFile?: File
+  externalUrl?: string
 }
 
 interface ProcedureFormModalProps {
@@ -40,6 +41,7 @@ const emptyForm: ProcedureFormValues = {
   steps: [''],
   videoUrl: undefined,
   videoName: undefined,
+  externalUrl: undefined,
 }
 
 export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: ProcedureFormModalProps) {
@@ -205,15 +207,9 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text-primary">
-            Vídeo do passo a passo <span className="font-normal text-text-muted">(opcional)</span>
+            Arquivo de apoio <span className="font-normal text-text-muted">(opcional)</span>
           </label>
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/*"
-            className="hidden"
-            onChange={(e) => handleVideoChange(e.target.files?.[0])}
-          />
+          <input ref={videoInputRef} type="file" className="hidden" onChange={(e) => handleVideoChange(e.target.files?.[0])} />
           {form.videoName ? (
             <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5">
               <span className="flex min-w-0 items-center gap-2 truncate text-sm text-text-primary">
@@ -223,7 +219,7 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
               <button
                 type="button"
                 onClick={removeVideo}
-                aria-label="Remover vídeo"
+                aria-label="Remover arquivo"
                 className="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-text-primary"
               >
                 <X size={14} />
@@ -236,9 +232,26 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
               className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border-strong bg-surface py-6 text-text-muted transition-colors hover:border-primary hover:text-primary"
             >
               <Video size={20} />
-              <span className="text-sm">Clique para enviar um vídeo</span>
+              <span className="text-sm">Clique para fazer upload de um arquivo</span>
             </button>
           )}
+          <p className="text-xs text-text-muted">
+            Vídeo, imagem e PDF ficam disponíveis para visualizar direto na página do procedimento. Outros tipos ficam salvos para download.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-text-primary">
+            Link externo <span className="font-normal text-text-muted">(opcional)</span>
+          </label>
+          <input
+            type="url"
+            value={form.externalUrl ?? ''}
+            onChange={(e) => setForm({ ...form, externalUrl: e.target.value })}
+            className="h-10 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+            placeholder="https://drive.google.com/... ou https://youtube.com/..."
+          />
+          <p className="text-xs text-text-muted">Útil para vídeos grandes demais para o upload direto.</p>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">

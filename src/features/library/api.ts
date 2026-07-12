@@ -9,6 +9,11 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 let docs = [...documents]
 let tree: FolderNode[] = structuredClone(initialTree)
 
+const FILE_BUCKET = 'library-files'
+const SIGNED_URL_TTL = 60 * 60
+/** Only these types get a real uploaded file — browsers can't render doc/sheet inline reliably. */
+const UPLOADABLE_TYPES: DocType[] = ['video', 'image', 'pdf']
+
 interface FolderRow {
   id: string
   parent_id: string | null
@@ -22,6 +27,9 @@ interface DocumentRow {
   type: DocType
   author: string
   updated_at: string
+  file_path: string | null
+  file_name: string | null
+  external_url: string | null
 }
 
 interface VersionRow {
@@ -55,6 +63,46 @@ async function fetchFavoriteIds(): Promise<Set<string>> {
   return new Set((data as { document_id: string }[]).map((r) => r.document_id))
 }
 
+async function fetchOwnCompanyId(): Promise<string> {
+  const { data, error } = await supabase!.from('companies').select('id').single()
+  if (error || !data) throw new Error('Não foi possível carregar a empresa.')
+  return (data as { id: string }).id
+}
+
+async function uploadFile(documentId: string, file: File): Promise<{ path: string; name: string }> {
+  const companyId = await fetchOwnCompanyId()
+  const ext = file.name.split('.').pop()
+  const path = `${companyId}/${documentId}-${Date.now()}${ext ? `.${ext}` : ''}`
+  const { error } = await supabase!.storage.from(FILE_BUCKET).upload(path, file, { contentType: file.type })
+  if (error) throw new Error(`Não foi possível enviar o arquivo: ${error.message}`)
+  return { path, name: file.name }
+}
+
+async function deleteFile(path: string) {
+  await supabase!.storage.from(FILE_BUCKET).remove([path])
+}
+
+async function rowToDocument(row: DocumentRow, history: DocVersion[], favorite: boolean): Promise<LibraryDocument> {
+  let fileUrl: string | undefined
+  if (row.file_path) {
+    const { data } = await supabase!.storage.from(FILE_BUCKET).createSignedUrl(row.file_path, SIGNED_URL_TTL)
+    fileUrl = data?.signedUrl
+  }
+  return {
+    id: row.id,
+    title: row.title,
+    type: row.type,
+    author: row.author,
+    updatedAt: row.updated_at,
+    folderId: row.folder_id ?? undefined,
+    favorite,
+    history,
+    fileUrl,
+    fileName: row.file_name ?? undefined,
+    externalUrl: row.external_url ?? undefined,
+  }
+}
+
 async function fetchDocumentById(id: string): Promise<LibraryDocument> {
   const [{ data: row, error }, { data: versionRows }, favoriteIds] = await Promise.all([
     supabase!.from('library_documents').select('*').eq('id', id).single(),
@@ -62,23 +110,13 @@ async function fetchDocumentById(id: string): Promise<LibraryDocument> {
     fetchFavoriteIds(),
   ])
   if (error || !row) throw new Error('Documento não encontrado.')
-  const r = row as DocumentRow
   const history: DocVersion[] = ((versionRows as VersionRow[] | null) ?? []).map((v) => ({
     version: v.version,
     date: v.date,
     author: v.author,
     note: v.note,
   }))
-  return {
-    id: r.id,
-    title: r.title,
-    type: r.type,
-    author: r.author,
-    updatedAt: r.updated_at,
-    folderId: r.folder_id ?? undefined,
-    favorite: favoriteIds.has(r.id),
-    history,
-  }
+  return rowToDocument(row as DocumentRow, history, favoriteIds.has(id))
 }
 
 export async function getFolderTree(): Promise<FolderNode[]> {
@@ -105,16 +143,9 @@ export async function listDocuments(): Promise<LibraryDocument[]> {
       list.push({ version: row.version, date: row.date, author: row.author, note: row.note })
       versionsByDoc.set(row.document_id, list)
     }
-    return (docRows as DocumentRow[]).map((row) => ({
-      id: row.id,
-      title: row.title,
-      type: row.type,
-      author: row.author,
-      updatedAt: row.updated_at,
-      folderId: row.folder_id ?? undefined,
-      favorite: favoriteIds.has(row.id),
-      history: versionsByDoc.get(row.id) ?? [],
-    }))
+    return Promise.all(
+      (docRows as DocumentRow[]).map((row) => rowToDocument(row, versionsByDoc.get(row.id) ?? [], favoriteIds.has(row.id))),
+    )
   }
   return delay([...docs])
 }
@@ -246,13 +277,21 @@ export interface CreateDocumentInput {
   /** omit to create an unfiled document, visible only in "Todos os documentos" */
   folderId?: string | null
   author: string
+  file?: File
+  externalUrl?: string
 }
 
 export async function createDocument(input: CreateDocumentInput): Promise<LibraryDocument> {
   if (isSupabase) {
     const { data: doc, error } = await supabase!
       .from('library_documents')
-      .insert({ title: input.title, type: input.type, folder_id: input.folderId ?? null, author: input.author })
+      .insert({
+        title: input.title,
+        type: input.type,
+        folder_id: input.folderId ?? null,
+        author: input.author,
+        external_url: input.externalUrl || null,
+      })
       .select()
       .single()
     if (error || !doc) throw new Error('Não foi possível criar o documento.')
@@ -264,6 +303,11 @@ export async function createDocument(input: CreateDocumentInput): Promise<Librar
       note: 'Documento criado.',
     })
     if (versionError) throw new Error('Não foi possível registrar a versão inicial.')
+    if (input.file && UPLOADABLE_TYPES.includes(input.type)) {
+      const { path, name } = await uploadFile(row.id, input.file)
+      const { error: fileError } = await supabase!.from('library_documents').update({ file_path: path, file_name: name }).eq('id', row.id)
+      if (fileError) throw new Error('Não foi possível salvar o arquivo do documento.')
+    }
     return fetchDocumentById(row.id)
   }
   const newDoc: LibraryDocument = {
@@ -282,8 +326,11 @@ export async function createDocument(input: CreateDocumentInput): Promise<Librar
 
 export async function deleteDocument(id: string): Promise<void> {
   if (isSupabase) {
+    const { data: current } = await supabase!.from('library_documents').select('file_path').eq('id', id).single()
+    const filePath = (current as { file_path: string | null } | null)?.file_path
     const { error } = await supabase!.from('library_documents').delete().eq('id', id)
     if (error) throw new Error('Não foi possível remover o documento.')
+    if (filePath) await deleteFile(filePath)
     return
   }
   docs = docs.filter((d) => d.id !== id)
@@ -293,14 +340,37 @@ export async function deleteDocument(id: string): Promise<void> {
 export interface UpdateDocumentInput {
   title: string
   type: DocType
+  fileName?: string
+  file?: File
+  externalUrl?: string
 }
 
 export async function updateDocument(id: string, input: UpdateDocumentInput): Promise<LibraryDocument> {
   if (isSupabase) {
-    const { error } = await supabase!
-      .from('library_documents')
-      .update({ title: input.title, type: input.type, updated_at: new Date().toISOString().slice(0, 10) })
-      .eq('id', id)
+    const { data: current, error: fetchError } = await supabase!.from('library_documents').select('file_path').eq('id', id).single()
+    if (fetchError || !current) throw new Error('Documento não encontrado.')
+    const currentRow = current as { file_path: string | null }
+
+    const payload: Record<string, unknown> = {
+      title: input.title,
+      type: input.type,
+      external_url: input.externalUrl || null,
+      updated_at: new Date().toISOString().slice(0, 10),
+    }
+
+    if (input.file && UPLOADABLE_TYPES.includes(input.type)) {
+      const { path, name } = await uploadFile(id, input.file)
+      if (currentRow.file_path) await deleteFile(currentRow.file_path)
+      payload.file_path = path
+      payload.file_name = name
+    } else if (!input.fileName || !UPLOADABLE_TYPES.includes(input.type)) {
+      if (currentRow.file_path) await deleteFile(currentRow.file_path)
+      payload.file_path = null
+      payload.file_name = null
+    }
+    // else: fileName is set, type is still uploadable, no new file chosen — existing file stays untouched
+
+    const { error } = await supabase!.from('library_documents').update(payload).eq('id', id)
     if (error) throw new Error('Não foi possível atualizar o documento.')
     return fetchDocumentById(id)
   }

@@ -36,9 +36,14 @@ export function UserFormModal({ open, onClose, onSubmit, initialData }: UserForm
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await onSubmit(form)
-    setSaving(false)
-    onClose()
+    try {
+      await onSubmit(form)
+      onClose()
+    } catch {
+      // the parent already surfaced the error via toast — keep the modal open so the user can retry
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
