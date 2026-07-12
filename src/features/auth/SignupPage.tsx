@@ -79,9 +79,10 @@ export function SignupPage() {
           transition={{ duration: 0.5 }}
           className="relative z-10 mx-auto w-full max-w-sm"
         >
-          <Link to="/" className="text-lg font-bold text-white">
+          <Link to="/" className="font-brand text-lg font-bold text-white">
             Praxis
           </Link>
+          <p className="mt-1 text-xs text-white/40">Práxis: da ação à execução.</p>
 
           {step === 'choice' && (
             <>

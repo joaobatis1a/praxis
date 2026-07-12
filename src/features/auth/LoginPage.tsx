@@ -53,9 +53,10 @@ export function LoginPage() {
           transition={{ duration: 0.5 }}
           className="relative z-10 mx-auto w-full max-w-sm"
         >
-          <Link to="/" className="text-lg font-bold text-white">
+          <Link to="/" className="font-brand text-lg font-bold text-white">
             Praxis
           </Link>
+          <p className="mt-1 text-xs text-white/40">Práxis: da ação à execução.</p>
 
           <h1 className="mt-8 text-2xl font-bold text-white">Bem-vindo de volta</h1>
           <p className="mt-1 text-sm text-white/50">Entre para acessar sua conta.</p>

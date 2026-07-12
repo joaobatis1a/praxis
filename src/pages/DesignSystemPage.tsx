@@ -58,7 +58,7 @@ export function DesignSystemPage() {
         sections={sections}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        header={<span className="text-lg font-bold text-text-primary">Praxis</span>}
+        header={<span className="font-brand text-lg font-bold text-text-primary">Praxis</span>}
         footer={<span className="px-3 text-xs text-text-muted">v0.1 · design system</span>}
       />
 
