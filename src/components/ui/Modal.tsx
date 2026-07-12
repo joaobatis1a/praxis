@@ -11,9 +11,11 @@ export interface ModalProps {
   description?: string
   children?: ReactNode
   className?: string
+  /** Extra button(s) rendered next to the close button, guaranteed to align with it (e.g. a favorite toggle). */
+  headerAction?: ReactNode
 }
 
-export function Modal({ open, onClose, title, description, children, className }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, className, headerAction }: ModalProps) {
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -53,21 +55,24 @@ export function Modal({ open, onClose, title, description, children, className }
               className,
             )}
           >
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar"
-              className="absolute right-4 top-4 z-10 rounded-md p-1 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
-            >
-              <X size={18} />
-            </button>
+            <div className="absolute right-4 top-4 z-10 flex items-center gap-1">
+              {headerAction}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Fechar"
+                className="rounded-md p-1 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
               {title && (
-                <h2 id="modal-title" className="pr-8 text-lg font-semibold text-text-primary">
+                <h2 id="modal-title" className="pr-16 text-lg font-semibold text-text-primary">
                   {title}
                 </h2>
               )}
-              {description && <p className="mt-1 pr-8 text-sm text-text-muted">{description}</p>}
+              {description && <p className="mt-1 pr-16 text-sm text-text-muted">{description}</p>}
               <div className={cn(title || description ? 'mt-4' : undefined)}>{children}</div>
             </div>
           </motion.div>
