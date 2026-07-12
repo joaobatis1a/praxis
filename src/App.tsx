@@ -6,6 +6,8 @@ import { DesignSystemPage } from './pages/DesignSystemPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
 import { AppLayout } from './features/dashboard/AppLayout'
 import { DashboardPage } from './features/dashboard/DashboardPage'
+import { UsersPage } from './features/users/UsersPage'
+import { RequireRole } from './features/auth/RequireRole'
 
 function App() {
   return (
@@ -17,8 +19,13 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/usuarios" element={<ComingSoonPage title="Gestão de Usuários" />} />
-          <Route path="/cargos" element={<ComingSoonPage title="Cargos e Permissões" />} />
+
+          <Route element={<RequireRole roles={['admin', 'gestor']} />}>
+            <Route path="/usuarios" element={<UsersPage />} />
+          </Route>
+          <Route element={<RequireRole roles={['admin']} />}>
+            <Route path="/cargos" element={<ComingSoonPage title="Cargos e Permissões" />} />
+          </Route>
           <Route path="/biblioteca" element={<ComingSoonPage title="Biblioteca de Conhecimento" />} />
           <Route path="/procedimentos" element={<ComingSoonPage title="Procedimentos Operacionais" />} />
           <Route path="/treinamentos" element={<ComingSoonPage title="Treinamentos" />} />
