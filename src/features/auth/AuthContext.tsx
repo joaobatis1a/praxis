@@ -8,6 +8,7 @@ interface AuthContextValue {
   isAuthenticating: boolean
   error: string | null
   login: (email: string, password: string) => Promise<AuthUser>
+  setSessionUser: (user: AuthUser) => void
   logout: () => void
 }
 
@@ -50,13 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function setSessionUser(authUser: AuthUser) {
+    setUser(authUser)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
+  }
+
   function logout() {
     setUser(null)
     localStorage.removeItem(STORAGE_KEY)
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticating, error, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticating, error, login, setSessionUser, logout }}>
       {children}
     </AuthContext.Provider>
   )

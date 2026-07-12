@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { LandingPage } from './features/landing/LandingPage'
 import { LoginPage } from './features/auth/LoginPage'
+import { SignupPage } from './features/auth/SignupPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { DesignSystemPage } from './pages/DesignSystemPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
@@ -15,6 +16,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/design-system" element={<DesignSystemPage />} />
 
       <Route element={<ProtectedRoute />}>
