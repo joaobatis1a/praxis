@@ -6,6 +6,7 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 }
 
 let notifications: AppNotification[] = structuredClone(initialNotifications)
+let disabledTypesByUser: Record<string, NotificationType[]> = {}
 
 export interface NotifyInput {
   type: NotificationType
@@ -45,11 +46,22 @@ function isRelevant(n: AppNotification, user: NotificationRecipient) {
 }
 
 export function listNotifications(user: NotificationRecipient): Promise<(AppNotification & { read: boolean })[]> {
+  const disabled = disabledTypesByUser[user.id] ?? []
   const relevant = notifications
-    .filter((n) => isRelevant(n, user))
+    .filter((n) => isRelevant(n, user) && !disabled.includes(n.type))
     .map((n) => ({ ...n, read: n.readBy.includes(user.id) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   return delay(relevant)
+}
+
+export function getDisabledTypes(userId: string): Promise<NotificationType[]> {
+  return delay(disabledTypesByUser[userId] ?? [])
+}
+
+export function setTypeEnabled(userId: string, type: NotificationType, enabled: boolean): Promise<NotificationType[]> {
+  const current = disabledTypesByUser[userId] ?? []
+  disabledTypesByUser[userId] = enabled ? current.filter((t) => t !== type) : [...new Set([...current, type])]
+  return delay(disabledTypesByUser[userId])
 }
 
 export function markAsRead(id: string, userId: string): Promise<void> {
