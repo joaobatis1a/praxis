@@ -25,3 +25,6 @@ dist-ssr
 
 # local verification screenshots
 .tmp-shots
+
+# Vercel CLI project link (per-machine, not shared)
+.vercel
