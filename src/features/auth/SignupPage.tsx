@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, Building2, KeyRound, Loader2 } from 'lucide-react'
 import { Button, Input } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
 import { signupCompanyRequest, signupWithCodeRequest } from './api'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
@@ -235,16 +236,18 @@ export function SignupPage() {
                 </Button>
               </form>
 
-              <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Código de demonstração</p>
-                <button
-                  type="button"
-                  onClick={() => setCodeForm({ ...codeForm, code: 'PRAXIS2026' })}
-                  className="mt-1 text-sm text-white/60 hover:text-[#6d94fa]"
-                >
-                  PRAXIS2026
-                </button>
-              </div>
+              {!isSupabase && (
+                <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Código de demonstração</p>
+                  <button
+                    type="button"
+                    onClick={() => setCodeForm({ ...codeForm, code: 'PRAXIS2026' })}
+                    className="mt-1 text-sm text-white/60 hover:text-[#6d94fa]"
+                  >
+                    PRAXIS2026
+                  </button>
+                </div>
+              )}
             </>
           )}
         </motion.div>
