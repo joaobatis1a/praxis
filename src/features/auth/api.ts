@@ -27,10 +27,21 @@ function profileToAuthUser(profile: ProfileRow): AuthUser {
   }
 }
 
-async function fetchOwnProfile(userId: string): Promise<AuthUser> {
+async function isCompanyActive(companyId: string): Promise<boolean> {
+  const { data, error } = await supabase!.from('companies').select('status').eq('id', companyId).single()
+  if (error || !data) return false
+  return (data as { status: string }).status !== 'inativo'
+}
+
+export async function fetchOwnProfile(userId: string): Promise<AuthUser> {
   const { data, error } = await supabase!.from('profiles').select('*').eq('id', userId).single()
   if (error || !data) throw new Error('Não foi possível carregar seu perfil.')
-  return profileToAuthUser(data as ProfileRow)
+  const profile = data as ProfileRow
+  if (!(await isCompanyActive(profile.company_id))) {
+    await supabase!.auth.signOut()
+    throw new Error('Sua empresa foi desativada. Entre em contato com o suporte.')
+  }
+  return profileToAuthUser(profile)
 }
 
 export async function loginRequest(email: string, password: string): Promise<AuthUser> {
@@ -128,13 +139,16 @@ export async function signupWithCodeRequest(input: SignupWithCodeInput): Promise
       .single()
     if (redeemError || !redeemed) throw new Error('Código inválido. Peça um novo código para o seu gestor.')
 
+    const redeemedRow = redeemed as { company_id: string; role: Role; department: string | null; company_status: string }
+    if (redeemedRow.company_status === 'inativo') {
+      throw new Error('Este convite pertence a uma empresa desativada.')
+    }
+
     const { data: signUpData, error: signUpError } = await supabase!.auth.signUp({
       email: input.email,
       password: input.password,
     })
     if (signUpError || !signUpData.user) throw new Error(signUpError?.message ?? 'Não foi possível criar sua conta.')
-
-    const redeemedRow = redeemed as { company_id: string; role: Role; department: string | null }
     const { data: profile, error: profileError } = await supabase!
       .from('profiles')
       .insert({
