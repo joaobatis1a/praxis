@@ -3,13 +3,11 @@ import { motion } from 'framer-motion'
 import { Building2, User } from 'lucide-react'
 import { Button, Modal, Select } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
-import { departments } from '../../../mocks/procedures'
 import type { NoticeRecipientType } from '../../../mocks/notices'
 import type { TeamMember } from '../../../mocks/teamMembers'
+import { listDepartments } from '../../departments/api'
 import { listProcedures } from '../../procedures/api'
 import { listUsers } from '../../users/api'
-
-const departmentOptions = departments.map((d) => ({ value: d, label: d }))
 
 export interface NoticeFormValues {
   procedureId: string
@@ -35,6 +33,7 @@ export function NoticeFormModal({ open, onClose, onSubmit, currentUserId }: Noti
   const [recipientId, setRecipientId] = useState('')
   const [saving, setSaving] = useState(false)
   const [members, setMembers] = useState<TeamMember[]>([])
+  const [departmentOptions, setDepartmentOptions] = useState<{ value: string; label: string }[]>([])
 
   const memberOptions = members
     .filter((m) => m.id !== currentUserId && m.status === 'ativo')
@@ -48,6 +47,7 @@ export function NoticeFormModal({ open, onClose, onSubmit, currentUserId }: Noti
       setProcedureId(options[0]?.value ?? '')
     })
     listUsers().then(setMembers)
+    listDepartments().then((data) => setDepartmentOptions(data.map((d) => ({ value: d, label: d }))))
     setDescription('')
     setRecipientType('user')
     setRecipientId('')

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Search } from 'lucide-react'
 import type { Procedure } from '../../mocks/procedures'
-import { departments } from '../../mocks/procedures'
 import { Button, ConfirmDialog, Select, Skeleton, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
+import { listDepartments } from '../departments/api'
 import { completeProcedure, createProcedure, deleteProcedure, listProcedures, toggleStep, toggleVideoWatched, updateProcedure } from './api'
 import { ProcedureCard } from './components/ProcedureCard'
 import { ProcedureDetailModal } from './components/ProcedureDetailModal'
@@ -13,7 +13,6 @@ import { ProcedureFormModal, type ProcedureFormValues } from './components/Proce
 
 type FormState = { mode: 'create' } | { mode: 'edit'; procedure: Procedure } | null
 
-const departmentOptions = [{ value: 'all', label: 'Todos os departamentos' }, ...departments.map((d) => ({ value: d, label: d }))]
 const statusOptions = [
   { value: 'all', label: 'Todos os status' },
   { value: 'publicado', label: 'Publicado' },
@@ -28,6 +27,7 @@ export function ProceduresPage() {
   const [search, setSearch] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [departmentOptions, setDepartmentOptions] = useState([{ value: 'all', label: 'Todos os departamentos' }])
   const [openProcedure, setOpenProcedure] = useState<Procedure | null>(null)
   const [formState, setFormState] = useState<FormState>(null)
   const [deleting, setDeleting] = useState<Procedure | null>(null)
@@ -37,6 +37,9 @@ export function ProceduresPage() {
     listProcedures().then((data) => {
       setProcedures(data)
       setLoading(false)
+    })
+    listDepartments().then((data) => {
+      setDepartmentOptions([{ value: 'all', label: 'Todos os departamentos' }, ...data.map((d) => ({ value: d, label: d }))])
     })
   }, [])
 

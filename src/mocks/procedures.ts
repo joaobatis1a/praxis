@@ -26,8 +26,6 @@ export interface Procedure {
   completedBy?: string
 }
 
-export const departments = ['Diretoria', 'Operações', 'Suporte', 'Comercial', 'Financeiro', 'Recursos Humanos']
-
 export const procedures: Procedure[] = [
   {
     id: 'proc-1',
