@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button, Checkbox, Input } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
@@ -120,28 +121,30 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
-              Contas de demonstração
-            </p>
-            <ul className="mt-2 space-y-1">
-              {demoAccounts.map((account) => (
-                <li key={account.email}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail(account.email)
-                      setPassword('senha123')
-                    }}
-                    className="text-sm text-white/60 hover:text-[#6d94fa]"
-                  >
-                    <span className="font-medium">{account.label}:</span> {account.email}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-xs text-white/40">Senha para todas: senha123</p>
-          </div>
+          {!isSupabase && (
+            <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                Contas de demonstração
+              </p>
+              <ul className="mt-2 space-y-1">
+                {demoAccounts.map((account) => (
+                  <li key={account.email}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail(account.email)
+                        setPassword('senha123')
+                      }}
+                      className="text-sm text-white/60 hover:text-[#6d94fa]"
+                    >
+                      <span className="font-medium">{account.label}:</span> {account.email}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-white/40">Senha para todas: senha123</p>
+            </div>
+          )}
         </motion.div>
       </div>
 
