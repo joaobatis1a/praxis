@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Bell, Building2, Save, Trash2, User as UserIcon } from 'lucide-react'
+import { AlertTriangle, Bell, Building2, Save, Tags, Trash2, User as UserIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, ConfirmDialog, Input, Skeleton, Switch, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
@@ -9,6 +9,7 @@ import type { TeamMember } from '../../mocks/teamMembers'
 import type { NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
+import { addDepartment, deleteDepartment, listDepartments } from '../departments/api'
 import { deleteUser, listUsers } from '../users/api'
 import { getCompany, getNotificationPreferences, setNotificationPreference, updateCompany, updateProfile } from './api'
 
@@ -58,6 +59,12 @@ export function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
+  const [departmentsList, setDepartmentsList] = useState<string[]>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(true)
+  const [newDepartment, setNewDepartment] = useState('')
+  const [savingDepartment, setSavingDepartment] = useState(false)
+  const [removingDepartment, setRemovingDepartment] = useState<string | null>(null)
+
   useEffect(() => {
     setName(user?.name ?? '')
   }, [user])
@@ -80,6 +87,14 @@ export function SettingsPage() {
   useEffect(() => {
     listUsers().then(setAllMembers)
   }, [])
+
+  useEffect(() => {
+    if (user?.role !== 'admin') return
+    listDepartments().then((data) => {
+      setDepartmentsList(data)
+      setLoadingDepartments(false)
+    })
+  }, [user])
 
   const visibleTypes = (Object.keys(notificationTypeInfo) as NotificationType[]).filter((type) => {
     const roles = notificationTypeInfo[type].roles
@@ -110,6 +125,35 @@ export function SettingsPage() {
     await updateCompany({ name: companyName.trim() })
     setSavingCompany(false)
     toast('Dados da empresa atualizados.')
+  }
+
+  async function handleAddDepartment(e: FormEvent) {
+    e.preventDefault()
+    if (!newDepartment.trim()) return
+    setSavingDepartment(true)
+    try {
+      const updated = await addDepartment(newDepartment)
+      setDepartmentsList(updated)
+      setNewDepartment('')
+      toast('Departamento adicionado.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível adicionar o departamento.', 'error')
+    } finally {
+      setSavingDepartment(false)
+    }
+  }
+
+  async function handleRemoveDepartment(name: string) {
+    setRemovingDepartment(name)
+    try {
+      const updated = await deleteDepartment(name)
+      setDepartmentsList(updated)
+      toast('Departamento removido.', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível remover o departamento.', 'error')
+    } finally {
+      setRemovingDepartment(null)
+    }
   }
 
   async function handleDeleteAccount() {
@@ -205,6 +249,61 @@ export function SettingsPage() {
                   </Button>
                 </div>
               </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {user.role === 'admin' && (
+          <motion.div variants={staggerItem}>
+            <Card>
+              <div className="flex items-center gap-2">
+                <Tags size={18} className="text-primary" />
+                <h2 className="text-base font-semibold text-text-primary">Departamentos</h2>
+              </div>
+              <p className="mt-1 text-sm text-text-muted">Defina os setores usados ao cadastrar colaboradores, procedimentos e avisos.</p>
+
+              {loadingDepartments ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-7 w-24" />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {departmentsList.map((dept) => (
+                    <span
+                      key={dept}
+                      className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface py-0.5 pl-2.5 pr-1.5 text-xs font-semibold text-text-secondary"
+                    >
+                      {dept}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDepartment(dept)}
+                        disabled={removingDepartment === dept}
+                        aria-label={`Remover ${dept}`}
+                        className="rounded-full p-0.5 text-text-muted transition-colors hover:bg-error-bg hover:text-error disabled:pointer-events-none disabled:opacity-50"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  {departmentsList.length === 0 && <p className="text-sm text-text-muted">Nenhum departamento cadastrado.</p>}
+                </div>
+              )}
+
+              <form onSubmit={handleAddDepartment} className="mt-4 flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    value={newDepartment}
+                    onChange={(e) => setNewDepartment(e.target.value)}
+                    placeholder="Ex: Marketing"
+                    aria-label="Novo departamento"
+                  />
+                </div>
+                <Button type="submit" variant="secondary" disabled={savingDepartment || !newDepartment.trim()}>
+                  {savingDepartment ? 'Adicionando...' : 'Adicionar'}
+                </Button>
+              </form>
             </Card>
           </motion.div>
         )}

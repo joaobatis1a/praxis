@@ -1,10 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Button, Input, Modal, Select } from '../../../components/ui'
 import { isSupabase } from '../../../lib/dataSource'
+import { listDepartments } from '../../departments/api'
 import type { Role } from '../../auth/types'
 import type { CreateUserInput } from '../api'
-
-const departments = ['Diretoria', 'Operações', 'Comercial', 'Financeiro', 'Suporte', 'Recursos Humanos']
 
 const roleOptions: { value: Role; label: string }[] = [
   { value: 'admin', label: 'Administrador' },
@@ -19,11 +18,12 @@ interface UserFormModalProps {
   initialData?: CreateUserInput
 }
 
-const emptyForm: CreateUserInput = { name: '', email: '', role: 'colaborador', department: departments[0] }
+const emptyForm: CreateUserInput = { name: '', email: '', role: 'colaborador', department: '' }
 
 export function UserFormModal({ open, onClose, onSubmit, initialData }: UserFormModalProps) {
   const [form, setForm] = useState<CreateUserInput>(initialData ?? emptyForm)
   const [saving, setSaving] = useState(false)
+  const [departments, setDepartments] = useState<string[]>([])
   const isEditing = !!initialData
   // Supabase mode can't create an account directly (no password to set for someone else) —
   // creating instead generates an invite code, so name/email aren't collected here.
@@ -32,6 +32,14 @@ export function UserFormModal({ open, onClose, onSubmit, initialData }: UserForm
   useEffect(() => {
     if (open) setForm(initialData ?? emptyForm)
   }, [open, initialData])
+
+  useEffect(() => {
+    if (!open) return
+    listDepartments().then((data) => {
+      setDepartments(data)
+      setForm((prev) => (prev.department ? prev : { ...prev, department: data[0] ?? '' }))
+    })
+  }, [open])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()

@@ -2,14 +2,13 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GripVertical, Plus, Video, X } from 'lucide-react'
 import { Button, Input, Modal, Select } from '../../../components/ui'
-import { departments, type ProcedureStatus } from '../../../mocks/procedures'
+import { listDepartments } from '../../departments/api'
+import type { ProcedureStatus } from '../../../mocks/procedures'
 
 const statusOptions = [
   { value: 'publicado', label: 'Publicado' },
   { value: 'rascunho', label: 'Rascunho' },
 ]
-
-const departmentOptions = departments.map((d) => ({ value: d, label: d }))
 
 export interface ProcedureFormValues {
   title: string
@@ -34,7 +33,7 @@ interface ProcedureFormModalProps {
 
 const emptyForm: ProcedureFormValues = {
   title: '',
-  department: departments[0],
+  department: '',
   responsible: '',
   status: 'rascunho',
   estimatedMinutes: 10,
@@ -48,12 +47,22 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
   const isEditing = !!initialData
   const [form, setForm] = useState<ProcedureFormValues>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [departmentOptions, setDepartmentOptions] = useState<{ value: string; label: string }[]>([])
   const videoInputRef = useRef<HTMLInputElement>(null)
   const createdObjectUrl = useRef<string | null>(null)
 
   useEffect(() => {
     if (open) setForm(initialData ?? emptyForm)
   }, [open, initialData])
+
+  useEffect(() => {
+    if (!open) return
+    listDepartments().then((data) => {
+      const options = data.map((d) => ({ value: d, label: d }))
+      setDepartmentOptions(options)
+      setForm((prev) => (prev.department ? prev : { ...prev, department: options[0]?.value ?? '' }))
+    })
+  }, [open])
 
   useEffect(() => {
     return () => {
