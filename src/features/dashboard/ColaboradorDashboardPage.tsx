@@ -30,11 +30,11 @@ export function ColaboradorDashboardPage() {
 
       {!data ? (
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <Skeleton className="h-56" />
             <Skeleton className="h-48" />
           </div>
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <Skeleton className="h-48" />
             <Skeleton className="h-40" />
           </div>
@@ -46,7 +46,7 @@ export function ColaboradorDashboardPage() {
           animate="show"
           className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]"
         >
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <motion.div variants={staggerItem}>
               <Card>
                 <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export function ColaboradorDashboardPage() {
             </motion.div>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <motion.div variants={staggerItem}>
               <Card className="flex flex-col items-center text-center">
                 <p className="text-sm font-medium text-text-secondary">Sua evolução geral</p>

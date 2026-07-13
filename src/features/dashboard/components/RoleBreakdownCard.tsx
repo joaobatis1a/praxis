@@ -14,7 +14,7 @@ export function RoleBreakdownCard({ breakdown }: { breakdown: Record<Role, numbe
   const total = roleOrder.reduce((sum, role) => sum + breakdown[role], 0) || 1
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <h3 className="text-base font-semibold text-text-primary">Colaboradores por cargo</h3>
       <div className="mt-4 space-y-3">
         {roleOrder.map((role) => {
