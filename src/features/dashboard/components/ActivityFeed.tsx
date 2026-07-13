@@ -56,7 +56,7 @@ export function ActivityFeed({ activity }: { activity: Activity[] }) {
   const visible = activity.slice(0, VISIBLE_COUNT)
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-text-primary">Últimas atividades</h3>
         {activity.length > VISIBLE_COUNT && (

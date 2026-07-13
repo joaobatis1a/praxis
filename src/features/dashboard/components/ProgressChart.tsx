@@ -25,6 +25,7 @@ export function ProgressChart({ data }: ProgressChartProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+      className="min-w-0"
     >
       <Card>
         <div className="flex items-center justify-between">
