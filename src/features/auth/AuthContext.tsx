@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
-import { loginRequest } from './api'
+import { fetchOwnProfile, loginRequest } from './api'
 import type { AuthUser } from './types'
 
 interface AuthContextValue {
@@ -28,16 +28,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isSupabase) {
       supabase!.auth.getSession().then(async ({ data }) => {
         if (data.session?.user) {
-          const { data: profile } = await supabase!.from('profiles').select('*').eq('id', data.session.user.id).single()
-          if (profile) {
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              companyId: profile.company_id,
-              department: profile.department ?? undefined,
-            })
+          try {
+            const authUser = await fetchOwnProfile(data.session.user.id)
+            setUser(authUser)
+          } catch {
+            // profile missing or company deactivated — fetchOwnProfile already signs out when needed
           }
         }
         setIsLoading(false)
