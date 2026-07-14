@@ -61,3 +61,9 @@ export interface UpdateProfileInput {
 export function updateProfile(userId: string, input: UpdateProfileInput) {
   return updateUser(userId, input as CreateUserInput)
 }
+
+/** Supabase mode only — deletes the company and every member's real Auth account, not just their profile. */
+export async function deleteCompany(companyId: string) {
+  const { error } = await supabase!.rpc('delete_company_and_users', { target_company_id: companyId })
+  if (error) throw new Error('Não foi possível excluir a empresa.')
+}
