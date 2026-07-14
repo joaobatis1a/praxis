@@ -60,8 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null)
           setPendingGoogleUser(null)
         } else if (event === 'SIGNED_IN' && session?.user) {
-          // password login already sets the user itself — this also covers the Google OAuth redirect-back case
-          handleSignedIn(session.user)
+          // password login/signup already handle their own profile fetch/creation inline (and are mid-flight
+          // when their own supabase.auth.signUp()/signInWithPassword() call fires this same event) — reacting
+          // here too would race their profile insert and sign the user right back out. Google OAuth is the one
+          // case with no calling function to hook into (the browser fully left and came back), so this only
+          // needs to run for that.
+          if (session.user.app_metadata?.provider === 'google') handleSignedIn(session.user)
         }
       })
       return () => subscription.subscription.unsubscribe()
