@@ -14,6 +14,7 @@ import { ProceduresPage } from './features/procedures/ProceduresPage'
 import { NoticesPage } from './features/notices/NoticesPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { SettingsPage } from './features/settings/SettingsPage'
+import { SupportPage } from './features/support/SupportPage'
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="/avisos" element={<NoticesPage />} />
           <Route path="/notificacoes" element={<NotificationsPage />} />
           <Route path="/configuracoes" element={<SettingsPage />} />
+          <Route path="/suporte" element={<SupportPage />} />
         </Route>
       </Route>
 
