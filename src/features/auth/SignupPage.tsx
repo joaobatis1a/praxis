@@ -1,25 +1,57 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, Building2, KeyRound, Loader2 } from 'lucide-react'
 import { Button, Input } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
-import { signupCompanyRequest, signupWithCodeRequest } from './api'
+import { signupCodeWithGoogle, signupCompanyRequest, signupCompanyWithGoogle, signupWithCodeRequest } from './api'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
+import { GoogleIcon } from './components/GoogleIcon'
 
 type Step = 'choice' | 'company' | 'code'
 
+const urlParams = new URLSearchParams(window.location.search)
+const initialOauthIntent = urlParams.get('oauthIntent')
+
 export function SignupPage() {
-  const [step, setStep] = useState<Step>('choice')
-  const { setSessionUser } = useAuth()
+  const [step, setStep] = useState<Step>(initialOauthIntent === 'code' ? 'code' : initialOauthIntent === 'company' ? 'company' : 'choice')
+  const { setSessionUser, user, error: authError } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [companyForm, setCompanyForm] = useState({ companyName: '', name: '', email: '', password: '' })
-  const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: '' })
+  const [companyForm, setCompanyForm] = useState({
+    companyName: urlParams.get('companyName') ?? '',
+    name: '',
+    email: '',
+    password: '',
+  })
+  const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: urlParams.get('inviteCode') ?? '' })
+
+  const displayError = error || authError
+
+  // covers the Google OAuth redirect-back landing here with a session already set
+  useEffect(() => {
+    if (user) navigate('/dashboard')
+  }, [user, navigate])
+
+  function handleCompanyGoogle() {
+    if (!companyForm.companyName.trim()) {
+      setError('Informe o nome da empresa antes de continuar com o Google.')
+      return
+    }
+    signupCompanyWithGoogle(companyForm.companyName.trim())
+  }
+
+  function handleCodeGoogle() {
+    if (!codeForm.code.trim()) {
+      setError('Informe o código da empresa antes de continuar com o Google.')
+      return
+    }
+    signupCodeWithGoogle(codeForm.code.trim())
+  }
 
   async function handleCompanySubmit(e: FormEvent) {
     e.preventDefault()
@@ -173,10 +205,10 @@ export function SignupPage() {
                   onChange={(e) => setCompanyForm({ ...companyForm, password: e.target.value })}
                 />
 
-                {error && (
+                {displayError && (
                   <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
                     <AlertCircle size={16} className="shrink-0" />
-                    {error}
+                    {displayError}
                   </div>
                 )}
 
@@ -185,6 +217,25 @@ export function SignupPage() {
                   {submitting ? 'Criando...' : 'Criar empresa'}
                 </Button>
               </form>
+
+              {isSupabase && (
+                <>
+                  <div className="mt-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="text-xs text-white/40">ou</span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCompanyGoogle}
+                    className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
+                  >
+                    <GoogleIcon />
+                    Continuar com Google
+                  </button>
+                  <p className="mt-2 text-xs text-white/40">Preencha o nome da empresa acima antes de continuar.</p>
+                </>
+              )}
             </>
           )}
 
@@ -223,10 +274,10 @@ export function SignupPage() {
                   onChange={(e) => setCodeForm({ ...codeForm, code: e.target.value })}
                 />
 
-                {error && (
+                {displayError && (
                   <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
                     <AlertCircle size={16} className="shrink-0" />
-                    {error}
+                    {displayError}
                   </div>
                 )}
 
@@ -235,6 +286,25 @@ export function SignupPage() {
                   {submitting ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
+
+              {isSupabase && (
+                <>
+                  <div className="mt-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="text-xs text-white/40">ou</span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCodeGoogle}
+                    className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
+                  >
+                    <GoogleIcon />
+                    Continuar com Google
+                  </button>
+                  <p className="mt-2 text-xs text-white/40">Preencha o código da empresa acima antes de continuar.</p>
+                </>
+              )}
 
               {!isSupabase && (
                 <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.03] p-4">

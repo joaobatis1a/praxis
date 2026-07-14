@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button, Checkbox, Input } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
+import { GoogleIcon } from './components/GoogleIcon'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 
@@ -15,12 +16,17 @@ const demoAccounts = [
 ]
 
 export function LoginPage() {
-  const { login, isAuthenticating, error } = useAuth()
+  const { login, loginWithGoogle, isAuthenticating, error, user } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+
+  // covers the Google OAuth redirect-back landing here with a session already set
+  useEffect(() => {
+    if (user) navigate('/dashboard')
+  }, [user, navigate])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -120,6 +126,24 @@ export function LoginPage() {
               {isAuthenticating ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
+
+          {isSupabase && (
+            <>
+              <div className="mt-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-xs text-white/40">ou</span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+              <button
+                type="button"
+                onClick={loginWithGoogle}
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
+              >
+                <GoogleIcon />
+                Continuar com Google
+              </button>
+            </>
+          )}
 
           {!isSupabase && (
             <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.03] p-4">
