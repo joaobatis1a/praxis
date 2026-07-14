@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { LandingPage } from './features/landing/LandingPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
@@ -40,6 +40,8 @@ function App() {
           <Route path="/configuracoes" element={<SettingsPage />} />
         </Route>
       </Route>
+
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
