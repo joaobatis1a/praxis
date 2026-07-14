@@ -116,7 +116,7 @@ export async function updateUser(id: string, input: CreateUserInput) {
 
 export async function deleteUser(id: string) {
   if (isSupabase) {
-    const { error } = await supabase!.from('profiles').delete().eq('id', id)
+    const { error } = await supabase!.rpc('delete_user_and_auth', { target_user_id: id })
     if (error) throw new Error('Não foi possível remover o colaborador.')
     return
   }
