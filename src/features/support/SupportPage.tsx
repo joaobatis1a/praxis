@@ -50,7 +50,12 @@ export function SupportPage() {
                 <p className="text-sm text-text-muted">{SUPPORT_EMAIL}</p>
               </div>
             </div>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className={cn(buttonVariants({ variant: 'secondary' }), 'shrink-0')}>
+            <a
+              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${SUPPORT_EMAIL}`}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(buttonVariants({ variant: 'secondary' }), 'shrink-0')}
+            >
               Enviar e-mail
             </a>
           </Card>
