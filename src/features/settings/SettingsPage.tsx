@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Bell, Building2, Save, Tags, Trash2, User as UserIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Badge, Button, Card, ConfirmDialog, Input, Skeleton, Switch, useToast } from '../../components/ui'
+import { Badge, Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { getUserDepartment } from '../../lib/userDepartment'
 import type { TeamMember } from '../../mocks/teamMembers'
@@ -11,7 +12,7 @@ import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { addDepartment, deleteDepartment, listDepartments } from '../departments/api'
 import { deleteUser, listUsers } from '../users/api'
-import { getCompany, getNotificationPreferences, setNotificationPreference, updateCompany, updateProfile } from './api'
+import { deleteCompany, getCompany, getNotificationPreferences, setNotificationPreference, updateCompany, updateProfile } from './api'
 
 const roleLabels: Record<Role, string> = {
   admin: 'Administrador',
@@ -58,6 +59,10 @@ export function SettingsPage() {
   const [allMembers, setAllMembers] = useState<TeamMember[]>([])
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const [confirmingDeleteCompany, setConfirmingDeleteCompany] = useState(false)
+  const [deleteCompanyConfirmText, setDeleteCompanyConfirmText] = useState('')
+  const [deletingCompany, setDeletingCompany] = useState(false)
 
   const [departmentsList, setDepartmentsList] = useState<string[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(true)
@@ -164,6 +169,23 @@ export function SettingsPage() {
     toast('Sua conta foi excluída.', 'error')
     logout()
     navigate('/login')
+  }
+
+  async function handleDeleteCompany() {
+    if (!user?.companyId) return
+    setDeletingCompany(true)
+    try {
+      await deleteCompany(user.companyId)
+      toast('Empresa excluída.', 'error')
+      logout()
+      navigate('/login')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível excluir a empresa.', 'error')
+    } finally {
+      setDeletingCompany(false)
+      setConfirmingDeleteCompany(false)
+      setDeleteCompanyConfirmText('')
+    }
   }
 
   if (!user) return null
@@ -333,6 +355,18 @@ export function SettingsPage() {
                 </Button>
               </div>
             )}
+
+            {user.role === 'admin' && isSupabase && (
+              <div className="mt-4 flex flex-col items-start gap-3 border-t border-error/20 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-text-muted">
+                  Excluir a empresa apaga todos os dados e as contas de <span className="font-medium text-text-primary">todos os colaboradores</span>, não só a sua.
+                </p>
+                <Button variant="destructive" onClick={() => setConfirmingDeleteCompany(true)} className="shrink-0">
+                  <Trash2 size={16} />
+                  Excluir empresa
+                </Button>
+              </div>
+            )}
           </Card>
         </motion.div>
       </motion.div>
@@ -346,6 +380,47 @@ export function SettingsPage() {
         confirmLabel={deleting ? 'Excluindo...' : 'Excluir conta'}
         variant="destructive"
       />
+
+      <Modal
+        open={confirmingDeleteCompany}
+        onClose={() => {
+          setConfirmingDeleteCompany(false)
+          setDeleteCompanyConfirmText('')
+        }}
+        title="Excluir empresa"
+        description="Essa ação é permanente: apaga a empresa, todos os documentos, procedimentos e avisos, e a conta de login de todos os colaboradores — inclusive a sua."
+        className="max-w-sm"
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text-primary">
+              Digite <span className="font-semibold">{companyName}</span> para confirmar
+            </label>
+            <Input value={deleteCompanyConfirmText} onChange={(e) => setDeleteCompanyConfirmText(e.target.value)} />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setConfirmingDeleteCompany(false)
+                setDeleteCompanyConfirmText('')
+              }}
+              disabled={deletingCompany}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteCompany}
+              disabled={deletingCompany || deleteCompanyConfirmText.trim() !== companyName.trim()}
+            >
+              {deletingCompany ? 'Excluindo...' : 'Excluir empresa'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
