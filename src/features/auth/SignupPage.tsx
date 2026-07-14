@@ -16,7 +16,16 @@ const initialOauthIntent = new URLSearchParams(window.location.search).get('oaut
 
 export function SignupPage() {
   const [step, setStep] = useState<Step>(initialOauthIntent === 'code' ? 'code' : initialOauthIntent === 'company' ? 'company' : 'choice')
-  const { setSessionUser, user, error: authError, pendingGoogleUser, clearPendingGoogleUser } = useAuth()
+  const {
+    setSessionUser,
+    user,
+    error: authError,
+    pendingGoogleUser,
+    clearPendingGoogleUser,
+    noCompanySession,
+    clearNoCompanySession,
+    ownerNoCompany,
+  } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,15 +36,22 @@ export function SignupPage() {
   const [googleCode, setGoogleCode] = useState('')
 
   const displayError = error || authError
+  // pendingGoogleUser (fresh Google signup) and noCompanySession (logged in, no company —
+  // e.g. after "Sair da empresa") both finish the same way: pick "Criar empresa" or "Tenho um
+  // código" for an *existing* Supabase Auth user, no new account created.
+  const identity = pendingGoogleUser ?? noCompanySession
 
-  // covers the Google OAuth redirect-back landing here with a session (and profile) already set
+  // covers the Google OAuth redirect-back landing here with a session (and profile) already set,
+  // and the Praxis owner arriving here with no company (routed to Central de Suporte instead)
   useEffect(() => {
     if (user) navigate('/dashboard')
-  }, [user, navigate])
+    else if (ownerNoCompany) navigate('/suporte')
+  }, [user, ownerNoCompany, navigate])
 
   function goBack() {
     setError(null)
     if (pendingGoogleUser) clearPendingGoogleUser()
+    if (noCompanySession) clearNoCompanySession()
     window.history.replaceState({}, '', '/signup')
     setStep('choice')
   }
@@ -72,11 +88,11 @@ export function SignupPage() {
 
   async function handleFinishGoogleCompany(e: FormEvent) {
     e.preventDefault()
-    if (!pendingGoogleUser) return
+    if (!identity) return
     setSubmitting(true)
     setError(null)
     try {
-      const authUser = await finishGoogleCompanySignup(googleCompanyName.trim(), pendingGoogleUser)
+      const authUser = await finishGoogleCompanySignup(googleCompanyName.trim(), identity)
       window.history.replaceState({}, '', '/signup')
       setSessionUser(authUser)
       navigate('/dashboard')
@@ -89,11 +105,11 @@ export function SignupPage() {
 
   async function handleFinishGoogleCode(e: FormEvent) {
     e.preventDefault()
-    if (!pendingGoogleUser) return
+    if (!identity) return
     setSubmitting(true)
     setError(null)
     try {
-      const authUser = await finishGoogleCodeSignup(googleCode.trim(), pendingGoogleUser)
+      const authUser = await finishGoogleCodeSignup(googleCode.trim(), identity)
       window.history.replaceState({}, '', '/signup')
       setSessionUser(authUser)
       navigate('/dashboard')
@@ -180,20 +196,22 @@ export function SignupPage() {
                 </button>
               </div>
 
-              <p className="mt-8 text-sm text-white/50">
-                Já tem conta?{' '}
-                <Link to="/login" className="font-medium text-[#6d94fa] hover:underline">
-                  Entrar
-                </Link>
-              </p>
+              {!noCompanySession && (
+                <p className="mt-8 text-sm text-white/50">
+                  Já tem conta?{' '}
+                  <Link to="/login" className="font-medium text-[#6d94fa] hover:underline">
+                    Entrar
+                  </Link>
+                </p>
+              )}
             </>
           )}
 
-          {step === 'company' && pendingGoogleUser && (
+          {step === 'company' && identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Só falta o nome da empresa</h1>
               <p className="mt-1 text-sm text-white/50">
-                Entrando como <span className="text-white/80">{pendingGoogleUser.email}</span>. Você será o administrador.
+                Entrando como <span className="text-white/80">{identity.email}</span>. Você será o administrador.
               </p>
 
               <form onSubmit={handleFinishGoogleCompany} className="mt-6 flex flex-col gap-4">
@@ -220,7 +238,7 @@ export function SignupPage() {
             </>
           )}
 
-          {step === 'company' && !pendingGoogleUser && (
+          {step === 'company' && !identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Crie sua empresa</h1>
               <p className="mt-1 text-sm text-white/50">Você será o administrador da conta.</p>
@@ -287,11 +305,11 @@ export function SignupPage() {
             </>
           )}
 
-          {step === 'code' && pendingGoogleUser && (
+          {step === 'code' && identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Só falta o código</h1>
               <p className="mt-1 text-sm text-white/50">
-                Entrando como <span className="text-white/80">{pendingGoogleUser.email}</span>. Peça o código ao seu gestor ou administrador.
+                Entrando como <span className="text-white/80">{identity.email}</span>. Peça o código ao seu gestor ou administrador.
               </p>
 
               <form onSubmit={handleFinishGoogleCode} className="mt-6 flex flex-col gap-4">
@@ -319,7 +337,7 @@ export function SignupPage() {
             </>
           )}
 
-          {step === 'code' && !pendingGoogleUser && (
+          {step === 'code' && !identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Entre com seu código</h1>
               <p className="mt-1 text-sm text-white/50">Peça o código ao seu gestor ou administrador.</p>

@@ -2,13 +2,13 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 
 export function ProtectedRoute() {
-  const { user, ownerNoCompany, isLoading } = useAuth()
+  const { user, ownerNoCompany, noCompanySession, isLoading } = useAuth()
 
   if (isLoading) return null
-  // ownerNoCompany covers the Praxis owner with a valid session but no company profile —
-  // still gets past this gate so they can reach /suporte; company-scoped routes are further
-  // gated by RequireCompanyProfile.
-  if (!user && !ownerNoCompany) return <Navigate to="/login" replace />
+  if (user || ownerNoCompany) return <Outlet />
+  // any other authenticated-but-no-company session goes straight to the join-a-company screen
+  // instead of bouncing through /login first
+  if (noCompanySession) return <Navigate to="/signup" replace />
 
-  return <Outlet />
+  return <Navigate to="/login" replace />
 }

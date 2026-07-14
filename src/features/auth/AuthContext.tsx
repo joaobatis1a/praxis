@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { isSupabase } from '../../lib/dataSource'
 import { isPraxisOwner } from '../../lib/praxisOwner'
 import { supabase } from '../../lib/supabaseClient'
-import { fetchOwnProfile, loginRequest, loginWithGoogle, toPendingGoogleUser, type PendingGoogleUser } from './api'
+import { CompanyInactiveError, fetchOwnProfile, loginRequest, loginWithGoogle, toPendingGoogleUser, type NoCompanySession, type PendingGoogleUser } from './api'
 import type { AuthUser } from './types'
 
 interface AuthContextValue {
@@ -14,8 +14,12 @@ interface AuthContextValue {
   /** set when Google auth just succeeded but no profile exists yet — the signup page shows a mini-form to finish it */
   pendingGoogleUser: PendingGoogleUser | null
   clearPendingGoogleUser: () => void
-  /** true when a valid, authenticated session belongs to the Praxis owner but has no company profile
-   * (e.g. after using "Sair da empresa") — lets them still reach the Central de Suporte inbox. */
+  /** set for any authenticated session with no company profile (e.g. after "Sair da empresa") —
+   * the Praxis owner (see ownerNoCompany) lands in Central de Suporte, everyone else lands on
+   * the signup page's "join a company" screen, reusing the same identity shape as a fresh Google signup. */
+  noCompanySession: NoCompanySession | null
+  clearNoCompanySession: () => void
+  /** derived from noCompanySession — true only when that session's email is the Praxis owner's */
   ownerNoCompany: boolean
   login: (email: string, password: string) => Promise<AuthUser | null>
   loginWithGoogle: () => void
@@ -33,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingGoogleUser, setPendingGoogleUser] = useState<PendingGoogleUser | null>(null)
-  const [ownerNoCompany, setOwnerNoCompany] = useState(false)
+  const [noCompanySession, setNoCompanySession] = useState<NoCompanySession | null>(null)
+  const ownerNoCompany = !!noCompanySession && isPraxisOwner(noCompanySession.email)
 
   useEffect(() => {
     if (isSupabase) {
@@ -42,23 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchOwnProfile(sessionUser.id)
           .then((authUser) => {
             setUser(authUser)
-            setOwnerNoCompany(false)
+            setNoCompanySession(null)
             if (oauthIntent) window.history.replaceState({}, '', window.location.pathname)
           })
-          .catch(() => {
+          .catch((err) => {
+            if (err instanceof CompanyInactiveError) {
+              setError(err.message)
+              return
+            }
             if (oauthIntent) {
               // authenticated with Google but no profile yet — the signup page finishes this with a mini-form
               setPendingGoogleUser(toPendingGoogleUser(sessionUser))
               return
             }
-            if (isPraxisOwner(sessionUser.email)) {
-              // the owner left every company on purpose ("Sair da empresa") — keep the session,
-              // just route them to the Central de Suporte inbox instead of signing them out
-              setOwnerNoCompany(true)
-              return
-            }
-            setError('Não encontramos uma conta com esse e-mail. Crie uma conta primeiro.')
-            supabase!.auth.signOut()
+            // authenticated, no company profile — the owner lands in Central de Suporte, everyone
+            // else lands on the signup page's "join a company" screen (see noCompanySession above)
+            setNoCompanySession(toPendingGoogleUser(sessionUser))
           })
       }
 
@@ -71,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_OUT') {
           setUser(null)
           setPendingGoogleUser(null)
-          setOwnerNoCompany(false)
+          setNoCompanySession(null)
         } else if (event === 'SIGNED_IN' && session?.user) {
           // password login/signup already handle their own profile fetch/creation inline (and are mid-flight
           // when their own supabase.auth.signUp()/signInWithPassword() call fires this same event) — reacting
@@ -102,11 +106,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authUser = await loginRequest(email, password)
       if (authUser) {
         setUser(authUser)
-        setOwnerNoCompany(false)
+        setNoCompanySession(null)
         if (!isSupabase) localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
       } else {
-        // signed in fine, but no company profile — only possible for the Praxis owner (see loginRequest)
-        setOwnerNoCompany(true)
+        // signed in fine, but no company profile — fetch the session user to build the identity
+        // the join-a-company screen (or Central de Suporte, for the owner) needs
+        const { data } = await supabase!.auth.getUser()
+        if (data.user) setNoCompanySession(toPendingGoogleUser(data.user))
       }
       return authUser
     } catch (err) {
@@ -126,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function logout() {
     setUser(null)
     setPendingGoogleUser(null)
-    setOwnerNoCompany(false)
+    setNoCompanySession(null)
     if (isSupabase) {
       supabase!.auth.signOut()
     } else {
@@ -139,6 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isSupabase) supabase!.auth.signOut()
   }
 
+  function clearNoCompanySession() {
+    setNoCompanySession(null)
+    if (isSupabase) supabase!.auth.signOut()
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -148,6 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error,
         pendingGoogleUser,
         clearPendingGoogleUser,
+        noCompanySession,
+        clearNoCompanySession,
         ownerNoCompany,
         login,
         loginWithGoogle,

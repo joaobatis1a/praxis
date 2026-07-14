@@ -1,8 +1,12 @@
 import { isSupabase } from '../../lib/dataSource'
-import { isPraxisOwner } from '../../lib/praxisOwner'
 import { supabase } from '../../lib/supabaseClient'
 import { mockUsers } from '../../mocks/users'
 import type { AuthUser, Role } from './types'
+
+/** Thrown by fetchOwnProfile when the profile exists but its company was deactivated — distinct
+ * from "no profile at all" so callers can surface this message instead of routing to the
+ * join-a-company screen (the session is already signed out by the time this is thrown). */
+export class CompanyInactiveError extends Error {}
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -40,7 +44,7 @@ export async function fetchOwnProfile(userId: string): Promise<AuthUser> {
   const profile = data as ProfileRow
   if (!(await isCompanyActive(profile.company_id))) {
     await supabase!.auth.signOut()
-    throw new Error('Sua empresa foi desativada. Entre em contato com o suporte.')
+    throw new CompanyInactiveError('Sua empresa foi desativada. Entre em contato com o suporte.')
   }
   return profileToAuthUser(profile)
 }
@@ -66,6 +70,12 @@ export interface PendingGoogleUser {
   name: string
 }
 
+/** Same shape as PendingGoogleUser, reused for any authenticated-but-no-profile session
+ * (e.g. after "Sair da empresa") — kept as a distinct name since it comes from a different
+ * origin (plain login, not a fresh Google signup) even though the data and downstream
+ * handling (finishGoogleCompanySignup/finishGoogleCodeSignup) are identical. */
+export type NoCompanySession = PendingGoogleUser
+
 export function toPendingGoogleUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown> }): PendingGoogleUser {
   return {
     id: user.id,
@@ -74,7 +84,9 @@ export function toPendingGoogleUser(user: { id: string; email?: string; user_met
   }
 }
 
-/** Called once the admin types the company name on the post-Google mini-form. */
+/** Attaches a new company (as admin) to an existing Supabase Auth user who has no profile yet —
+ * used both by the post-Google signup mini-form and by the join-a-company screen after
+ * "Sair da empresa". */
 export async function finishGoogleCompanySignup(companyName: string, user: PendingGoogleUser): Promise<AuthUser> {
   const { data: company, error: companyError } = await supabase!.from('companies').insert({ name: companyName }).select().single()
   if (companyError || !company) throw new Error('Não foi possível criar a empresa.')
@@ -88,7 +100,9 @@ export async function finishGoogleCompanySignup(companyName: string, user: Pendi
   return profileToAuthUser(profile as ProfileRow)
 }
 
-/** Called once the colleague types the invite code on the post-Google mini-form. */
+/** Redeems an invite code and attaches its company/role to an existing Supabase Auth user who
+ * has no profile yet — used both by the post-Google signup mini-form and by the join-a-company
+ * screen after "Sair da empresa". */
 export async function finishGoogleCodeSignup(code: string, user: PendingGoogleUser): Promise<AuthUser> {
   const { data: redeemed, error: redeemError } = await supabase!.rpc('redeem_invite_code', { invite_code: code.trim() }).single()
   if (redeemError || !redeemed) throw new Error('Código inválido. Peça um novo código para o seu gestor.')
@@ -112,8 +126,10 @@ export async function finishGoogleCodeSignup(code: string, user: PendingGoogleUs
   return profileToAuthUser(profile as ProfileRow)
 }
 
-/** Returns `null` only for the Praxis owner logging in with no company profile (see fetchOwnProfile) —
- * every other missing-profile case still throws, same as before. */
+/** Returns `null` when the login succeeded but there's no company profile — AuthContext then
+ * routes to the Central de Suporte (owner) or the join-a-company screen (everyone else). A
+ * CompanyInactiveError still propagates as a thrown error, since that's a distinct, actionable
+ * message rather than a "pick a company" situation. */
 export async function loginRequest(email: string, password: string): Promise<AuthUser | null> {
   if (isSupabase) {
     const { data, error } = await supabase!.auth.signInWithPassword({ email, password })
@@ -121,8 +137,8 @@ export async function loginRequest(email: string, password: string): Promise<Aut
     try {
       return await fetchOwnProfile(data.user.id)
     } catch (err) {
-      if (isPraxisOwner(email)) return null
-      throw err
+      if (err instanceof CompanyInactiveError) throw err
+      return null
     }
   }
 
