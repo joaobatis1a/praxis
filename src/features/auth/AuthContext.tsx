@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
-import { fetchOwnProfile, loginRequest } from './api'
+import { completeGoogleSignup, fetchOwnProfile, loginRequest, loginWithGoogle } from './api'
 import type { AuthUser } from './types'
 
 interface AuthContextValue {
@@ -10,6 +10,7 @@ interface AuthContextValue {
   isAuthenticating: boolean
   error: string | null
   login: (email: string, password: string) => Promise<AuthUser>
+  loginWithGoogle: () => void
   setSessionUser: (user: AuthUser) => void
   logout: () => void
 }
@@ -38,8 +39,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false)
       })
 
-      const { data: subscription } = supabase!.auth.onAuthStateChange((event) => {
-        if (event === 'SIGNED_OUT') setUser(null)
+      const { data: subscription } = supabase!.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // covers the Google OAuth redirect-back case — password login already sets the user itself
+          const oauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
+          if (oauthIntent) {
+            completeGoogleSignup(session.user)
+              .then((authUser) => {
+                if (authUser) setUser(authUser)
+              })
+              .catch((err) => {
+                setError(err instanceof Error ? err.message : 'Não foi possível concluir o cadastro com Google.')
+              })
+              .finally(() => {
+                window.history.replaceState({}, '', window.location.pathname)
+              })
+            return
+          }
+          fetchOwnProfile(session.user.id)
+            .then(setUser)
+            .catch(() => {
+              setError('Não encontramos uma conta com esse e-mail. Crie uma conta primeiro.')
+              supabase!.auth.signOut()
+            })
+        }
       })
       return () => subscription.subscription.unsubscribe()
     }
@@ -87,7 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticating, error, login, setSessionUser, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, isAuthenticating, error, login, loginWithGoogle, setSessionUser, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )
