@@ -3,6 +3,7 @@ import { LandingPage } from './features/landing/LandingPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
+import { RequireCompanyProfile } from './features/auth/RequireCompanyProfile'
 import { DesignSystemPage } from './pages/DesignSystemPage'
 import { AppLayout } from './features/dashboard/AppLayout'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -26,19 +27,23 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<RequireCompanyProfile />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
 
-          <Route element={<RequireRole roles={['admin', 'gestor']} />}>
-            <Route path="/usuarios" element={<UsersPage />} />
+            <Route element={<RequireRole roles={['admin', 'gestor']} />}>
+              <Route path="/usuarios" element={<UsersPage />} />
+            </Route>
+            <Route element={<RequireRole roles={['admin']} />}>
+              <Route path="/cargos" element={<RolesPermissionsPage />} />
+            </Route>
+            <Route path="/biblioteca" element={<LibraryPage />} />
+            <Route path="/procedimentos" element={<ProceduresPage />} />
+            <Route path="/avisos" element={<NoticesPage />} />
+            <Route path="/notificacoes" element={<NotificationsPage />} />
+            <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
-          <Route element={<RequireRole roles={['admin']} />}>
-            <Route path="/cargos" element={<RolesPermissionsPage />} />
-          </Route>
-          <Route path="/biblioteca" element={<LibraryPage />} />
-          <Route path="/procedimentos" element={<ProceduresPage />} />
-          <Route path="/avisos" element={<NoticesPage />} />
-          <Route path="/notificacoes" element={<NotificationsPage />} />
-          <Route path="/configuracoes" element={<SettingsPage />} />
+
+          {/* reachable both by normal company users and by the owner with no company (ownerNoCompany) */}
           <Route path="/suporte" element={<SupportPage />} />
         </Route>
       </Route>

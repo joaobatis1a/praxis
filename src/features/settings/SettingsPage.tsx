@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Bell, Building2, Save, Tags, Trash2, User as UserIcon, X } from 'lucide-react'
+import { AlertTriangle, Bell, Building2, LogOut, Save, Tags, Trash2, User as UserIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
@@ -12,7 +12,7 @@ import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { addDepartment, deleteDepartment, listDepartments } from '../departments/api'
 import { deleteUser, listUsers } from '../users/api'
-import { deleteCompany, getCompany, getNotificationPreferences, setNotificationPreference, updateCompany, updateProfile } from './api'
+import { deleteCompany, getCompany, getNotificationPreferences, leaveCompany, setNotificationPreference, updateCompany, updateProfile } from './api'
 
 const roleLabels: Record<Role, string> = {
   admin: 'Administrador',
@@ -63,6 +63,9 @@ export function SettingsPage() {
   const [confirmingDeleteCompany, setConfirmingDeleteCompany] = useState(false)
   const [deleteCompanyConfirmText, setDeleteCompanyConfirmText] = useState('')
   const [deletingCompany, setDeletingCompany] = useState(false)
+
+  const [confirmingLeaveCompany, setConfirmingLeaveCompany] = useState(false)
+  const [leavingCompany, setLeavingCompany] = useState(false)
 
   const [departmentsList, setDepartmentsList] = useState<string[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(true)
@@ -185,6 +188,21 @@ export function SettingsPage() {
       setDeletingCompany(false)
       setConfirmingDeleteCompany(false)
       setDeleteCompanyConfirmText('')
+    }
+  }
+
+  async function handleLeaveCompany() {
+    setLeavingCompany(true)
+    try {
+      await leaveCompany()
+      toast('Você saiu da empresa.')
+      logout()
+      navigate('/login')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível sair da empresa.', 'error')
+    } finally {
+      setLeavingCompany(false)
+      setConfirmingLeaveCompany(false)
     }
   }
 
@@ -356,6 +374,18 @@ export function SettingsPage() {
               </div>
             )}
 
+            {user.role === 'admin' && isSupabase && !isOnlyAdmin && (
+              <div className="mt-4 flex flex-col items-start gap-3 border-t border-error/20 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-text-muted">
+                  Sai da empresa, mas mantém seu login — diferente de excluir a conta. Use isso depois de promover outra pessoa a Admin.
+                </p>
+                <Button variant="secondary" onClick={() => setConfirmingLeaveCompany(true)} className="shrink-0">
+                  <LogOut size={16} />
+                  Sair da empresa
+                </Button>
+              </div>
+            )}
+
             {user.role === 'admin' && isSupabase && (
               <div className="mt-4 flex flex-col items-start gap-3 border-t border-error/20 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-text-muted">
@@ -379,6 +409,15 @@ export function SettingsPage() {
         description="Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita e você será desconectado."
         confirmLabel={deleting ? 'Excluindo...' : 'Excluir conta'}
         variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={confirmingLeaveCompany}
+        onClose={() => setConfirmingLeaveCompany(false)}
+        onConfirm={handleLeaveCompany}
+        title="Sair da empresa"
+        description="Você deixa de fazer parte desta empresa, mas seu login continua ativo — diferente de excluir a conta. Você será desconectado."
+        confirmLabel={leavingCompany ? 'Saindo...' : 'Sair da empresa'}
       />
 
       <Modal
