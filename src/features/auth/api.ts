@@ -51,88 +51,64 @@ export function loginWithGoogle() {
   })
 }
 
-export function signupCompanyWithGoogle(companyName: string) {
-  const params = new URLSearchParams({ oauthIntent: 'company', companyName })
+/** `intent` tells the signup page which mini-form to show once Google redirects back with no profile yet. */
+export function signupWithGoogle(intent: 'company' | 'code') {
   return supabase!.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/signup?${params.toString()}` },
+    options: { redirectTo: `${window.location.origin}/signup?oauthIntent=${intent}` },
   })
 }
 
-export function signupCodeWithGoogle(code: string) {
-  const params = new URLSearchParams({ oauthIntent: 'code', inviteCode: code })
-  return supabase!.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: `${window.location.origin}/signup?${params.toString()}` },
-  })
-}
-
-interface GoogleSessionUser {
+export interface PendingGoogleUser {
   id: string
-  email?: string
-  user_metadata?: Record<string, unknown>
+  email: string
+  name: string
 }
 
-/**
- * Called from AuthContext's SIGNED_IN handler when the URL carries an
- * `oauthIntent` — i.e. the user clicked "Continuar com Google" from the
- * signup page (company creation or invite-code redemption), not the login
- * page. Returns null if there's nothing to do (no intent in the URL).
- */
-export async function completeGoogleSignup(user: GoogleSessionUser): Promise<AuthUser | null> {
-  const params = new URLSearchParams(window.location.search)
-  const intent = params.get('oauthIntent')
-  if (!intent) return null
-
-  // already has a profile (e.g. clicked "Criar empresa" but already has an account) — just log them in
-  try {
-    return await fetchOwnProfile(user.id)
-  } catch {
-    // no profile yet — fall through and create one below
+export function toPendingGoogleUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown> }): PendingGoogleUser {
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    name: (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || user.email || 'Usuário',
   }
+}
 
-  const name = (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || user.email || 'Usuário'
-  const email = user.email ?? ''
+/** Called once the admin types the company name on the post-Google mini-form. */
+export async function finishGoogleCompanySignup(companyName: string, user: PendingGoogleUser): Promise<AuthUser> {
+  const { data: company, error: companyError } = await supabase!.from('companies').insert({ name: companyName }).select().single()
+  if (companyError || !company) throw new Error('Não foi possível criar a empresa.')
 
-  if (intent === 'company') {
-    const companyName = params.get('companyName') ?? ''
-    const { data: company, error: companyError } = await supabase!.from('companies').insert({ name: companyName }).select().single()
-    if (companyError || !company) throw new Error('Não foi possível criar a empresa.')
+  const { data: profile, error: profileError } = await supabase!
+    .from('profiles')
+    .insert({ id: user.id, company_id: company.id, name: user.name, email: user.email, role: 'admin' satisfies Role })
+    .select()
+    .single()
+  if (profileError || !profile) throw new Error('Não foi possível criar seu perfil.')
+  return profileToAuthUser(profile as ProfileRow)
+}
 
-    const { data: profile, error: profileError } = await supabase!
-      .from('profiles')
-      .insert({ id: user.id, company_id: company.id, name, email, role: 'admin' satisfies Role })
-      .select()
-      .single()
-    if (profileError || !profile) throw new Error('Não foi possível criar seu perfil.')
-    return profileToAuthUser(profile as ProfileRow)
-  }
+/** Called once the colleague types the invite code on the post-Google mini-form. */
+export async function finishGoogleCodeSignup(code: string, user: PendingGoogleUser): Promise<AuthUser> {
+  const { data: redeemed, error: redeemError } = await supabase!.rpc('redeem_invite_code', { invite_code: code.trim() }).single()
+  if (redeemError || !redeemed) throw new Error('Código inválido. Peça um novo código para o seu gestor.')
 
-  if (intent === 'code') {
-    const code = params.get('inviteCode') ?? ''
-    const { data: redeemed, error: redeemError } = await supabase!.rpc('redeem_invite_code', { invite_code: code.trim() }).single()
-    if (redeemError || !redeemed) throw new Error('Código inválido. Peça um novo código para o seu gestor.')
+  const redeemedRow = redeemed as { company_id: string; role: Role; department: string | null; company_status: string }
+  if (redeemedRow.company_status === 'inativo') throw new Error('Este convite pertence a uma empresa desativada.')
 
-    const redeemedRow = redeemed as { company_id: string; role: Role; department: string | null; company_status: string }
-    if (redeemedRow.company_status === 'inativo') throw new Error('Este convite pertence a uma empresa desativada.')
-
-    const { data: profile, error: profileError } = await supabase!
-      .from('profiles')
-      .insert({
-        id: user.id,
-        company_id: redeemedRow.company_id,
-        name,
-        email,
-        role: redeemedRow.role,
-        department: redeemedRow.department,
-      })
-      .select()
-      .single()
-    if (profileError || !profile) throw new Error('Não foi possível criar seu perfil.')
-    return profileToAuthUser(profile as ProfileRow)
-  }
-
-  return null
+  const { data: profile, error: profileError } = await supabase!
+    .from('profiles')
+    .insert({
+      id: user.id,
+      company_id: redeemedRow.company_id,
+      name: user.name,
+      email: user.email,
+      role: redeemedRow.role,
+      department: redeemedRow.department,
+    })
+    .select()
+    .single()
+  if (profileError || !profile) throw new Error('Não foi possível criar seu perfil.')
+  return profileToAuthUser(profile as ProfileRow)
 }
 
 export async function loginRequest(email: string, password: string): Promise<AuthUser> {

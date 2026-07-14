@@ -5,52 +5,39 @@ import { AlertCircle, ArrowLeft, Building2, KeyRound, Loader2 } from 'lucide-rea
 import { Button, Input } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
-import { signupCodeWithGoogle, signupCompanyRequest, signupCompanyWithGoogle, signupWithCodeRequest } from './api'
+import { finishGoogleCodeSignup, finishGoogleCompanySignup, signupCompanyRequest, signupWithCodeRequest, signupWithGoogle } from './api'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
 
 type Step = 'choice' | 'company' | 'code'
 
-const urlParams = new URLSearchParams(window.location.search)
-const initialOauthIntent = urlParams.get('oauthIntent')
+const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
 
 export function SignupPage() {
   const [step, setStep] = useState<Step>(initialOauthIntent === 'code' ? 'code' : initialOauthIntent === 'company' ? 'company' : 'choice')
-  const { setSessionUser, user, error: authError } = useAuth()
+  const { setSessionUser, user, error: authError, pendingGoogleUser, clearPendingGoogleUser } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [companyForm, setCompanyForm] = useState({
-    companyName: urlParams.get('companyName') ?? '',
-    name: '',
-    email: '',
-    password: '',
-  })
-  const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: urlParams.get('inviteCode') ?? '' })
+  const [companyForm, setCompanyForm] = useState({ companyName: '', name: '', email: '', password: '' })
+  const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: '' })
+  const [googleCompanyName, setGoogleCompanyName] = useState('')
+  const [googleCode, setGoogleCode] = useState('')
 
   const displayError = error || authError
 
-  // covers the Google OAuth redirect-back landing here with a session already set
+  // covers the Google OAuth redirect-back landing here with a session (and profile) already set
   useEffect(() => {
     if (user) navigate('/dashboard')
   }, [user, navigate])
 
-  function handleCompanyGoogle() {
-    if (!companyForm.companyName.trim()) {
-      setError('Informe o nome da empresa antes de continuar com o Google.')
-      return
-    }
-    signupCompanyWithGoogle(companyForm.companyName.trim())
-  }
-
-  function handleCodeGoogle() {
-    if (!codeForm.code.trim()) {
-      setError('Informe o código da empresa antes de continuar com o Google.')
-      return
-    }
-    signupCodeWithGoogle(codeForm.code.trim())
+  function goBack() {
+    setError(null)
+    if (pendingGoogleUser) clearPendingGoogleUser()
+    window.history.replaceState({}, '', '/signup')
+    setStep('choice')
   }
 
   async function handleCompanySubmit(e: FormEvent) {
@@ -83,16 +70,47 @@ export function SignupPage() {
     }
   }
 
+  async function handleFinishGoogleCompany(e: FormEvent) {
+    e.preventDefault()
+    if (!pendingGoogleUser) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const authUser = await finishGoogleCompanySignup(googleCompanyName.trim(), pendingGoogleUser)
+      window.history.replaceState({}, '', '/signup')
+      setSessionUser(authUser)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível criar a empresa.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleFinishGoogleCode(e: FormEvent) {
+    e.preventDefault()
+    if (!pendingGoogleUser) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const authUser = await finishGoogleCodeSignup(googleCode.trim(), pendingGoogleUser)
+      window.history.replaceState({}, '', '/signup')
+      setSessionUser(authUser)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível entrar com esse código.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="dark relative flex h-dvh overflow-hidden bg-[#050810]">
       <button
         type="button"
         onClick={() => {
           if (step === 'choice') navigate('/')
-          else {
-            setError(null)
-            setStep('choice')
-          }
+          else goBack()
         }}
         className="absolute left-6 top-6 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-white/60 transition-colors hover:text-white"
       >
@@ -171,7 +189,38 @@ export function SignupPage() {
             </>
           )}
 
-          {step === 'company' && (
+          {step === 'company' && pendingGoogleUser && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Só falta o nome da empresa</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Entrando como <span className="text-white/80">{pendingGoogleUser.email}</span>. Você será o administrador.
+              </p>
+
+              <form onSubmit={handleFinishGoogleCompany} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="Nome da empresa"
+                  required
+                  autoFocus
+                  value={googleCompanyName}
+                  onChange={(e) => setGoogleCompanyName(e.target.value)}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                  {submitting && <Loader2 size={18} className="animate-spin" />}
+                  {submitting ? 'Criando...' : 'Criar empresa'}
+                </Button>
+              </form>
+            </>
+          )}
+
+          {step === 'company' && !pendingGoogleUser && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Crie sua empresa</h1>
               <p className="mt-1 text-sm text-white/50">Você será o administrador da conta.</p>
@@ -227,19 +276,50 @@ export function SignupPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={handleCompanyGoogle}
+                    onClick={() => signupWithGoogle('company')}
                     className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
                   >
                     <GoogleIcon />
                     Continuar com Google
                   </button>
-                  <p className="mt-2 text-xs text-white/40">Preencha o nome da empresa acima antes de continuar.</p>
                 </>
               )}
             </>
           )}
 
-          {step === 'code' && (
+          {step === 'code' && pendingGoogleUser && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Só falta o código</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Entrando como <span className="text-white/80">{pendingGoogleUser.email}</span>. Peça o código ao seu gestor ou administrador.
+              </p>
+
+              <form onSubmit={handleFinishGoogleCode} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="Código da empresa"
+                  required
+                  autoFocus
+                  placeholder="Ex: PRAXIS2026"
+                  value={googleCode}
+                  onChange={(e) => setGoogleCode(e.target.value)}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                  {submitting && <Loader2 size={18} className="animate-spin" />}
+                  {submitting ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
+            </>
+          )}
+
+          {step === 'code' && !pendingGoogleUser && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Entre com seu código</h1>
               <p className="mt-1 text-sm text-white/50">Peça o código ao seu gestor ou administrador.</p>
@@ -296,13 +376,12 @@ export function SignupPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={handleCodeGoogle}
+                    onClick={() => signupWithGoogle('code')}
                     className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
                   >
                     <GoogleIcon />
                     Continuar com Google
                   </button>
-                  <p className="mt-2 text-xs text-white/40">Preencha o código da empresa acima antes de continuar.</p>
                 </>
               )}
 
