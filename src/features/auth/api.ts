@@ -1,4 +1,5 @@
 import { isSupabase } from '../../lib/dataSource'
+import { isPraxisOwner } from '../../lib/praxisOwner'
 import { supabase } from '../../lib/supabaseClient'
 import { mockUsers } from '../../mocks/users'
 import type { AuthUser, Role } from './types'
@@ -111,11 +112,18 @@ export async function finishGoogleCodeSignup(code: string, user: PendingGoogleUs
   return profileToAuthUser(profile as ProfileRow)
 }
 
-export async function loginRequest(email: string, password: string): Promise<AuthUser> {
+/** Returns `null` only for the Praxis owner logging in with no company profile (see fetchOwnProfile) —
+ * every other missing-profile case still throws, same as before. */
+export async function loginRequest(email: string, password: string): Promise<AuthUser | null> {
   if (isSupabase) {
     const { data, error } = await supabase!.auth.signInWithPassword({ email, password })
     if (error || !data.user) throw new Error('E-mail ou senha inválidos.')
-    return fetchOwnProfile(data.user.id)
+    try {
+      return await fetchOwnProfile(data.user.id)
+    } catch (err) {
+      if (isPraxisOwner(email)) return null
+      throw err
+    }
   }
 
   await delay(700)

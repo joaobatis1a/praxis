@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronUp, LogOut, Settings } from 'lucide-react'
+import { ChevronUp, LifeBuoy, LogOut, Settings } from 'lucide-react'
 import { Header, Sidebar, ThemeToggle } from '../../components/ui'
+import { PRAXIS_OWNER_EMAIL } from '../../lib/praxisOwner'
 import { getUserDepartment } from '../../lib/userDepartment'
 import { useAuth } from '../auth/AuthContext'
 import { listNotifications } from '../notifications/api'
 import { getNavItemsForRole } from './navigation'
+
+const ownerNoCompanyNavItems = [{ to: '/suporte', label: 'Suporte', icon: LifeBuoy }]
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrador',
@@ -15,7 +18,7 @@ const roleLabels: Record<string, string> = {
 }
 
 export function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user, ownerNoCompany, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -31,10 +34,11 @@ export function AppLayout() {
     })
   }, [user, department, location.pathname])
 
-  if (!user) return null
+  if (!user && !ownerNoCompany) return null
 
-  const items = getNavItemsForRole(user.role)
-  const initials = user.name
+  const items = user ? getNavItemsForRole(user.role) : ownerNoCompanyNavItems
+  const displayName = user?.name ?? 'Suporte Praxis'
+  const initials = displayName
     .split(' ')
     .map((n) => n[0])
     .slice(0, 2)
@@ -72,8 +76,8 @@ export function AppLayout() {
                 {initials}
               </motion.div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-text-primary">{user.name}</p>
-                <p className="truncate text-xs text-text-muted">{roleLabels[user.role]}</p>
+                <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
+                <p className="truncate text-xs text-text-muted">{user ? roleLabels[user.role] : 'Dono do Praxis'}</p>
               </div>
               <motion.span
                 animate={{ rotate: menuOpen ? 180 : 0 }}
@@ -96,21 +100,23 @@ export function AppLayout() {
                     className="absolute bottom-full left-0 z-20 mb-2 w-full rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)]"
                   >
                     <div className="px-2.5 py-2">
-                      <p className="truncate text-sm font-medium text-text-primary">{user.name}</p>
-                      <p className="truncate text-xs text-text-muted">{user.email}</p>
+                      <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
+                      <p className="truncate text-xs text-text-muted">{user?.email ?? PRAXIS_OWNER_EMAIL}</p>
                     </div>
                     <div className="my-1 border-t border-border" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        navigate('/configuracoes')
-                      }}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
-                    >
-                      <Settings size={16} />
-                      Configurações
-                    </button>
+                    {user && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false)
+                          navigate('/configuracoes')
+                        }}
+                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                      >
+                        <Settings size={16} />
+                        Configurações
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={logout}

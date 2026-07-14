@@ -16,23 +16,25 @@ const demoAccounts = [
 ]
 
 export function LoginPage() {
-  const { login, loginWithGoogle, isAuthenticating, error, user } = useAuth()
+  const { login, loginWithGoogle, isAuthenticating, error, user, ownerNoCompany } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  // covers the Google OAuth redirect-back landing here with a session already set
+  // covers both the Google OAuth redirect-back landing here with a session already set, and the
+  // Praxis owner logging in with no company profile (routed to the Central de Suporte instead)
   useEffect(() => {
     if (user) navigate('/dashboard')
-  }, [user, navigate])
+    else if (ownerNoCompany) navigate('/suporte')
+  }, [user, ownerNoCompany, navigate])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     try {
       await login(email, password)
-      navigate('/dashboard')
+      // navigation happens via the effect above once context state updates
     } catch {
       // error already surfaced via context state
     }

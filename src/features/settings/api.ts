@@ -67,3 +67,9 @@ export async function deleteCompany(companyId: string) {
   const { error } = await supabase!.rpc('delete_company_and_users', { target_company_id: companyId })
   if (error) throw new Error('Não foi possível excluir a empresa.')
 }
+
+/** Supabase mode only — removes the caller's own profile but keeps their Auth login, unlike deleteUser(). */
+export async function leaveCompany() {
+  const { error } = await supabase!.rpc('leave_company')
+  if (error) throw new Error('Não foi possível sair da empresa.')
+}

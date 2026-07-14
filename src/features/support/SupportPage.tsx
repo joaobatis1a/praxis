@@ -13,8 +13,8 @@ import type { SupportTicket } from './types'
 const SUPPORT_WHATSAPP = '5581982594090'
 
 export function SupportPage() {
-  const { user } = useAuth()
-  if (user && isPraxisOwner(user.email)) return <SupportAdminInbox />
+  const { user, ownerNoCompany } = useAuth()
+  if (ownerNoCompany || (user && isPraxisOwner(user.email))) return <SupportAdminInbox />
   return <SupportContact />
 }
 
