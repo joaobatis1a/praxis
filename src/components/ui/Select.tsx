@@ -70,18 +70,25 @@ export function Select({ value, onChange, options, className, triggerClassName, 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
     }
-    function onViewportChange() {
+    function onScroll(e: Event) {
+      // scrolling the open option list itself shouldn't close it — only scrolling
+      // something behind/outside it (which would leave the list floating in the wrong spot)
+      const target = e.target as Node
+      if (listRef.current?.contains(target)) return
+      setOpen(false)
+    }
+    function onResize() {
       setOpen(false)
     }
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
-    window.addEventListener('scroll', onViewportChange, true)
-    window.addEventListener('resize', onViewportChange)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onResize)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('scroll', onViewportChange, true)
-      window.removeEventListener('resize', onViewportChange)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onResize)
     }
   }, [open])
 
