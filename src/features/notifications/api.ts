@@ -1,3 +1,5 @@
+import { isSupabase } from '../../lib/dataSource'
+import { supabase } from '../../lib/supabaseClient'
 import { notifications as initialNotifications, type AppNotification, type NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
 
@@ -24,8 +26,48 @@ export interface NotificationRecipient {
   department?: string
 }
 
+interface NotificationRow {
+  id: string
+  type: NotificationType
+  title: string
+  description: string
+  created_at: string
+  target_user_id: string | null
+  target_department: string | null
+  target_roles: Role[] | null
+  link_to: string | null
+}
+
+function rowToNotification(row: NotificationRow, readBy: string[]): AppNotification {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    description: row.description,
+    createdAt: row.created_at,
+    readBy,
+    targetUserId: row.target_user_id ?? undefined,
+    targetDepartment: row.target_department ?? undefined,
+    targetRoles: row.target_roles ?? undefined,
+    linkTo: row.link_to ?? undefined,
+  }
+}
+
 /** Fire-and-forget: called by other feature api.ts modules when a notify-worthy event happens. */
-export function notify(input: NotifyInput) {
+export async function notify(input: NotifyInput): Promise<void> {
+  if (isSupabase) {
+    await supabase!.from('notifications').insert({
+      type: input.type,
+      title: input.title,
+      description: input.description,
+      target_user_id: input.targetUserId ?? null,
+      target_department: input.targetDepartment ?? null,
+      target_roles: input.targetRoles ?? null,
+      link_to: input.linkTo ?? null,
+    })
+    return
+  }
+
   const newNotification: AppNotification = {
     id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     createdAt: new Date().toISOString(),
@@ -45,7 +87,22 @@ function isRelevant(n: AppNotification, user: NotificationRecipient) {
   return true
 }
 
-export function listNotifications(user: NotificationRecipient): Promise<(AppNotification & { read: boolean })[]> {
+export async function listNotifications(user: NotificationRecipient): Promise<(AppNotification & { read: boolean })[]> {
+  if (isSupabase) {
+    const disabled = await getDisabledTypes(user.id)
+    const { data, error } = await supabase!
+      .from('notifications')
+      .select('*, notification_reads(user_id)')
+      .order('created_at', { ascending: false })
+    if (error || !data) return []
+    return (data as (NotificationRow & { notification_reads: { user_id: string }[] })[])
+      .filter((row) => !disabled.includes(row.type))
+      .map((row) => {
+        const read = row.notification_reads.length > 0
+        return { ...rowToNotification(row, read ? [user.id] : []), read }
+      })
+  }
+
   const disabled = disabledTypesByUser[user.id] ?? []
   const relevant = notifications
     .filter((n) => isRelevant(n, user) && !disabled.includes(n.type))
@@ -54,23 +111,62 @@ export function listNotifications(user: NotificationRecipient): Promise<(AppNoti
   return delay(relevant)
 }
 
-export function getDisabledTypes(userId: string): Promise<NotificationType[]> {
+export async function getDisabledTypes(userId: string): Promise<NotificationType[]> {
+  if (isSupabase) {
+    const { data, error } = await supabase!.from('notification_preferences').select('type')
+    if (error || !data) return []
+    return (data as { type: NotificationType }[]).map((r) => r.type)
+  }
   return delay(disabledTypesByUser[userId] ?? [])
 }
 
-export function setTypeEnabled(userId: string, type: NotificationType, enabled: boolean): Promise<NotificationType[]> {
+export async function setTypeEnabled(userId: string, type: NotificationType, enabled: boolean): Promise<NotificationType[]> {
+  if (isSupabase) {
+    if (enabled) {
+      const { error } = await supabase!.from('notification_preferences').delete().eq('type', type)
+      if (error) throw new Error('Não foi possível atualizar a preferência.')
+    } else {
+      const { error } = await supabase!
+        .from('notification_preferences')
+        .upsert({ type }, { onConflict: 'user_id,type', ignoreDuplicates: true })
+      if (error) throw new Error('Não foi possível atualizar a preferência.')
+    }
+    return getDisabledTypes(userId)
+  }
+
   const current = disabledTypesByUser[userId] ?? []
   disabledTypesByUser[userId] = enabled ? current.filter((t) => t !== type) : [...new Set([...current, type])]
   return delay(disabledTypesByUser[userId])
 }
 
-export function markAsRead(id: string, userId: string): Promise<void> {
+export async function markAsRead(id: string, userId: string): Promise<void> {
+  if (isSupabase) {
+    const { error } = await supabase!
+      .from('notification_reads')
+      .upsert({ notification_id: id }, { onConflict: 'notification_id,user_id', ignoreDuplicates: true })
+    if (error) throw new Error('Não foi possível marcar como lida.')
+    return
+  }
+
   const n = notifications.find((x) => x.id === id)
   if (n && !n.readBy.includes(userId)) n.readBy.push(userId)
   return delay(undefined)
 }
 
-export function markAllAsRead(ids: string[], userId: string): Promise<void> {
+export async function markAllAsRead(ids: string[], userId: string): Promise<void> {
+  if (ids.length === 0) return
+
+  if (isSupabase) {
+    const { error } = await supabase!
+      .from('notification_reads')
+      .upsert(
+        ids.map((id) => ({ notification_id: id })),
+        { onConflict: 'notification_id,user_id', ignoreDuplicates: true },
+      )
+    if (error) throw new Error('Não foi possível marcar como lidas.')
+    return
+  }
+
   for (const id of ids) {
     const n = notifications.find((x) => x.id === id)
     if (n && !n.readBy.includes(userId)) n.readBy.push(userId)
