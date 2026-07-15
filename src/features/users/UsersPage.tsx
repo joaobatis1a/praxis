@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Award, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
+import { Award, LogOut, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -20,6 +20,7 @@ import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import type { ProcedureCompletion } from '../../mocks/procedureCompletions'
 import type { Procedure } from '../../mocks/procedures'
 import type { TeamMember } from '../../mocks/teamMembers'
+import { useAuth } from '../auth/AuthContext'
 import type { Role } from '../auth/types'
 import { listDepartments } from '../departments/api'
 import { listCompletions, listProcedures } from '../procedures/api'
@@ -53,6 +54,7 @@ function initialsOf(name: string) {
 }
 
 export function UsersPage() {
+  const { user, logout } = useAuth()
   const { toast } = useToast()
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -215,8 +217,10 @@ export function UsersPage() {
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map((member) => (
-              <MotionTableRow key={member.id} variants={staggerItem} layout>
+            {filtered.map((member) => {
+              const isSelf = member.id === user?.id
+              return (
+              <MotionTableRow key={member.id} variants={staggerItem} layout className={isSelf ? 'bg-primary/5' : undefined}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <motion.div
@@ -227,7 +231,10 @@ export function UsersPage() {
                       {initialsOf(member.name)}
                     </motion.div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-text-primary">{member.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-sm font-medium text-text-primary">{member.name}</p>
+                        {isSelf && <Badge variant="primary">Você</Badge>}
+                      </div>
                       <p className="truncate text-xs text-text-muted">{member.email}</p>
                     </div>
                   </div>
@@ -265,43 +272,59 @@ export function UsersPage() {
                     >
                       <Award size={16} />
                     </motion.button>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => {
-                        setEditingMember(member)
-                        setModalOpen(true)
-                      }}
-                      aria-label={`Editar ${member.name}`}
-                      className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary"
-                    >
-                      <Pencil size={16} />
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => toggleStatus(member)}
-                      aria-label={member.status === 'ativo' ? `Desativar ${member.name}` : `Ativar ${member.name}`}
-                      className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary"
-                    >
-                      {member.status === 'ativo' ? <PowerOff size={16} /> : <UserCheck size={16} />}
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => setDeletingMember(member)}
-                      aria-label={`Excluir ${member.name}`}
-                      className="rounded-md p-2 text-text-muted hover:bg-error-bg hover:text-error"
-                    >
-                      <Trash2 size={16} />
-                    </motion.button>
+                    {isSelf ? (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.85 }}
+                        onClick={logout}
+                        aria-label="Sair"
+                        className="rounded-md p-2 text-text-muted hover:bg-error-bg hover:text-error"
+                      >
+                        <LogOut size={16} />
+                      </motion.button>
+                    ) : (
+                      <>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => {
+                            setEditingMember(member)
+                            setModalOpen(true)
+                          }}
+                          aria-label={`Editar ${member.name}`}
+                          className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary"
+                        >
+                          <Pencil size={16} />
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => toggleStatus(member)}
+                          aria-label={member.status === 'ativo' ? `Desativar ${member.name}` : `Ativar ${member.name}`}
+                          className="rounded-md p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary"
+                        >
+                          {member.status === 'ativo' ? <PowerOff size={16} /> : <UserCheck size={16} />}
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => setDeletingMember(member)}
+                          aria-label={`Excluir ${member.name}`}
+                          className="rounded-md p-2 text-text-muted hover:bg-error-bg hover:text-error"
+                        >
+                          <Trash2 size={16} />
+                        </motion.button>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </MotionTableRow>
-            ))}
+              )
+            })}
           </MotionTableBody>
         </Table>
       </div>
