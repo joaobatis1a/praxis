@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { isSupabase } from '../../lib/dataSource'
 import { isPraxisOwner } from '../../lib/praxisOwner'
 import { supabase } from '../../lib/supabaseClient'
-import { CompanyInactiveError, fetchOwnProfile, loginRequest, loginWithGoogle, toPendingGoogleUser, type NoCompanySession, type PendingGoogleUser } from './api'
+import { CompanyInactiveError, UserInactiveError, fetchOwnProfile, loginRequest, loginWithGoogle, toPendingGoogleUser, type NoCompanySession, type PendingGoogleUser } from './api'
 import type { AuthUser } from './types'
 
 interface AuthContextValue {
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (oauthIntent) window.history.replaceState({}, '', window.location.pathname)
           })
           .catch((err) => {
-            if (err instanceof CompanyInactiveError) {
+            if (err instanceof CompanyInactiveError || err instanceof UserInactiveError) {
               setError(err.message)
               return
             }

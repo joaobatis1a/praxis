@@ -8,6 +8,11 @@ import type { AuthUser, Role } from './types'
  * join-a-company screen (the session is already signed out by the time this is thrown). */
 export class CompanyInactiveError extends Error {}
 
+/** Thrown by fetchOwnProfile when the profile exists but was set to 'inativo' by an admin —
+ * handled the same way as CompanyInactiveError by every caller (surfaced as a message, session
+ * already signed out), just with a different message. */
+export class UserInactiveError extends Error {}
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -19,6 +24,7 @@ interface ProfileRow {
   email: string
   role: Role
   department: string | null
+  status: 'ativo' | 'inativo'
 }
 
 function profileToAuthUser(profile: ProfileRow): AuthUser {
@@ -42,6 +48,10 @@ export async function fetchOwnProfile(userId: string): Promise<AuthUser> {
   const { data, error } = await supabase!.from('profiles').select('*').eq('id', userId).single()
   if (error || !data) throw new Error('Não foi possível carregar seu perfil.')
   const profile = data as ProfileRow
+  if (profile.status === 'inativo') {
+    await supabase!.auth.signOut()
+    throw new UserInactiveError('Você está inativo nesta empresa.')
+  }
   if (!(await isCompanyActive(profile.company_id))) {
     await supabase!.auth.signOut()
     throw new CompanyInactiveError('Sua empresa foi desativada. Entre em contato com o suporte.')
@@ -137,7 +147,7 @@ export async function loginRequest(email: string, password: string): Promise<Aut
     try {
       return await fetchOwnProfile(data.user.id)
     } catch (err) {
-      if (err instanceof CompanyInactiveError) throw err
+      if (err instanceof CompanyInactiveError || err instanceof UserInactiveError) throw err
       return null
     }
   }
