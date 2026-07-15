@@ -25,6 +25,7 @@ interface ProfileRow {
   role: Role
   department: string | null
   status: 'ativo' | 'inativo'
+  theme: 'light' | 'dark' | null
 }
 
 function profileToAuthUser(profile: ProfileRow): AuthUser {
@@ -35,6 +36,7 @@ function profileToAuthUser(profile: ProfileRow): AuthUser {
     role: profile.role,
     companyId: profile.company_id,
     department: profile.department ?? undefined,
+    theme: profile.theme,
   }
 }
 

@@ -2,13 +2,23 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '../../lib/theme-provider'
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  /** fires with the theme just switched to — lets callers persist it somewhere beyond localStorage */
+  onAfterToggle?: (theme: 'light' | 'dark') => void
+}
+
+export function ThemeToggle({ onAfterToggle }: ThemeToggleProps = {}) {
   const { theme, toggleTheme } = useTheme()
+
+  function handleClick() {
+    toggleTheme()
+    onAfterToggle?.(theme === 'light' ? 'dark' : 'light')
+  }
 
   return (
     <motion.button
       type="button"
-      onClick={toggleTheme}
+      onClick={handleClick}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.85, rotate: -20 }}
       aria-label="Alternar tema"

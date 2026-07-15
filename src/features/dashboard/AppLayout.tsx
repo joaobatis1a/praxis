@@ -3,10 +3,13 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronUp, LifeBuoy, LogOut, Settings } from 'lucide-react'
 import { Header, Sidebar, ThemeToggle } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
 import { PRAXIS_OWNER_EMAIL } from '../../lib/praxisOwner'
+import { useTheme } from '../../lib/theme-provider'
 import { getUserDepartment } from '../../lib/userDepartment'
 import { useAuth } from '../auth/AuthContext'
 import { listNotifications } from '../notifications/api'
+import { setThemePreference } from '../settings/api'
 import { getNavItemsForRole } from './navigation'
 
 const ownerNoCompanyNavItems = [{ to: '/suporte', label: 'Suporte', icon: LifeBuoy }]
@@ -24,6 +27,7 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const { theme, setTheme } = useTheme()
 
   const department = useMemo(() => getUserDepartment(user), [user])
 
@@ -33,6 +37,13 @@ export function AppLayout() {
       setUnreadCount(data.filter((n) => !n.read).length)
     })
   }, [user, department, location.pathname])
+
+  // pulls the account's saved theme in on login, so it follows the user across devices —
+  // runs once per user (not on every local theme change), a plain toggle persists separately below
+  useEffect(() => {
+    if (isSupabase && user?.theme && user.theme !== theme) setTheme(user.theme)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   if (!user && !ownerNoCompany) return null
 
@@ -138,7 +149,13 @@ export function AppLayout() {
           notificationCount={unreadCount}
           onNotificationsClick={() => navigate('/notificacoes')}
           onMenuClick={() => setSidebarOpen(true)}
-          rightSlot={<ThemeToggle />}
+          rightSlot={
+            <ThemeToggle
+              onAfterToggle={(next) => {
+                if (isSupabase && user) setThemePreference(user.id, next).catch(() => {})
+              }}
+            />
+          }
         />
 
         <main className="flex-1 overflow-y-auto">

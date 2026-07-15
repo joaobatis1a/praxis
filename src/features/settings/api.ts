@@ -51,6 +51,13 @@ export function setNotificationPreference(userId: string, type: NotificationType
   return setTypeEnabled(userId, type, enabled)
 }
 
+/** Supabase mode only — persists the theme choice on the user's profile so it follows them
+ * across devices; mock mode keeps theme in localStorage only (see lib/theme-provider.tsx). */
+export async function setThemePreference(userId: string, theme: 'light' | 'dark') {
+  const { error } = await supabase!.from('profiles').update({ theme }).eq('id', userId)
+  if (error) throw new Error('Não foi possível salvar sua preferência de tema.')
+}
+
 export interface UpdateProfileInput {
   name: string
   email: string
