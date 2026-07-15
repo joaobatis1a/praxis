@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
@@ -21,6 +21,7 @@ import type { ProcedureCompletion } from '../../mocks/procedureCompletions'
 import type { Procedure } from '../../mocks/procedures'
 import type { TeamMember } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
+import { listDepartments } from '../departments/api'
 import { listCompletions, listProcedures } from '../procedures/api'
 import { createUser, deleteUser, generateInviteCode, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
 import { InviteCodeModal } from './components/InviteCodeModal'
@@ -66,17 +67,17 @@ export function UsersPage() {
   const [procedures, setProcedures] = useState<Procedure[]>([])
   const [completions, setCompletions] = useState<ProcedureCompletion[]>([])
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [departments, setDepartments] = useState<string[]>([])
 
   useEffect(() => {
-    Promise.all([listUsers(), listProcedures(), listCompletions()]).then(([users, procs, comps]) => {
+    Promise.all([listUsers(), listProcedures(), listCompletions(), listDepartments()]).then(([users, procs, comps, depts]) => {
       setMembers(users)
       setProcedures(procs)
       setCompletions(comps)
+      setDepartments(depts)
       setLoading(false)
     })
   }, [])
-
-  const departments = useMemo(() => Array.from(new Set(members.map((m) => m.department))).sort(), [members])
 
   const filtered = members.filter((m) => {
     const matchesSearch =
