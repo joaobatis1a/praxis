@@ -38,7 +38,7 @@ interface CompletionRow {
   id: string
   procedure_id: string
   procedure_title: string
-  user_id: string
+  user_id: string | null
   user_name: string
   completed_at: string
 }

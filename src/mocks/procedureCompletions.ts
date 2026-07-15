@@ -2,7 +2,7 @@ export interface ProcedureCompletion {
   id: string
   procedureId: string
   procedureTitle: string
-  userId: string
+  userId: string | null
   userName: string
   completedAt: string
 }
