@@ -14,7 +14,7 @@ interface NoticeRow {
   procedure_id: string
   procedure_title: string
   description: string
-  author_id: string
+  author_id: string | null
   author_name: string
   recipient_type: NoticeRecipientType
   recipient_id: string

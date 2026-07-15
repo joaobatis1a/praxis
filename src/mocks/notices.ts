@@ -5,7 +5,7 @@ export interface Notice {
   procedureId: string
   procedureTitle: string
   description: string
-  authorId: string
+  authorId: string | null
   authorName: string
   recipientType: NoticeRecipientType
   recipientId: string
