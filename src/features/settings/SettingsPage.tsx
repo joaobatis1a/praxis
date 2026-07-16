@@ -22,6 +22,7 @@ const roleLabels: Record<Role, string> = {
 
 const notificationTypeInfo: Record<NotificationType, { label: string; description: string; roles?: Role[] }> = {
   aviso: { label: 'Avisos', description: 'Quando você recebe um aviso de alguém ou do seu setor.' },
+  'aviso-respondido': { label: 'Respostas de avisos', description: 'Quando alguém responde a um aviso que você enviou.' },
   documento: { label: 'Documentos favoritos', description: 'Quando um documento que você favoritou é atualizado.' },
   'procedimento-publicado': { label: 'Novos procedimentos', description: 'Quando um procedimento é publicado no seu setor.' },
   'procedimento-concluido': {

@@ -2,6 +2,7 @@ import type { Role } from '../features/auth/types'
 
 export type NotificationType =
   | 'aviso'
+  | 'aviso-respondido'
   | 'documento'
   | 'procedimento-publicado'
   | 'procedimento-concluido'
