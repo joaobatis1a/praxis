@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Bell, Building2, LogOut, Save, Tags, Trash2, User as UserIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Badge, Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
+import { Badge, Button, Card, ConfirmDialog, Input, Modal, Select, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { getUserDepartment } from '../../lib/userDepartment'
@@ -45,9 +45,9 @@ export function SettingsPage() {
   const { user, setSessionUser, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
-  const department = useMemo(() => getUserDepartment(user) ?? '', [user])
 
   const [name, setName] = useState(user?.name ?? '')
+  const [department, setDepartment] = useState(() => getUserDepartment(user) ?? '')
   const [savingProfile, setSavingProfile] = useState(false)
 
   const [disabledTypes, setDisabledTypes] = useState<NotificationType[]>([])
@@ -75,6 +75,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     setName(user?.name ?? '')
+    setDepartment(getUserDepartment(user) ?? '')
   }, [user])
 
   useEffect(() => {
@@ -112,10 +113,15 @@ export function SettingsPage() {
   async function handleSaveProfile() {
     if (!user) return
     setSavingProfile(true)
-    const updated = await updateProfile(user.id, { name: name.trim(), email: user.email, role: user.role, department })
-    setSessionUser({ ...user, name: updated.name })
-    setSavingProfile(false)
-    toast('Perfil atualizado.')
+    try {
+      const updated = await updateProfile(user.id, { name: name.trim(), email: user.email, role: user.role, department })
+      setSessionUser({ ...user, name: updated.name, department: updated.department })
+      toast('Perfil atualizado.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível atualizar o perfil.', 'error')
+    } finally {
+      setSavingProfile(false)
+    }
   }
 
   async function handleToggleType(type: NotificationType, enabled: boolean) {
@@ -232,8 +238,21 @@ export function SettingsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="primary">{roleLabels[user.role]}</Badge>
-                <Badge variant="neutral">{department}</Badge>
+                {user.role !== 'admin' && <Badge variant="neutral">{department}</Badge>}
               </div>
+              {user.role === 'admin' && (
+                <div className="flex flex-col gap-1.5 sm:max-w-xs">
+                  <label className="text-sm font-medium text-text-primary">Departamento</label>
+                  <Select
+                    value={department}
+                    onChange={setDepartment}
+                    options={departmentsList.map((dept) => ({ value: dept, label: dept }))}
+                    className="w-full"
+                    triggerClassName="w-full"
+                    aria-label="Meu departamento"
+                  />
+                </div>
+              )}
               <div className="flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={savingProfile || !name.trim()}>
                   <Save size={16} />
