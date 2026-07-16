@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
+import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
-import { deleteTicket, listAllTickets, sendMessage, setTicketStatus } from './api'
+import { deleteTicket, listAllTickets, rowToMessage, rowToTicket, sendMessage, setTicketStatus, type MessageRow, type TicketRow } from './api'
 import { TicketThread } from './components/TicketThread'
 import type { SupportTicket, SupportTicketStatus } from './types'
 
@@ -38,11 +40,43 @@ export function SupportAdminInbox() {
     })
   }, [])
 
+  function addMessage(ticketId: string, msg: SupportTicket['messages'][number]) {
+    setTickets((prev) =>
+      prev.map((t) => (t.id === ticketId && !t.messages.some((m) => m.id === msg.id) ? { ...t, messages: [...t.messages, msg] } : t)),
+    )
+  }
+
+  useEffect(() => {
+    if (!isSupabase) return
+    const channel = supabase!
+      .channel('support-admin-inbox')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_tickets' }, (payload) => {
+        const row = payload.new as TicketRow
+        setTickets((prev) => (prev.some((t) => t.id === row.id) ? prev : [rowToTicket(row, []), ...prev]))
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, (payload) => {
+        const msg = rowToMessage(payload.new as MessageRow)
+        addMessage(msg.ticketId, msg)
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' }, (payload) => {
+        const row = payload.new as TicketRow
+        setTickets((prev) => prev.map((t) => (t.id === row.id ? { ...t, status: row.status, title: row.title } : t)))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_tickets' }, (payload) => {
+        const oldId = (payload.old as { id: string }).id
+        setTickets((prev) => prev.filter((t) => t.id !== oldId))
+      })
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
+  }, [])
+
   async function handleSendMessage(ticketId: string, text: string) {
     if (!user) return
     try {
       const msg = await sendMessage(ticketId, { id: user.id, name: user.name }, text, true)
-      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, messages: [...t.messages, msg] } : t)))
+      addMessage(ticketId, msg)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.', 'error')
     }
@@ -89,7 +123,6 @@ export function SupportAdminInbox() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mt-6 space-y-4">
           {sorted.map((ticket) => {
             const isOpen = expanded === ticket.id
-            const lastMessage = ticket.messages[ticket.messages.length - 1]
             return (
               <motion.div key={ticket.id} variants={staggerItem}>
                 <Card>
@@ -101,7 +134,7 @@ export function SupportAdminInbox() {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
                       <p className="text-xs text-text-muted">{ticket.userEmail}</p>
-                      <p className="mt-2 truncate text-sm text-text-secondary">{lastMessage?.message}</p>
+                      <p className="mt-2 truncate text-sm text-text-secondary">{ticket.title}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
@@ -125,7 +158,7 @@ export function SupportAdminInbox() {
                             canReply={ticket.status !== 'encerrado'}
                             onSend={(text) => handleSendMessage(ticket.id, text)}
                             actions={
-                              <div className="flex flex-wrap gap-2">
+                              <>
                                 {ticket.status === 'aberto' && (
                                   <Button variant="secondary" onClick={() => handleStatusChange(ticket.id, 'resolvido')}>
                                     Marcar como resolvido
@@ -140,7 +173,7 @@ export function SupportAdminInbox() {
                                   <Trash2 size={16} />
                                   Excluir chamado
                                 </Button>
-                              </div>
+                              </>
                             }
                           />
                         </div>

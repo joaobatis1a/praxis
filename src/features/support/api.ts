@@ -8,16 +8,17 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-interface TicketRow {
+export interface TicketRow {
   id: string
   user_id: string
   user_name: string
   user_email: string
+  title: string
   status: SupportTicketStatus
   created_at: string
 }
 
-interface MessageRow {
+export interface MessageRow {
   id: string
   ticket_id: string
   sender_id: string | null
@@ -27,7 +28,7 @@ interface MessageRow {
   created_at: string
 }
 
-function rowToMessage(row: MessageRow): SupportMessage {
+export function rowToMessage(row: MessageRow): SupportMessage {
   return {
     id: row.id,
     ticketId: row.ticket_id,
@@ -39,12 +40,13 @@ function rowToMessage(row: MessageRow): SupportMessage {
   }
 }
 
-function rowToTicket(row: TicketRow, messages: SupportMessage[]): SupportTicket {
+export function rowToTicket(row: TicketRow, messages: SupportMessage[]): SupportTicket {
   return {
     id: row.id,
     userId: row.user_id,
     userName: row.user_name,
     userEmail: row.user_email,
+    title: row.title,
     status: row.status,
     createdAt: row.created_at,
     messages,
@@ -62,11 +64,11 @@ async function attachMessages(rows: TicketRow[]): Promise<SupportTicket[]> {
   return rows.map((row) => rowToTicket(row, messages.filter((m) => m.ticketId === row.id)))
 }
 
-export async function createTicket(user: AuthUser, message: string): Promise<SupportTicket> {
+export async function createTicket(user: AuthUser, title: string, message: string): Promise<SupportTicket> {
   if (isSupabase) {
     const { data, error } = await supabase!
       .from('support_tickets')
-      .insert({ user_name: user.name, user_email: user.email })
+      .insert({ user_name: user.name, user_email: user.email, title })
       .select()
       .single()
     if (error || !data) throw new Error('Não foi possível enviar sua mensagem.')
@@ -89,6 +91,7 @@ export async function createTicket(user: AuthUser, message: string): Promise<Sup
     userId: user.id,
     userName: user.name,
     userEmail: user.email,
+    title,
     status: 'aberto',
     createdAt: now,
     messages: [{ id: `msg-${Date.now()}`, ticketId: id, senderId: user.id, senderName: user.name, isOwner: false, message, createdAt: now }],
