@@ -1,16 +1,29 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
-import { Mail, MessageCircle, Send } from 'lucide-react'
-import { Badge, Button, buttonVariants, Card, Modal, Skeleton, useToast } from '../../components/ui'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronDown, Mail, MessageCircle, Send, Trash2 } from 'lucide-react'
+import { Badge, Button, buttonVariants, Card, ConfirmDialog, Modal, Skeleton, useToast } from '../../components/ui'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { isPraxisOwner } from '../../lib/praxisOwner'
 import { useAuth } from '../auth/AuthContext'
-import { createTicket, listMyTickets } from './api'
+import { closeOwnTicket, createTicket, deleteTicket, listMyTickets, sendMessage } from './api'
 import { SupportAdminInbox } from './SupportAdminInbox'
-import type { SupportTicket } from './types'
+import { TicketThread } from './components/TicketThread'
+import type { SupportTicket, SupportTicketStatus } from './types'
 
 const SUPPORT_WHATSAPP = '5581982594090'
+
+const statusLabel: Record<SupportTicketStatus, string> = {
+  aberto: 'Aguardando resposta',
+  resolvido: 'Resolvido',
+  encerrado: 'Encerrado',
+}
+
+const statusVariant: Record<SupportTicketStatus, 'warning' | 'success' | 'neutral'> = {
+  aberto: 'warning',
+  resolvido: 'success',
+  encerrado: 'neutral',
+}
 
 export function SupportPage() {
   const { user, ownerNoCompany } = useAuth()
@@ -24,6 +37,8 @@ function SupportContact() {
 
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(true)
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<SupportTicket | null>(null)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [message, setMessage] = useState('')
@@ -52,6 +67,34 @@ function SupportContact() {
     } finally {
       setSending(false)
     }
+  }
+
+  async function handleSendMessage(ticketId: string, text: string) {
+    if (!user) return
+    try {
+      const msg = await sendMessage(ticketId, { id: user.id, name: user.name }, text, false)
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, messages: [...t.messages, msg] } : t)))
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.', 'error')
+    }
+  }
+
+  async function handleCloseTicket(ticketId: string) {
+    try {
+      await closeOwnTicket(ticketId)
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status: 'encerrado' } : t)))
+      toast('Chamado encerrado.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível encerrar o chamado.', 'error')
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleting) return
+    await deleteTicket(deleting.id)
+    setTickets((prev) => prev.filter((t) => t.id !== deleting.id))
+    setDeleting(null)
+    toast('Chamado excluído.', 'error')
   }
 
   return (
@@ -104,24 +147,63 @@ function SupportContact() {
         {!loadingTickets && tickets.length > 0 && (
           <motion.div variants={staggerItem}>
             <Card>
-              <h2 className="text-base font-semibold text-text-primary">Minhas mensagens</h2>
-              <div className="mt-4 space-y-4 divide-y divide-border">
-                {tickets.map((ticket) => (
-                  <div key={ticket.id} className="pt-4 first:pt-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm text-text-primary">{ticket.message}</p>
-                      <Badge variant={ticket.status === 'respondido' ? 'success' : 'neutral'} className="shrink-0">
-                        {ticket.status === 'respondido' ? 'Respondido' : 'Aguardando resposta'}
-                      </Badge>
+              <h2 className="text-base font-semibold text-text-primary">Meus chamados</h2>
+              <div className="mt-4 divide-y divide-border">
+                {tickets.map((ticket) => {
+                  const isOpen = expanded === ticket.id
+                  const lastMessage = ticket.messages[ticket.messages.length - 1]
+                  return (
+                    <div key={ticket.id} className="py-3 first:pt-0">
+                      <button
+                        type="button"
+                        onClick={() => setExpanded(isOpen ? null : ticket.id)}
+                        className="flex w-full items-center justify-between gap-2 text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-text-primary">{lastMessage?.message}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
+                          <ChevronDown size={16} className={cn('text-text-muted transition-transform', isOpen && 'rotate-180')} />
+                        </div>
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-3 rounded-md bg-surface p-3">
+                              <TicketThread
+                                messages={ticket.messages}
+                                viewerIsOwner={false}
+                                canReply={ticket.status !== 'encerrado'}
+                                onSend={(text) => handleSendMessage(ticket.id, text)}
+                                actions={
+                                  <div className="flex flex-wrap gap-2">
+                                    {ticket.status === 'resolvido' && (
+                                      <Button variant="secondary" onClick={() => handleCloseTicket(ticket.id)}>
+                                        Confirmar e encerrar chamado
+                                      </Button>
+                                    )}
+                                    <Button variant="ghost" onClick={() => setDeleting(ticket)}>
+                                      <Trash2 size={16} />
+                                      Excluir chamado
+                                    </Button>
+                                  </div>
+                                }
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    {ticket.reply && (
-                      <div className="mt-2 rounded-md border border-primary/20 bg-primary/5 p-3">
-                        <p className="text-xs font-semibold text-primary">Resposta do suporte</p>
-                        <p className="mt-1 text-sm text-text-secondary">{ticket.reply}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </Card>
           </motion.div>
@@ -157,6 +239,15 @@ function SupportContact() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        onConfirm={handleDelete}
+        title="Excluir chamado"
+        description="Tem certeza que deseja excluir este chamado? Essa ação não pode ser desfeita."
+        confirmLabel="Excluir"
+      />
     </div>
   )
 }
