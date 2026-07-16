@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Building2, CheckCheck, ClipboardList, Trash2, User } from 'lucide-react'
+import { Building2, CheckCheck, ClipboardList, Reply, Send, Trash2, User } from 'lucide-react'
 import { Badge, Button } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import type { Notice } from '../../../mocks/notices'
@@ -13,10 +14,26 @@ interface NoticeCardProps {
   variant: 'received' | 'sent'
   onMarkRead?: () => void
   onDelete?: () => void
+  onReply?: (text: string) => Promise<void> | void
 }
 
-export function NoticeCard({ notice, variant, onMarkRead, onDelete }: NoticeCardProps) {
+export function NoticeCard({ notice, variant, onMarkRead, onDelete, onReply }: NoticeCardProps) {
   const unread = variant === 'received' && !notice.read
+  const [replying, setReplying] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
+
+  async function handleSendReply() {
+    if (!onReply || !replyText.trim()) return
+    setSendingReply(true)
+    try {
+      await onReply(replyText.trim())
+      setReplying(false)
+      setReplyText('')
+    } finally {
+      setSendingReply(false)
+    }
+  }
 
   return (
     <motion.div
@@ -45,6 +62,37 @@ export function NoticeCard({ notice, variant, onMarkRead, onDelete }: NoticeCard
 
       <p className="mt-3 text-sm text-text-primary">{notice.description}</p>
 
+      {notice.reply && (
+        <div className="mt-3 rounded-md border border-border bg-surface px-3 py-2.5">
+          <p className="text-xs font-medium text-text-muted">
+            {variant === 'received' ? 'Sua resposta' : `Resposta de ${notice.recipientLabel}`}
+          </p>
+          <p className="mt-1 text-sm text-text-primary">{notice.reply}</p>
+        </div>
+      )}
+
+      {replying && (
+        <div className="mt-3 flex flex-col gap-2">
+          <textarea
+            autoFocus
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Escreva sua resposta..."
+            rows={2}
+            className="w-full resize-none rounded-md border border-border-strong bg-surface-card px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setReplying(false)} disabled={sendingReply}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={handleSendReply} disabled={sendingReply || !replyText.trim()}>
+              <Send size={14} />
+              {sendingReply ? 'Enviando...' : 'Enviar resposta'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
         <div className="flex items-center gap-3 text-xs text-text-muted">
           <span>
@@ -57,6 +105,12 @@ export function NoticeCard({ notice, variant, onMarkRead, onDelete }: NoticeCard
         </div>
 
         <div className="flex items-center gap-1">
+          {variant === 'received' && !notice.reply && !replying && onReply && (
+            <Button variant="ghost" size="sm" onClick={() => setReplying(true)}>
+              <Reply size={14} />
+              Responder
+            </Button>
+          )}
           {variant === 'received' && !notice.read && onMarkRead && (
             <Button variant="ghost" size="sm" onClick={onMarkRead}>
               <CheckCheck size={14} />

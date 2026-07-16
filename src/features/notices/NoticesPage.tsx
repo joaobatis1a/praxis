@@ -7,7 +7,7 @@ import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { getUserDepartment } from '../../lib/userDepartment'
 import type { Notice } from '../../mocks/notices'
 import { useAuth } from '../auth/AuthContext'
-import { createNotice, deleteNotice, listNotices, markAsRead } from './api'
+import { createNotice, deleteNotice, listNotices, markAsRead, replyToNotice } from './api'
 import { NoticeCard } from './components/NoticeCard'
 import { NoticeFormModal, type NoticeFormValues } from './components/NoticeFormModal'
 
@@ -48,12 +48,41 @@ export function NoticesPage() {
     setNotices((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
   }
 
+  async function handleReply(id: string, text: string) {
+    if (!user) return
+    try {
+      const updated = await replyToNotice(id, text, user.name)
+      setNotices((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
+      toast('Resposta enviada.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar a resposta.', 'error')
+      throw err
+    }
+  }
+
   async function handleCreate(values: NoticeFormValues) {
     if (!user) return
     try {
-      const newNotice = await createNotice({ ...values, authorId: user.id, authorName: user.name })
-      setNotices((prev) => [newNotice, ...prev])
-      toast(`Aviso enviado para ${newNotice.recipientLabel}.`)
+      const created = await Promise.all(
+        values.recipients.map((r) =>
+          createNotice({
+            procedureId: values.procedureId,
+            procedureTitle: values.procedureTitle,
+            description: values.description,
+            authorId: user.id,
+            authorName: user.name,
+            recipientType: r.recipientType,
+            recipientId: r.recipientId,
+            recipientLabel: r.recipientLabel,
+          }),
+        ),
+      )
+      setNotices((prev) => [...created, ...prev])
+      toast(
+        created.length === 1
+          ? `Aviso enviado para ${created[0].recipientLabel}.`
+          : `Aviso enviado para ${created.length} destinatários.`,
+      )
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível enviar o aviso.', 'error')
       throw err
@@ -138,6 +167,7 @@ export function NoticesPage() {
                     notice={notice}
                     variant={tab === 'received' ? 'received' : 'sent'}
                     onMarkRead={tab === 'received' ? () => handleMarkRead(notice.id) : undefined}
+                    onReply={tab === 'received' ? (text) => handleReply(notice.id, text) : undefined}
                     onDelete={() => setDeleting(notice)}
                   />
                 </motion.div>

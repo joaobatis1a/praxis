@@ -21,6 +21,8 @@ interface NoticeRow {
   recipient_label: string
   read: boolean
   created_at: string
+  reply: string | null
+  replied_at: string | null
 }
 
 function rowToNotice(row: NoticeRow): Notice {
@@ -36,6 +38,8 @@ function rowToNotice(row: NoticeRow): Notice {
     recipientLabel: row.recipient_label,
     createdAt: row.created_at,
     read: row.read,
+    reply: row.reply,
+    repliedAt: row.replied_at,
   }
 }
 
@@ -111,6 +115,44 @@ export async function markAsRead(id: string): Promise<Notice> {
   const notice = notices.find((n) => n.id === id)
   if (!notice) throw new Error('Aviso não encontrado')
   notice.read = true
+  return delay(notice)
+}
+
+export async function replyToNotice(id: string, reply: string, replierName: string): Promise<Notice> {
+  if (isSupabase) {
+    const { data, error } = await supabase!
+      .from('notices')
+      .update({ reply, replied_at: new Date().toISOString(), read: true })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error || !data) throw new Error('Não foi possível enviar a resposta.')
+    const updated = rowToNotice(data as NoticeRow)
+    if (updated.authorId) {
+      notify({
+        type: 'aviso-respondido',
+        title: 'Resposta ao seu aviso',
+        description: `${replierName} respondeu ao seu aviso sobre "${updated.procedureTitle}"`,
+        targetUserId: updated.authorId,
+        linkTo: '/avisos',
+      })
+    }
+    return updated
+  }
+  const notice = notices.find((n) => n.id === id)
+  if (!notice) throw new Error('Aviso não encontrado')
+  notice.reply = reply
+  notice.repliedAt = new Date().toISOString()
+  notice.read = true
+  if (notice.authorId) {
+    notify({
+      type: 'aviso-respondido',
+      title: 'Resposta ao seu aviso',
+      description: `${replierName} respondeu ao seu aviso sobre "${notice.procedureTitle}"`,
+      targetUserId: notice.authorId,
+      linkTo: '/avisos',
+    })
+  }
   return delay(notice)
 }
 

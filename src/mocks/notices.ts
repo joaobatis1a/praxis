@@ -12,6 +12,8 @@ export interface Notice {
   recipientLabel: string
   createdAt: string
   read: boolean
+  reply?: string | null
+  repliedAt?: string | null
 }
 
 export const notices: Notice[] = [
