@@ -188,12 +188,14 @@
   }
 
   /* iOS Safari auto-zooms the page when a focused text field's font-size is under 16px —
-     force 16px on mobile only so the visual text-sm sizing on desktop is untouched. */
+     force 16px on mobile only so the visual text-sm sizing on desktop is untouched.
+     !important is needed because Tailwind's utilities layer (e.g. text-sm on the inputs
+     themselves) outranks this base-layer rule regardless of the media query. */
   @media (max-width: 767px) {
     input,
     textarea,
     select {
-      font-size: 16px;
+      font-size: 16px !important;
     }
   }
 

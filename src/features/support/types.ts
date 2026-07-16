@@ -15,6 +15,7 @@ export interface SupportTicket {
   userId: string
   userName: string
   userEmail: string
+  title: string
   status: SupportTicketStatus
   createdAt: string
   messages: SupportMessage[]

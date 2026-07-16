@@ -49,7 +49,7 @@ export function TicketThread({ messages, viewerIsOwner, canReply, onSend, action
         })}
       </div>
 
-      {actions}
+      {actions && <div className="flex flex-wrap gap-2 border-t border-border pt-3">{actions}</div>}
 
       {canReply && (
         <form onSubmit={handleSubmit} className="flex gap-2">

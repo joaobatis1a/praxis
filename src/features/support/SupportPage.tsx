@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Mail, MessageCircle, Send, Trash2 } from 'lucide-react'
-import { Badge, Button, buttonVariants, Card, ConfirmDialog, Modal, Skeleton, useToast } from '../../components/ui'
+import { Badge, Button, buttonVariants, Card, ConfirmDialog, Input, Modal, Skeleton, useToast } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
+import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { isPraxisOwner } from '../../lib/praxisOwner'
 import { useAuth } from '../auth/AuthContext'
-import { closeOwnTicket, createTicket, deleteTicket, listMyTickets, sendMessage } from './api'
+import { closeOwnTicket, createTicket, deleteTicket, listMyTickets, rowToMessage, sendMessage, type MessageRow, type TicketRow } from './api'
 import { SupportAdminInbox } from './SupportAdminInbox'
 import { TicketThread } from './components/TicketThread'
 import type { SupportTicket, SupportTicketStatus } from './types'
@@ -41,6 +43,7 @@ function SupportContact() {
   const [deleting, setDeleting] = useState<SupportTicket | null>(null)
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -52,13 +55,43 @@ function SupportContact() {
     })
   }, [user])
 
+  function addMessage(ticketId: string, msg: SupportTicket['messages'][number]) {
+    setTickets((prev) =>
+      prev.map((t) => (t.id === ticketId && !t.messages.some((m) => m.id === msg.id) ? { ...t, messages: [...t.messages, msg] } : t)),
+    )
+  }
+
+  useEffect(() => {
+    if (!isSupabase || !user) return
+    const channel = supabase!
+      .channel(`support-user-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, (payload) => {
+        const msg = rowToMessage(payload.new as MessageRow)
+        addMessage(msg.ticketId, msg)
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' }, (payload) => {
+        const row = payload.new as TicketRow
+        setTickets((prev) => prev.map((t) => (t.id === row.id ? { ...t, status: row.status, title: row.title } : t)))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_tickets' }, (payload) => {
+        const oldId = (payload.old as { id: string }).id
+        setTickets((prev) => prev.filter((t) => t.id !== oldId))
+      })
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
   async function handleSend(e: FormEvent) {
     e.preventDefault()
-    if (!user || !message.trim()) return
+    if (!user || !title.trim() || !message.trim()) return
     setSending(true)
     try {
-      const ticket = await createTicket(user, message.trim())
+      const ticket = await createTicket(user, title.trim(), message.trim())
       setTickets((prev) => [ticket, ...prev])
+      setTitle('')
       setMessage('')
       setModalOpen(false)
       toast('Mensagem enviada ao suporte.')
@@ -73,7 +106,7 @@ function SupportContact() {
     if (!user) return
     try {
       const msg = await sendMessage(ticketId, { id: user.id, name: user.name }, text, false)
-      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, messages: [...t.messages, msg] } : t)))
+      addMessage(ticketId, msg)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.', 'error')
     }
@@ -151,7 +184,6 @@ function SupportContact() {
               <div className="mt-4 divide-y divide-border">
                 {tickets.map((ticket) => {
                   const isOpen = expanded === ticket.id
-                  const lastMessage = ticket.messages[ticket.messages.length - 1]
                   return (
                     <div key={ticket.id} className="py-3 first:pt-0">
                       <button
@@ -160,7 +192,7 @@ function SupportContact() {
                         className="flex w-full items-center justify-between gap-2 text-left"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-sm text-text-primary">{lastMessage?.message}</p>
+                          <p className="truncate text-sm font-medium text-text-primary">{ticket.title}</p>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
@@ -184,7 +216,7 @@ function SupportContact() {
                                 canReply={ticket.status !== 'encerrado'}
                                 onSend={(text) => handleSendMessage(ticket.id, text)}
                                 actions={
-                                  <div className="flex flex-wrap gap-2">
+                                  <>
                                     {ticket.status === 'resolvido' && (
                                       <Button variant="secondary" onClick={() => handleCloseTicket(ticket.id)}>
                                         Confirmar e encerrar chamado
@@ -194,7 +226,7 @@ function SupportContact() {
                                       <Trash2 size={16} />
                                       Excluir chamado
                                     </Button>
-                                  </div>
+                                  </>
                                 }
                               />
                             </div>
@@ -216,8 +248,23 @@ function SupportContact() {
         )}
       </motion.div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Enviar mensagem ao suporte">
+      <Modal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false)
+          setTitle('')
+          setMessage('')
+        }}
+        title="Enviar mensagem ao suporte"
+      >
         <form onSubmit={handleSend} className="flex flex-col gap-4">
+          <Input
+            label="Título"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: Erro ao enviar aviso"
+            required
+          />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="support-message" className="text-sm font-medium text-text-primary">
               Sua mensagem
@@ -232,7 +279,7 @@ function SupportContact() {
             />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={sending || !message.trim()}>
+            <Button type="submit" disabled={sending || !title.trim() || !message.trim()}>
               <Send size={16} />
               {sending ? 'Enviando...' : 'Enviar'}
             </Button>
