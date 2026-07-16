@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Award, BookOpen, CheckCheck, ClipboardList, Megaphone, ShieldCheck, UserPlus, type LucideIcon } from 'lucide-react'
+import { Award, BookOpen, CheckCheck, ClipboardList, Megaphone, Reply, ShieldCheck, UserPlus, type LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Skeleton } from '../../components/ui'
 import { cn } from '../../lib/cn'
@@ -12,6 +12,7 @@ import { listNotifications, markAllAsRead, markAsRead } from './api'
 
 const iconByType: Record<NotificationType, LucideIcon> = {
   aviso: Megaphone,
+  'aviso-respondido': Reply,
   documento: BookOpen,
   'procedimento-publicado': ClipboardList,
   'procedimento-concluido': Award,
