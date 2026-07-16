@@ -151,30 +151,28 @@ export function SupportAdminInbox() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-3 rounded-md bg-surface p-3">
+                        <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-md border border-border bg-surface-card px-3 py-2">
+                          {ticket.status === 'aberto' && (
+                            <Button size="sm" variant="secondary" onClick={() => handleStatusChange(ticket.id, 'resolvido')}>
+                              Marcar como resolvido
+                            </Button>
+                          )}
+                          {ticket.status === 'resolvido' && (
+                            <Button size="sm" variant="secondary" onClick={() => handleStatusChange(ticket.id, 'aberto')}>
+                              Reabrir
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => setDeleting(ticket)}>
+                            <Trash2 size={16} />
+                            Excluir chamado
+                          </Button>
+                        </div>
+                        <div className="mt-2 rounded-md bg-surface p-3">
                           <TicketThread
                             messages={ticket.messages}
                             viewerIsOwner
                             canReply={ticket.status !== 'encerrado'}
                             onSend={(text) => handleSendMessage(ticket.id, text)}
-                            actions={
-                              <>
-                                {ticket.status === 'aberto' && (
-                                  <Button variant="secondary" onClick={() => handleStatusChange(ticket.id, 'resolvido')}>
-                                    Marcar como resolvido
-                                  </Button>
-                                )}
-                                {ticket.status === 'resolvido' && (
-                                  <Button variant="secondary" onClick={() => handleStatusChange(ticket.id, 'aberto')}>
-                                    Reabrir
-                                  </Button>
-                                )}
-                                <Button variant="ghost" onClick={() => setDeleting(ticket)}>
-                                  <Trash2 size={16} />
-                                  Excluir chamado
-                                </Button>
-                              </>
-                            }
                           />
                         </div>
                       </motion.div>

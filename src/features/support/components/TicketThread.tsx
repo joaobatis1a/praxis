@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Send } from 'lucide-react'
 import { Button } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
@@ -9,10 +9,9 @@ interface TicketThreadProps {
   viewerIsOwner: boolean
   canReply: boolean
   onSend: (message: string) => Promise<void>
-  actions?: ReactNode
 }
 
-export function TicketThread({ messages, viewerIsOwner, canReply, onSend, actions }: TicketThreadProps) {
+export function TicketThread({ messages, viewerIsOwner, canReply, onSend }: TicketThreadProps) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -48,8 +47,6 @@ export function TicketThread({ messages, viewerIsOwner, canReply, onSend, action
           )
         })}
       </div>
-
-      {actions && <div className="flex flex-wrap gap-2 border-t border-border pt-3">{actions}</div>}
 
       {canReply && (
         <form onSubmit={handleSubmit} className="flex gap-2">
