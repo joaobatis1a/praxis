@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronUp, LifeBuoy, LogOut, Settings } from 'lucide-react'
-import { Header, Sidebar, ThemeToggle } from '../../components/ui'
+import { Header, Logo, Sidebar, ThemeToggle } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { PRAXIS_OWNER_EMAIL } from '../../lib/praxisOwner'
 import { useTheme } from '../../lib/theme-provider'
@@ -61,7 +61,7 @@ export function AppLayout() {
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        header={<span className="font-brand text-lg font-bold text-text-primary">Praxis</span>}
+        header={<Logo textClassName="text-text-primary" />}
         sections={[
           {
             items: items.map((item) => ({
