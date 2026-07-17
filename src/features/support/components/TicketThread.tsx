@@ -24,11 +24,13 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
   const [sending, setSending] = useState(false)
   const [peerTyping, setPeerTyping] = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const channelReadyRef = useRef(false)
   const lastTypingSentRef = useRef(0)
   const hideTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     if (!isSupabase) return
+    channelReadyRef.current = false
     const channel = supabase!
       .channel(`support-typing-${ticketId}`)
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
@@ -37,10 +39,13 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
         clearTimeout(hideTypingTimeoutRef.current)
         hideTypingTimeoutRef.current = setTimeout(() => setPeerTyping(false), TYPING_HIDE_DELAY)
       })
-      .subscribe()
+      .subscribe((status) => {
+        channelReadyRef.current = status === 'SUBSCRIBED'
+      })
     channelRef.current = channel
     return () => {
       clearTimeout(hideTypingTimeoutRef.current)
+      channelReadyRef.current = false
       supabase!.removeChannel(channel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,7 +53,7 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
 
   function handleDraftChange(value: string) {
     setDraft(value)
-    if (!isSupabase) return
+    if (!isSupabase || !channelReadyRef.current) return
     const now = Date.now()
     if (now - lastTypingSentRef.current > TYPING_BROADCAST_THROTTLE) {
       lastTypingSentRef.current = now
@@ -71,7 +76,7 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
-        <AnimatePresence initial={false}>
+        <AnimatePresence>
           {messages.map((m) => {
             const own = m.isOwner === viewerIsOwner
             return (
