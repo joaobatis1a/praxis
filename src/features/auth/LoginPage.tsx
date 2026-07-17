@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { Button, Checkbox, Input } from '../../components/ui'
+import { Button, Checkbox, Input, Logo } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
 import { GoogleIcon } from './components/GoogleIcon'
@@ -64,8 +64,8 @@ export function LoginPage() {
           transition={{ duration: 0.5 }}
           className="relative z-10 mx-auto w-full max-w-sm"
         >
-          <Link to="/" className="font-brand text-lg font-bold text-white">
-            Praxis
+          <Link to="/">
+            <Logo textClassName="text-white" />
           </Link>
           <p className="mt-1 text-xs text-white/40">Práxis: da ação à execução.</p>
 

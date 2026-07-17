@@ -1,3 +1,5 @@
+import { Logo } from '../../../components/ui'
+
 const columns = [
   {
     title: 'Produto',
@@ -19,7 +21,7 @@ export function LandingFooter({ className }: { className?: string }) {
       <div className="mx-auto max-w-[var(--container-page)] px-6 py-12">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <span className="font-brand text-lg font-bold text-text-primary">Praxis</span>
+            <Logo textClassName="text-text-primary" />
             <p className="mt-2 text-sm text-text-muted">Práxis: da ação à execução.</p>
           </div>
 
