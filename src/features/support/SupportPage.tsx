@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Mail, MessageCircle, Send, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, Mail, MessageCircle, Send, Trash2 } from 'lucide-react'
 import { Badge, Button, buttonVariants, Card, ConfirmDialog, Input, Modal, Skeleton, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
@@ -186,19 +186,39 @@ function SupportContact() {
                   const isOpen = expanded === ticket.id
                   return (
                     <div key={ticket.id} className="py-3 first:pt-0">
-                      <button
-                        type="button"
-                        onClick={() => setExpanded(isOpen ? null : ticket.id)}
-                        className="flex w-full items-center justify-between gap-2 text-left"
-                      >
-                        <div className="min-w-0">
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExpanded(isOpen ? null : ticket.id)}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        >
                           <p className="truncate text-sm font-medium text-text-primary">{ticket.title}</p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
+                          <ChevronDown size={16} className={cn('shrink-0 text-text-muted transition-transform', isOpen && 'rotate-180')} />
+                        </button>
+                        <div className="flex shrink-0 items-center gap-1">
                           <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
-                          <ChevronDown size={16} className={cn('text-text-muted transition-transform', isOpen && 'rotate-180')} />
+                          {ticket.status === 'resolvido' && (
+                            <button
+                              type="button"
+                              onClick={() => handleCloseTicket(ticket.id)}
+                              aria-label="Confirmar e encerrar chamado"
+                              title="Confirmar e encerrar chamado"
+                              className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-success"
+                            >
+                              <Check size={15} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setDeleting(ticket)}
+                            aria-label="Excluir chamado"
+                            title="Excluir chamado"
+                            className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
-                      </button>
+                      </div>
 
                       <AnimatePresence initial={false}>
                         {isOpen && (
@@ -209,19 +229,9 @@ function SupportContact() {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-md border border-border bg-surface-card px-3 py-2">
-                              {ticket.status === 'resolvido' && (
-                                <Button size="sm" variant="secondary" onClick={() => handleCloseTicket(ticket.id)}>
-                                  Confirmar e encerrar chamado
-                                </Button>
-                              )}
-                              <Button size="sm" variant="ghost" onClick={() => setDeleting(ticket)}>
-                                <Trash2 size={16} />
-                                Excluir chamado
-                              </Button>
-                            </div>
-                            <div className="mt-2 rounded-md bg-surface p-3">
+                            <div className="mt-3 rounded-md bg-surface p-3">
                               <TicketThread
+                                ticketId={ticket.id}
                                 messages={ticket.messages}
                                 viewerIsOwner={false}
                                 canReply={ticket.status !== 'encerrado'}

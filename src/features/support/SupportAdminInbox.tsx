@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Trash2 } from 'lucide-react'
-import { Badge, Button, Card, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
+import { Check, ChevronDown, RotateCcw, Trash2 } from 'lucide-react'
+import { Badge, Card, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
@@ -126,21 +126,54 @@ export function SupportAdminInbox() {
             return (
               <motion.div key={ticket.id} variants={staggerItem}>
                 <Card>
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(isOpen ? null : ticket.id)}
-                    className="flex w-full items-start justify-between gap-2 text-left"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
-                      <p className="text-xs text-text-muted">{ticket.userEmail}</p>
-                      <p className="mt-2 truncate text-sm text-text-secondary">{ticket.title}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(isOpen ? null : ticket.id)}
+                      className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
+                        <p className="text-xs text-text-muted">{ticket.userEmail}</p>
+                        <p className="mt-2 truncate text-sm text-text-secondary">{ticket.title}</p>
+                      </div>
+                      <ChevronDown size={16} className={cn('mt-0.5 shrink-0 text-text-muted transition-transform', isOpen && 'rotate-180')} />
+                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
                       <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
-                      <ChevronDown size={16} className={cn('text-text-muted transition-transform', isOpen && 'rotate-180')} />
+                      {ticket.status === 'aberto' && (
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(ticket.id, 'resolvido')}
+                          aria-label="Marcar como resolvido"
+                          title="Marcar como resolvido"
+                          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-success"
+                        >
+                          <Check size={15} />
+                        </button>
+                      )}
+                      {ticket.status === 'resolvido' && (
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(ticket.id, 'aberto')}
+                          aria-label="Reabrir chamado"
+                          title="Reabrir chamado"
+                          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-primary"
+                        >
+                          <RotateCcw size={15} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setDeleting(ticket)}
+                        aria-label="Excluir chamado"
+                        title="Excluir chamado"
+                        className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
-                  </button>
+                  </div>
 
                   <AnimatePresence initial={false}>
                     {isOpen && (
@@ -151,24 +184,9 @@ export function SupportAdminInbox() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-md border border-border bg-surface-card px-3 py-2">
-                          {ticket.status === 'aberto' && (
-                            <Button size="sm" variant="secondary" onClick={() => handleStatusChange(ticket.id, 'resolvido')}>
-                              Marcar como resolvido
-                            </Button>
-                          )}
-                          {ticket.status === 'resolvido' && (
-                            <Button size="sm" variant="secondary" onClick={() => handleStatusChange(ticket.id, 'aberto')}>
-                              Reabrir
-                            </Button>
-                          )}
-                          <Button size="sm" variant="ghost" onClick={() => setDeleting(ticket)}>
-                            <Trash2 size={16} />
-                            Excluir chamado
-                          </Button>
-                        </div>
-                        <div className="mt-2 rounded-md bg-surface p-3">
+                        <div className="mt-3 rounded-md bg-surface p-3">
                           <TicketThread
+                            ticketId={ticket.id}
                             messages={ticket.messages}
                             viewerIsOwner
                             canReply={ticket.status !== 'encerrado'}
