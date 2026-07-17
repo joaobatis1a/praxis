@@ -126,51 +126,53 @@ export function SupportAdminInbox() {
             return (
               <motion.div key={ticket.id} variants={staggerItem}>
                 <Card>
-                  <div className="flex w-full items-start justify-between gap-2">
+                  <div className="flex w-full items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => setExpanded(isOpen ? null : ticket.id)}
-                      className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                      className="min-w-0 flex-1 text-left"
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
-                        <p className="text-xs text-text-muted">{ticket.userEmail}</p>
-                        <p className="mt-2 truncate text-sm text-text-secondary">{ticket.title}</p>
-                      </div>
-                      <ChevronDown size={16} className={cn('mt-0.5 shrink-0 text-text-muted transition-transform', isOpen && 'rotate-180')} />
+                      <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
+                      <p className="text-xs text-text-muted">{ticket.userEmail}</p>
+                      <p className="mt-2 truncate text-sm text-text-secondary">{ticket.title}</p>
                     </button>
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="flex shrink-0 items-center gap-1.5">
                       <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
                       {ticket.status === 'aberto' && (
                         <button
                           type="button"
                           onClick={() => handleStatusChange(ticket.id, 'resolvido')}
-                          aria-label="Marcar como resolvido"
-                          title="Marcar como resolvido"
-                          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-success"
+                          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-success"
                         >
-                          <Check size={15} />
+                          <Check size={14} />
+                          Resolver
                         </button>
                       )}
                       {ticket.status === 'resolvido' && (
                         <button
                           type="button"
                           onClick={() => handleStatusChange(ticket.id, 'aberto')}
-                          aria-label="Reabrir chamado"
-                          title="Reabrir chamado"
-                          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-primary"
+                          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-primary"
                         >
-                          <RotateCcw size={15} />
+                          <RotateCcw size={14} />
+                          Reabrir
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setDeleting(ticket)}
-                        aria-label="Excluir chamado"
-                        title="Excluir chamado"
-                        className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={14} />
+                        Excluir
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpanded(isOpen ? null : ticket.id)}
+                        aria-label={isOpen ? 'Recolher chamado' : 'Expandir chamado'}
+                        className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-hover"
+                      >
+                        <ChevronDown size={16} className={cn('transition-transform', isOpen && 'rotate-180')} />
                       </button>
                     </div>
                   </div>
