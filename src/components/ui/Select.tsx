@@ -24,10 +24,13 @@ interface Position {
   width: number
   openUpward: boolean
   top: number
+  maxHeight: number
 }
 
 const LIST_MAX_HEIGHT = 240
+const MIN_LIST_HEIGHT = 160
 const GAP = 6
+const VIEWPORT_MARGIN = 12
 
 export function Select({ value, onChange, options, className, triggerClassName, ...rest }: SelectProps) {
   const [open, setOpen] = useState(false)
@@ -44,11 +47,13 @@ export function Select({ value, onChange, options, className, triggerClassName, 
     const spaceBelow = window.innerHeight - rect.bottom
     const spaceAbove = rect.top
     const openUpward = spaceBelow < LIST_MAX_HEIGHT && spaceAbove > spaceBelow
+    const available = (openUpward ? spaceAbove : spaceBelow) - GAP - VIEWPORT_MARGIN
     setPosition({
       left: rect.left,
       width: rect.width,
       openUpward,
       top: openUpward ? rect.top - GAP : rect.bottom + GAP,
+      maxHeight: Math.max(MIN_LIST_HEIGHT, Math.min(LIST_MAX_HEIGHT, available)),
     })
   }
 
@@ -133,7 +138,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
                 position: 'fixed',
                 left: position.left,
                 width: position.width,
-                maxHeight: LIST_MAX_HEIGHT,
+                maxHeight: position.maxHeight,
                 ...(position.openUpward ? { bottom: window.innerHeight - position.top } : { top: position.top }),
               }}
               className="z-50 overflow-y-auto rounded-md border border-border bg-surface-card p-1 shadow-[var(--shadow-level-2)]"
