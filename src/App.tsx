@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { LandingPage } from './features/landing/LandingPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
+import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { RequireCompanyProfile } from './features/auth/RequireCompanyProfile'
 import { DesignSystemPage } from './pages/DesignSystemPage'
@@ -23,6 +24,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
       <Route path="/design-system" element={<DesignSystemPage />} />
 
       <Route element={<ProtectedRoute />}>

@@ -10,7 +10,7 @@ import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
 
-type Step = 'choice' | 'company' | 'code'
+type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details'
 
 const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
 
@@ -31,7 +31,9 @@ export function SignupPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [companyForm, setCompanyForm] = useState({ companyName: '', name: '', email: '', password: '' })
+  const [companyConfirmPassword, setCompanyConfirmPassword] = useState('')
   const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: '' })
+  const [codeConfirmPassword, setCodeConfirmPassword] = useState('')
   const [googleCompanyName, setGoogleCompanyName] = useState('')
   const [googleCode, setGoogleCode] = useState('')
 
@@ -50,16 +52,42 @@ export function SignupPage() {
 
   function goBack() {
     setError(null)
+    if (step === 'company-details') {
+      setStep('company')
+      return
+    }
+    if (step === 'code-details') {
+      setStep('code')
+      return
+    }
     if (pendingGoogleUser) clearPendingGoogleUser()
     if (noCompanySession) clearNoCompanySession()
     window.history.replaceState({}, '', '/signup')
     setStep('choice')
   }
 
+  function handleCompanyNext(e: FormEvent) {
+    e.preventDefault()
+    if (!companyForm.companyName.trim()) return
+    setError(null)
+    setStep('company-details')
+  }
+
+  function handleCodeNext(e: FormEvent) {
+    e.preventDefault()
+    if (!codeForm.code.trim()) return
+    setError(null)
+    setStep('code-details')
+  }
+
   async function handleCompanySubmit(e: FormEvent) {
     e.preventDefault()
-    setSubmitting(true)
     setError(null)
+    if (companyForm.password !== companyConfirmPassword) {
+      setError('As senhas não coincidem.')
+      return
+    }
+    setSubmitting(true)
     try {
       const user = await signupCompanyRequest(companyForm)
       setSessionUser(user)
@@ -73,8 +101,12 @@ export function SignupPage() {
 
   async function handleCodeSubmit(e: FormEvent) {
     e.preventDefault()
-    setSubmitting(true)
     setError(null)
+    if (codeForm.password !== codeConfirmPassword) {
+      setError('As senhas não coincidem.')
+      return
+    }
+    setSubmitting(true)
     try {
       const user = await signupWithCodeRequest(codeForm)
       setSessionUser(user)
@@ -243,33 +275,13 @@ export function SignupPage() {
               <h1 className="mt-8 text-2xl font-bold text-white">Crie sua empresa</h1>
               <p className="mt-1 text-sm text-white/50">Você será o administrador da conta.</p>
 
-              <form onSubmit={handleCompanySubmit} className="mt-6 flex flex-col gap-4">
+              <form onSubmit={handleCompanyNext} className="mt-6 flex flex-col gap-4">
                 <Input
                   label="Nome da empresa"
                   required
+                  autoFocus
                   value={companyForm.companyName}
                   onChange={(e) => setCompanyForm({ ...companyForm, companyName: e.target.value })}
-                />
-                <Input
-                  label="Seu nome"
-                  required
-                  value={companyForm.name}
-                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                />
-                <Input
-                  label="E-mail"
-                  type="email"
-                  required
-                  value={companyForm.email}
-                  onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                />
-                <Input
-                  label="Senha"
-                  type="password"
-                  required
-                  minLength={6}
-                  value={companyForm.password}
-                  onChange={(e) => setCompanyForm({ ...companyForm, password: e.target.value })}
                 />
 
                 {displayError && (
@@ -279,9 +291,8 @@ export function SignupPage() {
                   </div>
                 )}
 
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
-                  {submitting && <Loader2 size={18} className="animate-spin" />}
-                  {submitting ? 'Criando...' : 'Criar empresa'}
+                <Button type="submit" size="lg" className="mt-2">
+                  Próximo
                 </Button>
               </form>
 
@@ -302,6 +313,60 @@ export function SignupPage() {
                   </button>
                 </>
               )}
+            </>
+          )}
+
+          {step === 'company-details' && !identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Seus dados</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Criando <span className="text-white/80">{companyForm.companyName}</span>.
+              </p>
+
+              <form onSubmit={handleCompanySubmit} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="Seu nome"
+                  required
+                  autoFocus
+                  value={companyForm.name}
+                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                />
+                <Input
+                  label="E-mail"
+                  type="email"
+                  required
+                  value={companyForm.email}
+                  onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                />
+                <Input
+                  label="Senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={companyForm.password}
+                  onChange={(e) => setCompanyForm({ ...companyForm, password: e.target.value })}
+                />
+                <Input
+                  label="Confirmar senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={companyConfirmPassword}
+                  onChange={(e) => setCompanyConfirmPassword(e.target.value)}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                  {submitting && <Loader2 size={18} className="animate-spin" />}
+                  {submitting ? 'Criando...' : 'Criar empresa'}
+                </Button>
+              </form>
             </>
           )}
 
@@ -342,31 +407,11 @@ export function SignupPage() {
               <h1 className="mt-8 text-2xl font-bold text-white">Entre com seu código</h1>
               <p className="mt-1 text-sm text-white/50">Peça o código ao seu gestor ou administrador.</p>
 
-              <form onSubmit={handleCodeSubmit} className="mt-6 flex flex-col gap-4">
-                <Input
-                  label="Seu nome"
-                  required
-                  value={codeForm.name}
-                  onChange={(e) => setCodeForm({ ...codeForm, name: e.target.value })}
-                />
-                <Input
-                  label="E-mail"
-                  type="email"
-                  required
-                  value={codeForm.email}
-                  onChange={(e) => setCodeForm({ ...codeForm, email: e.target.value })}
-                />
-                <Input
-                  label="Senha"
-                  type="password"
-                  required
-                  minLength={6}
-                  value={codeForm.password}
-                  onChange={(e) => setCodeForm({ ...codeForm, password: e.target.value })}
-                />
+              <form onSubmit={handleCodeNext} className="mt-6 flex flex-col gap-4">
                 <Input
                   label="Código da empresa"
                   required
+                  autoFocus
                   placeholder="Ex: PRAXIS2026"
                   value={codeForm.code}
                   onChange={(e) => setCodeForm({ ...codeForm, code: e.target.value })}
@@ -379,9 +424,8 @@ export function SignupPage() {
                   </div>
                 )}
 
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
-                  {submitting && <Loader2 size={18} className="animate-spin" />}
-                  {submitting ? 'Entrando...' : 'Entrar'}
+                <Button type="submit" size="lg" className="mt-2">
+                  Próximo
                 </Button>
               </form>
 
@@ -415,6 +459,58 @@ export function SignupPage() {
                   </button>
                 </div>
               )}
+            </>
+          )}
+
+          {step === 'code-details' && !identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Seus dados</h1>
+              <p className="mt-1 text-sm text-white/50">Código: <span className="text-white/80">{codeForm.code}</span></p>
+
+              <form onSubmit={handleCodeSubmit} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="Seu nome"
+                  required
+                  autoFocus
+                  value={codeForm.name}
+                  onChange={(e) => setCodeForm({ ...codeForm, name: e.target.value })}
+                />
+                <Input
+                  label="E-mail"
+                  type="email"
+                  required
+                  value={codeForm.email}
+                  onChange={(e) => setCodeForm({ ...codeForm, email: e.target.value })}
+                />
+                <Input
+                  label="Senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={codeForm.password}
+                  onChange={(e) => setCodeForm({ ...codeForm, password: e.target.value })}
+                />
+                <Input
+                  label="Confirmar senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={codeConfirmPassword}
+                  onChange={(e) => setCodeConfirmPassword(e.target.value)}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                  {submitting && <Loader2 size={18} className="animate-spin" />}
+                  {submitting ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
             </>
           )}
         </motion.div>

@@ -61,6 +61,13 @@ export async function fetchOwnProfile(userId: string): Promise<AuthUser> {
   return profileToAuthUser(profile)
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase!.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/redefinir-senha`,
+  })
+  if (error) throw new Error('Não foi possível enviar o link de recuperação.')
+}
+
 export function loginWithGoogle() {
   return supabase!.auth.signInWithOAuth({
     provider: 'google',
