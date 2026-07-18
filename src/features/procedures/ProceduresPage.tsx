@@ -136,7 +136,9 @@ export function ProceduresPage() {
             className="h-12 w-full rounded-lg border border-border bg-surface-card pl-11 pr-4 text-sm text-text-primary shadow-[var(--shadow-level-1)] placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
           />
         </div>
-        <Select value={departmentFilter} onChange={setDepartmentFilter} options={departmentOptions} aria-label="Filtrar por departamento" />
+        {user?.role === 'admin' && (
+          <Select value={departmentFilter} onChange={setDepartmentFilter} options={departmentOptions} aria-label="Filtrar por departamento" />
+        )}
         <Select value={statusFilter} onChange={setStatusFilter} options={statusOptions} aria-label="Filtrar por status" />
       </div>
 
