@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Award, LogOut, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
+import { Award, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -54,7 +54,7 @@ function initialsOf(name: string) {
 }
 
 export function UsersPage() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { toast } = useToast()
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -272,18 +272,7 @@ export function UsersPage() {
                     >
                       <Award size={16} />
                     </motion.button>
-                    {isSelf ? (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.15 }}
-                        whileTap={{ scale: 0.85 }}
-                        onClick={logout}
-                        aria-label="Sair"
-                        className="rounded-md p-2 text-text-muted hover:bg-error-bg hover:text-error"
-                      >
-                        <LogOut size={16} />
-                      </motion.button>
-                    ) : (
+                    {!isSelf && (
                       <>
                         <motion.button
                           type="button"
