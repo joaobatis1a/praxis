@@ -374,34 +374,37 @@ export function SettingsPage() {
               <AlertTriangle size={18} className="text-error" />
               <h2 className="text-base font-semibold text-text-primary">Zona de perigo</h2>
             </div>
-            <p className="mt-1 text-sm text-text-muted">Excluir sua conta é permanente e não pode ser desfeito.</p>
+            <p className="mt-1 text-sm text-text-muted">
+              Sair da empresa mantém seu login ativo. Excluir a conta{user.role === 'admin' ? ' ou a empresa' : ''} é permanente e não pode ser desfeito.
+            </p>
+
+            {isSupabase && !isOnlyAdmin && (
+              <div className="mt-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-text-muted">
+                  Sai da empresa, mas mantém seu login — diferente de excluir a conta.
+                  {user.role === 'admin' ? ' Use isso depois de promover outra pessoa a Admin.' : ''}
+                </p>
+                <Button variant="secondary" onClick={() => setConfirmingLeaveCompany(true)} className="shrink-0">
+                  <LogOut size={16} />
+                  Sair da empresa
+                </Button>
+              </div>
+            )}
 
             {isOnlyAdmin ? (
               <div className="mt-4 flex flex-col items-start gap-3 rounded-md border border-warning/30 bg-warning-bg/40 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-warning-foreground">
-                  Você é o único administrador da empresa. Promova outra pessoa a Admin antes de excluir sua conta.
+                  Você é o único administrador da empresa. Promova outra pessoa a Admin antes de sair ou excluir sua conta.
                 </p>
                 <Button variant="secondary" onClick={() => navigate('/usuarios')} className="shrink-0">
                   Ir para Usuários
                 </Button>
               </div>
             ) : (
-              <div className="mt-4 flex justify-end">
+              <div className={`mt-4 flex justify-end ${isSupabase ? 'border-t border-error/20 pt-4' : ''}`}>
                 <Button variant="destructive" onClick={() => setConfirmingDelete(true)}>
                   <Trash2 size={16} />
                   Excluir minha conta
-                </Button>
-              </div>
-            )}
-
-            {user.role === 'admin' && isSupabase && !isOnlyAdmin && (
-              <div className="mt-4 flex flex-col items-start gap-3 border-t border-error/20 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-text-muted">
-                  Sai da empresa, mas mantém seu login — diferente de excluir a conta. Use isso depois de promover outra pessoa a Admin.
-                </p>
-                <Button variant="secondary" onClick={() => setConfirmingLeaveCompany(true)} className="shrink-0">
-                  <LogOut size={16} />
-                  Sair da empresa
                 </Button>
               </div>
             )}
