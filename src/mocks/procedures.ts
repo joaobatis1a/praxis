@@ -5,6 +5,11 @@ export interface ProcedureStep {
   text: string
 }
 
+export interface ExternalLink {
+  label: string
+  url: string
+}
+
 export interface Procedure {
   id: string
   title: string
@@ -18,8 +23,8 @@ export interface Procedure {
   completedStepIds: string[]
   videoUrl?: string
   videoName?: string
-  /** optional link (Drive, YouTube, etc.) shown alongside — or instead of — an uploaded video */
-  externalUrl?: string
+  /** optional links (Drive, YouTube, etc.) shown alongside — or instead of — an uploaded video */
+  externalLinks?: ExternalLink[]
   videoWatched: boolean
   completed: boolean
   completedAt?: string
