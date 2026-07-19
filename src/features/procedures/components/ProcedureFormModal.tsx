@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GripVertical, Plus, Video, X } from 'lucide-react'
-import { Button, Input, Modal, Select } from '../../../components/ui'
+import { Button, ExternalLinksField, Input, Modal, Select, type ExternalLinkValue } from '../../../components/ui'
 import { listDepartments } from '../../departments/api'
 import type { ProcedureStatus } from '../../../mocks/procedures'
 
@@ -21,7 +21,7 @@ export interface ProcedureFormValues {
   videoName?: string
   /** only set when the user picks a new file in this session — absent means "keep existing video" on edit */
   videoFile?: File
-  externalUrl?: string
+  externalLinks?: ExternalLinkValue[]
 }
 
 interface ProcedureFormModalProps {
@@ -40,7 +40,7 @@ const emptyForm: ProcedureFormValues = {
   steps: [''],
   videoUrl: undefined,
   videoName: undefined,
-  externalUrl: undefined,
+  externalLinks: [],
 }
 
 export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: ProcedureFormModalProps) {
@@ -103,7 +103,16 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
     if (!form.title.trim() || steps.length === 0) return
     setSaving(true)
     try {
-      await onSubmit({ ...form, title: form.title.trim(), responsible: form.responsible.trim(), steps })
+      const cleanLinks = (form.externalLinks ?? [])
+        .filter((link) => link.url.trim())
+        .map((link) => ({ label: link.label.trim() || 'Link', url: link.url.trim() }))
+      await onSubmit({
+        ...form,
+        title: form.title.trim(),
+        responsible: form.responsible.trim(),
+        steps,
+        externalLinks: cleanLinks,
+      })
       onClose()
     } catch {
       // the parent already surfaced the error via toast — keep the modal open so the user can retry
@@ -249,19 +258,7 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
           </p>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-primary">
-            Link externo <span className="font-normal text-text-muted">(opcional)</span>
-          </label>
-          <input
-            type="url"
-            value={form.externalUrl ?? ''}
-            onChange={(e) => setForm({ ...form, externalUrl: e.target.value })}
-            className="h-10 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
-            placeholder="https://drive.google.com/... ou https://youtube.com/..."
-          />
-          <p className="text-xs text-text-muted">Útil para vídeos grandes demais para o upload direto.</p>
-        </div>
+        <ExternalLinksField value={form.externalLinks ?? []} onChange={(links) => setForm({ ...form, externalLinks: links })} />
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>

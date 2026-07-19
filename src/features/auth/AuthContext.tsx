@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isSupabase) {
       function handleSignedIn(sessionUser: User) {
         const oauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
-        fetchOwnProfile(sessionUser.id)
+        return fetchOwnProfile(sessionUser.id)
           .then((authUser) => {
             setUser(authUser)
             setNoCompanySession(null)
@@ -67,8 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       supabase!.auth.getSession().then(({ data }) => {
-        if (data.session?.user) handleSignedIn(data.session.user)
-        setIsLoading(false)
+        if (data.session?.user) {
+          // keep isLoading true until the profile fetch resolves — otherwise ProtectedRoute sees
+          // isLoading=false with user still null and bounces a valid session to /login
+          handleSignedIn(data.session.user).finally(() => setIsLoading(false))
+        } else {
+          setIsLoading(false)
+        }
       })
 
       const { data: subscription } = supabase!.auth.onAuthStateChange((event, session) => {

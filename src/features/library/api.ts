@@ -1,6 +1,14 @@
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
-import { documents, folderTree as initialTree, type DocType, type DocVersion, type FolderNode, type LibraryDocument } from '../../mocks/library'
+import {
+  documents,
+  folderTree as initialTree,
+  type DocType,
+  type DocVersion,
+  type ExternalLink,
+  type FolderNode,
+  type LibraryDocument,
+} from '../../mocks/library'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -29,7 +37,7 @@ interface DocumentRow {
   updated_at: string
   file_path: string | null
   file_name: string | null
-  external_url: string | null
+  external_links: ExternalLink[]
 }
 
 interface VersionRow {
@@ -99,7 +107,7 @@ async function rowToDocument(row: DocumentRow, history: DocVersion[], favorite: 
     history,
     fileUrl,
     fileName: row.file_name ?? undefined,
-    externalUrl: row.external_url ?? undefined,
+    externalLinks: row.external_links,
   }
 }
 
@@ -278,7 +286,7 @@ export interface CreateDocumentInput {
   folderId?: string | null
   author: string
   file?: File
-  externalUrl?: string
+  externalLinks?: ExternalLink[]
 }
 
 export async function createDocument(input: CreateDocumentInput): Promise<LibraryDocument> {
@@ -290,7 +298,7 @@ export async function createDocument(input: CreateDocumentInput): Promise<Librar
         type: input.type,
         folder_id: input.folderId ?? null,
         author: input.author,
-        external_url: input.externalUrl || null,
+        external_links: input.externalLinks ?? [],
       })
       .select()
       .single()
@@ -319,6 +327,7 @@ export async function createDocument(input: CreateDocumentInput): Promise<Librar
     updatedAt: new Date().toISOString().slice(0, 10),
     favorite: false,
     history: [{ version: 'v1', date: new Date().toISOString().slice(0, 10), author: input.author, note: 'Documento criado.' }],
+    externalLinks: input.externalLinks,
   }
   docs = [newDoc, ...docs]
   return delay(newDoc)
@@ -342,7 +351,7 @@ export interface UpdateDocumentInput {
   type: DocType
   fileName?: string
   file?: File
-  externalUrl?: string
+  externalLinks?: ExternalLink[]
 }
 
 export async function updateDocument(id: string, input: UpdateDocumentInput): Promise<LibraryDocument> {
@@ -354,7 +363,7 @@ export async function updateDocument(id: string, input: UpdateDocumentInput): Pr
     const payload: Record<string, unknown> = {
       title: input.title,
       type: input.type,
-      external_url: input.externalUrl || null,
+      external_links: input.externalLinks ?? [],
       updated_at: new Date().toISOString().slice(0, 10),
     }
 
@@ -374,6 +383,6 @@ export async function updateDocument(id: string, input: UpdateDocumentInput): Pr
     if (error) throw new Error('Não foi possível atualizar o documento.')
     return fetchDocumentById(id)
   }
-  docs = docs.map((d) => (d.id === id ? { ...d, title: input.title, type: input.type } : d))
+  docs = docs.map((d) => (d.id === id ? { ...d, title: input.title, type: input.type, externalLinks: input.externalLinks } : d))
   return delay(docs.find((d) => d.id === id)!)
 }

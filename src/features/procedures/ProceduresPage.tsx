@@ -109,7 +109,7 @@ export function ProceduresPage() {
           steps: formState.procedure.steps.map((s) => s.text),
           videoUrl: formState.procedure.videoUrl,
           videoName: formState.procedure.videoName,
-          externalUrl: formState.procedure.externalUrl,
+          externalLinks: formState.procedure.externalLinks,
         }
       : undefined
 

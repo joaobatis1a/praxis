@@ -287,7 +287,7 @@ export function LibraryPage() {
                 title: docForm.doc.title,
                 type: docForm.doc.type,
                 fileName: docForm.doc.fileName,
-                externalUrl: docForm.doc.externalUrl,
+                externalLinks: docForm.doc.externalLinks,
               }
             : undefined
         }

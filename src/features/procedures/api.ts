@@ -1,6 +1,12 @@
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
-import { procedures as initialProcedures, type Procedure, type ProcedureStatus, type ProcedureStep } from '../../mocks/procedures'
+import {
+  procedures as initialProcedures,
+  type ExternalLink,
+  type Procedure,
+  type ProcedureStatus,
+  type ProcedureStep,
+} from '../../mocks/procedures'
 import { procedureCompletions as initialCompletions, type ProcedureCompletion } from '../../mocks/procedureCompletions'
 import { notify } from '../notifications/api'
 
@@ -27,7 +33,7 @@ interface ProcedureRow {
   completed_step_ids: string[]
   video_path: string | null
   video_name: string | null
-  external_url: string | null
+  external_links: ExternalLink[]
   video_watched: boolean
   completed: boolean
   completed_at: string | null
@@ -62,7 +68,7 @@ async function rowToProcedure(row: ProcedureRow): Promise<Procedure> {
     completedStepIds: row.completed_step_ids,
     videoUrl,
     videoName: row.video_name ?? undefined,
-    externalUrl: row.external_url ?? undefined,
+    externalLinks: row.external_links,
     videoWatched: row.video_watched,
     completed: row.completed,
     completedAt: row.completed_at ?? undefined,
@@ -111,7 +117,7 @@ export interface CreateProcedureInput {
   videoUrl?: string
   videoName?: string
   videoFile?: File
-  externalUrl?: string
+  externalLinks?: ExternalLink[]
 }
 
 export interface UpdateProcedureInput {
@@ -124,7 +130,7 @@ export interface UpdateProcedureInput {
   videoUrl?: string
   videoName?: string
   videoFile?: File
-  externalUrl?: string
+  externalLinks?: ExternalLink[]
 }
 
 export async function listProcedures(): Promise<Procedure[]> {
@@ -199,7 +205,7 @@ export async function createProcedure(input: CreateProcedureInput): Promise<Proc
         estimated_minutes: input.estimatedMinutes,
         author: input.author,
         steps,
-        external_url: input.externalUrl || null,
+        external_links: input.externalLinks ?? [],
         updated_at: new Date().toISOString().slice(0, 10),
       })
       .select()
@@ -246,7 +252,7 @@ export async function createProcedure(input: CreateProcedureInput): Promise<Proc
     completedStepIds: [],
     videoUrl: input.videoUrl,
     videoName: input.videoName,
-    externalUrl: input.externalUrl,
+    externalLinks: input.externalLinks,
     videoWatched: false,
     completed: false,
   }
@@ -285,7 +291,7 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
       status: input.status,
       estimated_minutes: input.estimatedMinutes,
       steps,
-      external_url: input.externalUrl || null,
+      external_links: input.externalLinks ?? [],
       // editing invalidates any in-progress or completed execution, so it always resets
       completed_step_ids: [],
       video_watched: false,
@@ -334,7 +340,7 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
     updatedAt: new Date().toISOString().slice(0, 10),
     videoUrl: input.videoUrl,
     videoName: input.videoName,
-    externalUrl: input.externalUrl,
+    externalLinks: input.externalLinks,
   }
   procedures = procedures.map((p) => (p.id === id ? updated : p))
   return delay(updated)

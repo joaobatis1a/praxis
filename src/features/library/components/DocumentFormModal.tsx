@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FileUp, X } from 'lucide-react'
-import { Button, Modal } from '../../../components/ui'
+import { Button, ExternalLinksField, Modal, type ExternalLinkValue } from '../../../components/ui'
 import type { DocType } from '../../../mocks/library'
 
 const UPLOADABLE_TYPES: DocType[] = ['video', 'image', 'pdf']
@@ -23,7 +23,7 @@ export interface DocumentFormValues {
   type: DocType
   fileName?: string
   file?: File
-  externalUrl?: string
+  externalLinks?: ExternalLinkValue[]
 }
 
 interface DocumentFormModalProps {
@@ -41,7 +41,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
   const [type, setType] = useState<DocType>('doc')
   const [fileName, setFileName] = useState<string | null>(null)
   const [file, setFile] = useState<File | undefined>(undefined)
-  const [externalUrl, setExternalUrl] = useState('')
+  const [externalLinks, setExternalLinks] = useState<ExternalLinkValue[]>([])
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -51,7 +51,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
       setType(initialData?.type ?? 'doc')
       setFileName(initialData?.fileName ?? null)
       setFile(undefined)
-      setExternalUrl(initialData?.externalUrl ?? '')
+      setExternalLinks(initialData?.externalLinks ?? [])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData])
@@ -75,7 +75,10 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
     if (disabled) return
     setSaving(true)
     try {
-      await onSubmit({ title, type, fileName: fileName ?? undefined, file, externalUrl: externalUrl.trim() || undefined })
+      const cleanLinks = externalLinks
+        .filter((link) => link.url.trim())
+        .map((link) => ({ label: link.label.trim() || 'Link', url: link.url.trim() }))
+      await onSubmit({ title, type, fileName: fileName ?? undefined, file, externalLinks: cleanLinks })
       onClose()
     } catch {
       // the parent already surfaced the error via toast — keep the modal open so the user can retry
@@ -128,21 +131,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, folderLabel, disabl
           </p>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-primary">
-            Link externo <span className="font-normal text-text-muted">(opcional)</span>
-          </label>
-          <input
-            type="url"
-            value={externalUrl}
-            onChange={(e) => setExternalUrl(e.target.value)}
-            className="h-10 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
-            placeholder="https://drive.google.com/... ou https://youtube.com/..."
-          />
-          <p className="text-xs text-text-muted">
-            Útil para vídeos grandes demais para o upload direto, ou para manter o arquivo hospedado fora do Praxis.
-          </p>
-        </div>
+        <ExternalLinksField value={externalLinks} onChange={setExternalLinks} />
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text-primary">Título</label>
