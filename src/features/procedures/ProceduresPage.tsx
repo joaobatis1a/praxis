@@ -114,7 +114,7 @@ export function ProceduresPage() {
           responsible: formState.procedure.responsible,
           status: formState.procedure.status,
           estimatedMinutes: formState.procedure.estimatedMinutes,
-          steps: formState.procedure.steps.map((s) => s.text),
+          steps: formState.procedure.steps.map((s) => ({ id: s.id, text: s.text })),
           videoUrl: formState.procedure.videoUrl,
           videoName: formState.procedure.videoName,
           externalLinks: formState.procedure.externalLinks,

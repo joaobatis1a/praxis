@@ -106,6 +106,12 @@ async function deleteVideo(path: string) {
   await supabase!.storage.from(VIDEO_BUCKET).remove([path])
 }
 
+export interface ProcedureStepInput {
+  /** present when this step already existed — omit for a newly added step */
+  id?: string
+  text: string
+}
+
 export interface CreateProcedureInput {
   title: string
   department: string
@@ -113,7 +119,7 @@ export interface CreateProcedureInput {
   status: ProcedureStatus
   estimatedMinutes: number
   author: string
-  steps: string[]
+  steps: ProcedureStepInput[]
   videoUrl?: string
   videoName?: string
   videoFile?: File
@@ -126,7 +132,7 @@ export interface UpdateProcedureInput {
   responsible: string
   status: ProcedureStatus
   estimatedMinutes: number
-  steps: string[]
+  steps: ProcedureStepInput[]
   videoUrl?: string
   videoName?: string
   videoFile?: File
@@ -194,7 +200,7 @@ export async function toggleVideoWatched(procedureId: string): Promise<Procedure
 
 export async function createProcedure(input: CreateProcedureInput): Promise<Procedure> {
   if (isSupabase) {
-    const steps: ProcedureStep[] = input.steps.map((text, i) => ({ id: `s${i + 1}`, text }))
+    const steps: ProcedureStep[] = input.steps.map((s, i) => ({ id: s.id ?? `s${i + 1}`, text: s.text }))
     const { data: inserted, error } = await supabase!
       .from('procedures')
       .insert({
@@ -238,7 +244,7 @@ export async function createProcedure(input: CreateProcedureInput): Promise<Proc
   }
 
   const id = `proc-${Date.now()}`
-  const steps: ProcedureStep[] = input.steps.map((text, i) => ({ id: `${id}-s${i + 1}`, text }))
+  const steps: ProcedureStep[] = input.steps.map((s, i) => ({ id: s.id ?? `${id}-s${i + 1}`, text: s.text }))
   const newProcedure: Procedure = {
     id,
     title: input.title,
@@ -287,21 +293,17 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
       completed_by: string | null
       video_watched: boolean
     }
-    const steps: ProcedureStep[] = input.steps.map((text, i) => {
-      const previous = currentRow.steps[i]
-      return { id: previous?.id ?? `s${i + 1}`, text }
-    })
+    const steps: ProcedureStep[] = input.steps.map((s) => ({ id: s.id ?? crypto.randomUUID(), text: s.text }))
 
-    // only invalidate progress when the steps themselves actually changed (count, order or text) —
-    // a cosmetic edit (title, department, responsible, video, links...) shouldn't wipe out
-    // everyone's already-checked boxes or completion badge
+    // step identity travels by id, not position, so reordering (drag-and-drop) alone never
+    // touches progress/completion — only an actual add/remove/text-edit does
+    const currentTextById = new Map(currentRow.steps.map((s) => [s.id, s.text]))
+    const newStepIds = new Set(steps.map((s) => s.id))
     const stepsChanged =
-      steps.length !== currentRow.steps.length ||
-      steps.some((step, i) => step.id !== currentRow.steps[i]?.id || step.text !== currentRow.steps[i]?.text)
-    const validStepIds = new Set(steps.map((s) => s.id))
-    const preservedStepIds = stepsChanged
-      ? currentRow.completed_step_ids.filter((sid) => validStepIds.has(sid))
-      : currentRow.completed_step_ids
+      currentRow.steps.length !== steps.length ||
+      steps.some((step) => currentTextById.get(step.id) !== step.text) ||
+      currentRow.steps.some((step) => !newStepIds.has(step.id))
+    const preservedStepIds = currentRow.completed_step_ids.filter((sid) => newStepIds.has(sid))
 
     const payload: Record<string, unknown> = {
       title: input.title,
@@ -347,17 +349,14 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
 
   const existing = procedures.find((p) => p.id === id)
   if (!existing) throw new Error('Procedimento não encontrado')
-  const steps: ProcedureStep[] = input.steps.map((text, i) => {
-    const previous = existing.steps[i]
-    return { id: previous?.id ?? `${id}-s${i + 1}`, text }
-  })
+  const steps: ProcedureStep[] = input.steps.map((s) => ({ id: s.id ?? crypto.randomUUID(), text: s.text }))
+  const currentTextById = new Map(existing.steps.map((s) => [s.id, s.text]))
+  const newStepIds = new Set(steps.map((s) => s.id))
   const stepsChanged =
-    steps.length !== existing.steps.length ||
-    steps.some((step, i) => step.id !== existing.steps[i]?.id || step.text !== existing.steps[i]?.text)
-  const validStepIds = new Set(steps.map((s) => s.id))
-  const preservedStepIds = stepsChanged
-    ? existing.completedStepIds.filter((sid) => validStepIds.has(sid))
-    : existing.completedStepIds
+    existing.steps.length !== steps.length ||
+    steps.some((step) => currentTextById.get(step.id) !== step.text) ||
+    existing.steps.some((step) => !newStepIds.has(step.id))
+  const preservedStepIds = existing.completedStepIds.filter((sid) => newStepIds.has(sid))
   const videoChanged = input.videoUrl !== existing.videoUrl
   const updated: Procedure = {
     ...existing,
