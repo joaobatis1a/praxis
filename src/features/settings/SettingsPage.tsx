@@ -1,24 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Bell, Building2, LogOut, Save, Tags, Trash2, User as UserIcon, X } from 'lucide-react'
+import { AlertTriangle, Bell, Building2, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Badge, Button, Card, ConfirmDialog, Input, Modal, Select, Skeleton, Switch, useToast } from '../../components/ui'
+import { Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
-import { getUserDepartment } from '../../lib/userDepartment'
 import type { TeamMember } from '../../mocks/teamMembers'
 import type { NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { addDepartment, deleteDepartment, listDepartments } from '../departments/api'
 import { deleteUser, listUsers } from '../users/api'
-import { deleteCompany, getCompany, getNotificationPreferences, leaveCompany, setNotificationPreference, updateCompany, updateProfile } from './api'
-
-const roleLabels: Record<Role, string> = {
-  admin: 'Administrador',
-  gestor: 'Gestor',
-  colaborador: 'Colaborador',
-}
+import { deleteCompany, getCompany, getNotificationPreferences, leaveCompany, setNotificationPreference, updateCompany } from './api'
 
 const notificationTypeInfo: Record<NotificationType, { label: string; description: string; roles?: Role[] }> = {
   aviso: { label: 'Avisos', description: 'Quando você recebe um aviso de alguém ou do seu setor.' },
@@ -43,13 +36,9 @@ const notificationTypeInfo: Record<NotificationType, { label: string; descriptio
 }
 
 export function SettingsPage() {
-  const { user, setSessionUser, logout } = useAuth()
+  const { user, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
-
-  const [name, setName] = useState(user?.name ?? '')
-  const [department, setDepartment] = useState(() => getUserDepartment(user) ?? '')
-  const [savingProfile, setSavingProfile] = useState(false)
 
   const [disabledTypes, setDisabledTypes] = useState<NotificationType[]>([])
   const [loadingPrefs, setLoadingPrefs] = useState(true)
@@ -73,11 +62,6 @@ export function SettingsPage() {
   const [newDepartment, setNewDepartment] = useState('')
   const [savingDepartment, setSavingDepartment] = useState(false)
   const [removingDepartment, setRemovingDepartment] = useState<string | null>(null)
-
-  useEffect(() => {
-    setName(user?.name ?? '')
-    setDepartment(getUserDepartment(user) ?? '')
-  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -110,20 +94,6 @@ export function SettingsPage() {
     const roles = notificationTypeInfo[type].roles
     return !roles || (user && roles.includes(user.role))
   })
-
-  async function handleSaveProfile() {
-    if (!user) return
-    setSavingProfile(true)
-    try {
-      const updated = await updateProfile(user.id, { name: name.trim(), email: user.email, role: user.role, department })
-      setSessionUser({ ...user, name: updated.name, department: updated.department })
-      toast('Perfil atualizado.')
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível atualizar o perfil.', 'error')
-    } finally {
-      setSavingProfile(false)
-    }
-  }
 
   async function handleToggleType(type: NotificationType, enabled: boolean) {
     if (!user) return
@@ -223,47 +193,9 @@ export function SettingsPage() {
       <motion.h1 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-bold text-text-primary">
         Configurações
       </motion.h1>
-      <p className="mt-1 text-sm text-text-muted">Gerencie seu perfil e notificações{user.role === 'admin' ? ', e a empresa' : ''}.</p>
+      <p className="mt-1 text-sm text-text-muted">Gerencie notificações{user.role === 'admin' ? ', a empresa e os departamentos' : ''}.</p>
 
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mt-6 space-y-6">
-        <motion.div variants={staggerItem}>
-          <Card>
-            <div className="flex items-center gap-2">
-              <UserIcon size={18} className="text-primary" />
-              <h2 className="text-base font-semibold text-text-primary">Meu perfil</h2>
-            </div>
-            <div className="mt-4 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input label="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
-                <Input label="E-mail" value={user.email} disabled hint="O e-mail não pode ser alterado." />
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="primary">{roleLabels[user.role]}</Badge>
-                {user.role !== 'admin' && <Badge variant="neutral">{department}</Badge>}
-              </div>
-              {user.role === 'admin' && (
-                <div className="flex flex-col gap-1.5 sm:max-w-xs">
-                  <label className="text-sm font-medium text-text-primary">Departamento</label>
-                  <Select
-                    value={department}
-                    onChange={setDepartment}
-                    options={departmentsList.map((dept) => ({ value: dept, label: dept }))}
-                    className="w-full"
-                    triggerClassName="w-full"
-                    aria-label="Meu departamento"
-                  />
-                </div>
-              )}
-              <div className="flex justify-end">
-                <Button onClick={handleSaveProfile} disabled={savingProfile || !name.trim()}>
-                  <Save size={16} />
-                  {savingProfile ? 'Salvando...' : 'Salvar perfil'}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
         <motion.div variants={staggerItem}>
           <Card>
             <div className="flex items-center gap-2">

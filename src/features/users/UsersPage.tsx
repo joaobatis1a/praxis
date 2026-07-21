@@ -33,7 +33,7 @@ const MotionTableRow = motion(TableRow)
 const MotionTableBody = motion(TableBody)
 
 const roleLabels: Record<Role, string> = {
-  admin: 'Administrador',
+  admin: 'Proprietário',
   gestor: 'Gestor',
   colaborador: 'Colaborador',
 }
@@ -138,7 +138,7 @@ export function UsersPage() {
   ]
   const roleOptions = [
     { value: 'todos', label: 'Todos os cargos' },
-    { value: 'admin', label: 'Administrador' },
+    { value: 'admin', label: 'Proprietário' },
     { value: 'gestor', label: 'Gestor' },
     { value: 'colaborador', label: 'Colaborador' },
   ]

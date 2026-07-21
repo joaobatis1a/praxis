@@ -6,7 +6,7 @@ import { Reveal } from './Reveal'
 const roles = [
   {
     icon: ShieldCheck,
-    title: 'Administrador',
+    title: 'Proprietário',
     description: 'Acesso total à plataforma.',
     items: ['Gerencia usuários, cargos e permissões', 'Configura empresa e segurança', 'Vê tudo o que acontece no sistema'],
     entrance: { hidden: { opacity: 0, y: 32 }, show: { opacity: 1, y: 0 } } satisfies Variants,

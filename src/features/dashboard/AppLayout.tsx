@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronUp, LifeBuoy, LogOut, Settings } from 'lucide-react'
+import { ChevronUp, LifeBuoy, LogOut, User } from 'lucide-react'
 import { Header, Logo, Sidebar, ThemeToggle } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { PRAXIS_OWNER_EMAIL } from '../../lib/praxisOwner'
@@ -15,7 +15,7 @@ import { getNavItemsForRole } from './navigation'
 const ownerNoCompanyNavItems = [{ to: '/suporte', label: 'Suporte', icon: LifeBuoy }]
 
 const roleLabels: Record<string, string> = {
-  admin: 'Administrador',
+  admin: 'Proprietário',
   gestor: 'Gestor',
   colaborador: 'Colaborador',
 }
@@ -120,12 +120,12 @@ export function AppLayout() {
                         type="button"
                         onClick={() => {
                           setMenuOpen(false)
-                          navigate('/configuracoes')
+                          navigate('/perfil')
                         }}
                         className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                       >
-                        <Settings size={16} />
-                        Configurações
+                        <User size={16} />
+                        Editar perfil
                       </button>
                     )}
                     <button

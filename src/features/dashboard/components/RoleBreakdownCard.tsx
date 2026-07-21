@@ -3,7 +3,7 @@ import { Card } from '../../../components/ui'
 import type { Role } from '../../auth/types'
 
 const roleInfo: Record<Role, { label: string; icon: typeof ShieldCheck }> = {
-  admin: { label: 'Administradores', icon: ShieldCheck },
+  admin: { label: 'Proprietários', icon: ShieldCheck },
   gestor: { label: 'Gestores', icon: UsersRound },
   colaborador: { label: 'Colaboradores', icon: GraduationCap },
 }

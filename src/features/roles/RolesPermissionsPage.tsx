@@ -8,7 +8,7 @@ import type { Role } from '../auth/types'
 import { countByRole, getModules, getPermissions, setPermission } from './api'
 
 const roleInfo: Record<Role, { label: string; description: string; icon: typeof ShieldCheck }> = {
-  admin: { label: 'Administrador', description: 'Acesso total à plataforma.', icon: ShieldCheck },
+  admin: { label: 'Proprietário', description: 'Acesso total à plataforma.', icon: ShieldCheck },
   gestor: { label: 'Gestor', description: 'Gerencia equipe e conteúdo.', icon: UsersRound },
   colaborador: { label: 'Colaborador', description: 'Consulta e realiza treinamentos.', icon: GraduationCap },
 }
@@ -87,7 +87,9 @@ export function RolesPermissionsPage() {
                 </motion.div>
                 <h3 className="mt-3 text-base font-semibold text-text-primary">{info.label}</h3>
                 <p className="mt-1 text-sm text-text-muted">{info.description}</p>
-                <p className="mt-3 text-xs font-medium text-text-muted">{counts?.[role] ?? '–'} colaboradores</p>
+                <p className="mt-3 text-xs font-medium text-text-muted">
+                  {counts?.[role] ?? '–'} {counts?.[role] === 1 ? 'usuário' : 'usuários'}
+                </p>
               </div>
             </motion.button>
           )
