@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { GripVertical, Plus, Video, X } from 'lucide-react'
 import { Button, ExternalLinksField, Input, Modal, Select, type ExternalLinkValue } from '../../../components/ui'
 import { listDepartments } from '../../departments/api'
@@ -10,18 +10,35 @@ const statusOptions = [
   { value: 'rascunho', label: 'Rascunho' },
 ]
 
+export interface ProcedureStepValue {
+  /** present when editing a step that already exists in the DB — omit for a newly added step */
+  id?: string
+  text: string
+}
+
 export interface ProcedureFormValues {
   title: string
   department: string
   responsible: string
   status: ProcedureStatus
   estimatedMinutes: number
-  steps: string[]
+  steps: ProcedureStepValue[]
   videoUrl?: string
   videoName?: string
   /** only set when the user picks a new file in this session — absent means "keep existing video" on edit */
   videoFile?: File
   externalLinks?: ExternalLinkValue[]
+}
+
+/** local-only identity for React/drag-reorder — never sent to the server */
+interface StepItem {
+  key: string
+  id?: string
+  text: string
+}
+
+function makeStepItem(step?: ProcedureStepValue): StepItem {
+  return { key: crypto.randomUUID(), id: step?.id, text: step?.text ?? '' }
 }
 
 interface ProcedureFormModalProps {
@@ -37,7 +54,7 @@ const emptyForm: ProcedureFormValues = {
   responsible: '',
   status: 'rascunho',
   estimatedMinutes: 10,
-  steps: [''],
+  steps: [],
   videoUrl: undefined,
   videoName: undefined,
   externalLinks: [],
@@ -46,13 +63,17 @@ const emptyForm: ProcedureFormValues = {
 export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: ProcedureFormModalProps) {
   const isEditing = !!initialData
   const [form, setForm] = useState<ProcedureFormValues>(emptyForm)
+  const [stepItems, setStepItems] = useState<StepItem[]>([makeStepItem()])
   const [saving, setSaving] = useState(false)
   const [departmentOptions, setDepartmentOptions] = useState<{ value: string; label: string }[]>([])
   const videoInputRef = useRef<HTMLInputElement>(null)
   const createdObjectUrl = useRef<string | null>(null)
 
   useEffect(() => {
-    if (open) setForm(initialData ?? emptyForm)
+    if (!open) return
+    setForm(initialData ?? emptyForm)
+    const initialSteps = initialData?.steps ?? []
+    setStepItems(initialSteps.length > 0 ? initialSteps.map(makeStepItem) : [makeStepItem()])
   }, [open, initialData])
 
   useEffect(() => {
@@ -85,21 +106,23 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
     if (videoInputRef.current) videoInputRef.current.value = ''
   }
 
-  function updateStep(index: number, text: string) {
-    setForm((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === index ? text : s)) }))
+  function updateStep(key: string, text: string) {
+    setStepItems((prev) => prev.map((s) => (s.key === key ? { ...s, text } : s)))
   }
 
   function addStep() {
-    setForm((prev) => ({ ...prev, steps: [...prev.steps, ''] }))
+    setStepItems((prev) => [...prev, makeStepItem()])
   }
 
-  function removeStep(index: number) {
-    setForm((prev) => ({ ...prev, steps: prev.steps.filter((_, i) => i !== index) }))
+  function removeStep(key: string) {
+    setStepItems((prev) => prev.filter((s) => s.key !== key))
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const steps = form.steps.map((s) => s.trim()).filter(Boolean)
+    const steps = stepItems
+      .map((s) => ({ id: s.id, text: s.text.trim() }))
+      .filter((s) => s.text)
     if (!form.title.trim() || steps.length === 0) return
     setSaving(true)
     try {
@@ -181,38 +204,20 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text-primary">Etapas</label>
-          <div className="space-y-2">
+          <Reorder.Group axis="y" values={stepItems} onReorder={setStepItems} className="space-y-2">
             <AnimatePresence initial={false}>
-              {form.steps.map((step, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="flex items-center gap-2"
-                >
-                  <GripVertical size={14} className="shrink-0 text-text-muted" />
-                  <input
-                    required
-                    value={step}
-                    onChange={(e) => updateStep(i, e.target.value)}
-                    placeholder={`Etapa ${i + 1}`}
-                    className="h-9 flex-1 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeStep(i)}
-                    disabled={form.steps.length === 1}
-                    aria-label="Remover etapa"
-                    className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-error-bg hover:text-error disabled:pointer-events-none disabled:opacity-30"
-                  >
-                    <X size={14} />
-                  </button>
-                </motion.div>
+              {stepItems.map((item, i) => (
+                <StepRow
+                  key={item.key}
+                  item={item}
+                  placeholder={`Etapa ${i + 1}`}
+                  onChange={(text) => updateStep(item.key, text)}
+                  onRemove={() => removeStep(item.key)}
+                  removeDisabled={stepItems.length === 1}
+                />
               ))}
             </AnimatePresence>
-          </div>
+          </Reorder.Group>
           <button
             type="button"
             onClick={addStep}
@@ -270,5 +275,56 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
         </div>
       </form>
     </Modal>
+  )
+}
+
+interface StepRowProps {
+  item: StepItem
+  placeholder: string
+  onChange: (text: string) => void
+  onRemove: () => void
+  removeDisabled: boolean
+}
+
+function StepRow({ item, placeholder, onChange, onRemove, removeDisabled }: StepRowProps) {
+  const dragControls = useDragControls()
+
+  return (
+    <Reorder.Item
+      value={item}
+      dragListener={false}
+      dragControls={dragControls}
+      layout
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+      className="flex items-center gap-2 bg-surface-card"
+    >
+      <button
+        type="button"
+        onPointerDown={(e) => dragControls.start(e)}
+        aria-label="Reordenar etapa"
+        className="shrink-0 cursor-grab touch-none text-text-muted hover:text-text-primary active:cursor-grabbing"
+      >
+        <GripVertical size={14} />
+      </button>
+      <input
+        required
+        value={item.text}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-9 flex-1 rounded-md border border-border-strong bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={removeDisabled}
+        aria-label="Remover etapa"
+        className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-error-bg hover:text-error disabled:pointer-events-none disabled:opacity-30"
+      >
+        <X size={14} />
+      </button>
+    </Reorder.Item>
   )
 }
