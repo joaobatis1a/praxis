@@ -64,6 +64,10 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
   const isEditing = !!initialData
   const [form, setForm] = useState<ProcedureFormValues>(emptyForm)
   const [stepItems, setStepItems] = useState<StepItem[]>([makeStepItem()])
+  // bumped every time the modal opens for a (new) session — keying the steps list on this
+  // forces a clean remount instead of AnimatePresence cross-fading the old default row with
+  // the freshly-reset one, which briefly produced two overlapping "Etapa 1" inputs
+  const [stepsSessionId, setStepsSessionId] = useState(0)
   const [saving, setSaving] = useState(false)
   const [departmentOptions, setDepartmentOptions] = useState<{ value: string; label: string }[]>([])
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -74,6 +78,7 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
     setForm(initialData ?? emptyForm)
     const initialSteps = initialData?.steps ?? []
     setStepItems(initialSteps.length > 0 ? initialSteps.map(makeStepItem) : [makeStepItem()])
+    setStepsSessionId((n) => n + 1)
   }, [open, initialData])
 
   useEffect(() => {
@@ -204,7 +209,7 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text-primary">Etapas</label>
-          <Reorder.Group axis="y" values={stepItems} onReorder={setStepItems} className="space-y-2">
+          <Reorder.Group key={stepsSessionId} axis="y" values={stepItems} onReorder={setStepItems} className="space-y-2">
             <AnimatePresence initial={false}>
               {stepItems.map((item, i) => (
                 <StepRow
