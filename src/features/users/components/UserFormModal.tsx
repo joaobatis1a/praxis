@@ -6,7 +6,7 @@ import type { Role } from '../../auth/types'
 import type { CreateUserInput } from '../api'
 
 const roleOptions: { value: Role; label: string }[] = [
-  { value: 'admin', label: 'Administrador' },
+  { value: 'admin', label: 'Proprietário' },
   { value: 'gestor', label: 'Gestor' },
   { value: 'colaborador', label: 'Colaborador' },
 ]

@@ -6,7 +6,7 @@ import type { Role } from '../auth/types'
 import { notify } from '../notifications/api'
 
 const roleLabels: Record<Role, string> = {
-  admin: 'Administrador',
+  admin: 'Proprietário',
   gestor: 'Gestor',
   colaborador: 'Colaborador',
 }
