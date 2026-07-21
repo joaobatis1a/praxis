@@ -26,7 +26,7 @@ import { FolderFormModal } from './components/FolderFormModal'
 import { DocumentCard } from './components/DocumentCard'
 import { HorizontalDocRow } from './components/HorizontalDocRow'
 import { DocumentDetailModal } from './components/DocumentDetailModal'
-import { DocumentFormModal, type DocumentFormValues } from './components/DocumentFormModal'
+import { DocumentFormModal, inferTypeFromFilename, stripExtension, type DocumentFormValues } from './components/DocumentFormModal'
 
 type DocFormState = { mode: 'create' } | { mode: 'edit'; doc: LibraryDocument } | null
 
@@ -85,6 +85,27 @@ export function LibraryPage() {
       }
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível salvar o documento.', 'error')
+      throw err
+    }
+  }
+
+  async function handleDocFormSubmitBatch(files: File[]) {
+    try {
+      const created: LibraryDocument[] = []
+      for (const file of files) {
+        const doc = await createDocument({
+          title: stripExtension(file.name),
+          type: inferTypeFromFilename(file.name),
+          folderId: selectedFolder,
+          author: user?.name ?? 'Você',
+          file,
+        })
+        created.push(doc)
+      }
+      setDocs((prev) => [...created, ...prev])
+      toast(`${created.length} documentos foram criados.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível salvar um dos documentos.', 'error')
       throw err
     }
   }
@@ -280,6 +301,7 @@ export function LibraryPage() {
         open={!!docForm}
         onClose={() => setDocForm(null)}
         onSubmit={handleDocFormSubmit}
+        onSubmitBatch={handleDocFormSubmitBatch}
         folderLabel={locationLabel}
         initialData={
           docForm?.mode === 'edit'
