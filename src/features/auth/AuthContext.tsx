@@ -40,6 +40,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [noCompanySession, setNoCompanySession] = useState<NoCompanySession | null>(null)
   const ownerNoCompany = !!noCompanySession && isPraxisOwner(noCompanySession.email)
 
+  // Listen for another admin changing this user's own role/department/status live — so an
+  // active session picks it up immediately instead of needing a reload to see new permissions,
+  // and an account marked inativo gets signed out right away rather than keeping a stale session.
+  useEffect(() => {
+    if (!isSupabase || !user) return
+    const userId = user.id
+    const channel = supabase!
+      .channel(`profile-self-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        (payload) => {
+          const next = payload.new as { role: string; department: string | null; status: 'ativo' | 'inativo' }
+          if (next.status === 'inativo') {
+            setUser(null)
+            setError('Você está inativo nesta empresa.')
+            supabase!.auth.signOut()
+            return
+          }
+          setUser((prev) => (prev ? { ...prev, role: next.role as AuthUser['role'], department: next.department ?? undefined } : prev))
+        },
+      )
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
+  }, [user?.id])
+
   useEffect(() => {
     if (isSupabase) {
       function handleSignedIn(sessionUser: User) {
