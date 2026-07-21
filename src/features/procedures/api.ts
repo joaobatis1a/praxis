@@ -274,15 +274,34 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
   if (isSupabase) {
     const { data: current, error: fetchError } = await supabase!
       .from('procedures')
-      .select('video_path, steps')
+      .select('video_path, steps, completed_step_ids, completed, completed_at, completed_by, video_watched')
       .eq('id', id)
       .single()
     if (fetchError || !current) throw new Error('Procedimento não encontrado.')
-    const currentRow = current as { video_path: string | null; steps: ProcedureStep[] }
+    const currentRow = current as {
+      video_path: string | null
+      steps: ProcedureStep[]
+      completed_step_ids: string[]
+      completed: boolean
+      completed_at: string | null
+      completed_by: string | null
+      video_watched: boolean
+    }
     const steps: ProcedureStep[] = input.steps.map((text, i) => {
       const previous = currentRow.steps[i]
       return { id: previous?.id ?? `s${i + 1}`, text }
     })
+
+    // only invalidate progress when the steps themselves actually changed (count, order or text) —
+    // a cosmetic edit (title, department, responsible, video, links...) shouldn't wipe out
+    // everyone's already-checked boxes or completion badge
+    const stepsChanged =
+      steps.length !== currentRow.steps.length ||
+      steps.some((step, i) => step.id !== currentRow.steps[i]?.id || step.text !== currentRow.steps[i]?.text)
+    const validStepIds = new Set(steps.map((s) => s.id))
+    const preservedStepIds = stepsChanged
+      ? currentRow.completed_step_ids.filter((sid) => validStepIds.has(sid))
+      : currentRow.completed_step_ids
 
     const payload: Record<string, unknown> = {
       title: input.title,
@@ -292,26 +311,34 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
       estimated_minutes: input.estimatedMinutes,
       steps,
       external_links: input.externalLinks ?? [],
-      // editing invalidates any in-progress or completed execution, so it always resets
-      completed_step_ids: [],
-      video_watched: false,
-      completed: false,
-      completed_at: null,
-      completed_by: null,
+      completed_step_ids: preservedStepIds,
       updated_at: new Date().toISOString().slice(0, 10),
     }
 
+    if (stepsChanged) {
+      // the "fully completed" badge no longer reflects the current step content
+      payload.completed = false
+      payload.completed_at = null
+      payload.completed_by = null
+    }
+
+    let videoChanged = false
     if (input.videoFile) {
+      videoChanged = true
       const { path, name } = await uploadVideo(id, input.videoFile)
       if (currentRow.video_path) await deleteVideo(currentRow.video_path)
       payload.video_path = path
       payload.video_name = name
     } else if (!input.videoName) {
-      if (currentRow.video_path) await deleteVideo(currentRow.video_path)
+      if (currentRow.video_path) {
+        videoChanged = true
+        await deleteVideo(currentRow.video_path)
+      }
       payload.video_path = null
       payload.video_name = null
     }
     // else: videoName is set but no new file was chosen — existing video stays untouched
+    if (videoChanged) payload.video_watched = false
 
     const { data, error } = await supabase!.from('procedures').update(payload).eq('id', id).select().single()
     if (error || !data) throw new Error('Não foi possível atualizar o procedimento.')
@@ -324,6 +351,14 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
     const previous = existing.steps[i]
     return { id: previous?.id ?? `${id}-s${i + 1}`, text }
   })
+  const stepsChanged =
+    steps.length !== existing.steps.length ||
+    steps.some((step, i) => step.id !== existing.steps[i]?.id || step.text !== existing.steps[i]?.text)
+  const validStepIds = new Set(steps.map((s) => s.id))
+  const preservedStepIds = stepsChanged
+    ? existing.completedStepIds.filter((sid) => validStepIds.has(sid))
+    : existing.completedStepIds
+  const videoChanged = input.videoUrl !== existing.videoUrl
   const updated: Procedure = {
     ...existing,
     title: input.title,
@@ -332,11 +367,11 @@ export async function updateProcedure(id: string, input: UpdateProcedureInput): 
     status: input.status,
     estimatedMinutes: input.estimatedMinutes,
     steps,
-    completedStepIds: [],
-    videoWatched: false,
-    completed: false,
-    completedAt: undefined,
-    completedBy: undefined,
+    completedStepIds: preservedStepIds,
+    videoWatched: videoChanged ? false : existing.videoWatched,
+    completed: stepsChanged ? false : existing.completed,
+    completedAt: stepsChanged ? undefined : existing.completedAt,
+    completedBy: stepsChanged ? undefined : existing.completedBy,
     updatedAt: new Date().toISOString().slice(0, 10),
     videoUrl: input.videoUrl,
     videoName: input.videoName,
