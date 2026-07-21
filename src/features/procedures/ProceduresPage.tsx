@@ -53,15 +53,23 @@ export function ProceduresPage() {
   }, [procedures, search, departmentFilter, statusFilter])
 
   async function handleToggleStep(procedureId: string, stepId: string) {
-    const updated = await toggleStep(procedureId, stepId)
-    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-    setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
+    try {
+      const updated = await toggleStep(procedureId, stepId)
+      setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível atualizar a etapa.', 'error')
+    }
   }
 
   async function handleToggleVideoWatched(procedureId: string) {
-    const updated = await toggleVideoWatched(procedureId)
-    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-    setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
+    try {
+      const updated = await toggleVideoWatched(procedureId)
+      setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      setOpenProcedure((prev) => (prev && prev.id === updated.id ? updated : prev))
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível atualizar o vídeo.', 'error')
+    }
   }
 
   async function handleFormSubmit(values: ProcedureFormValues) {
