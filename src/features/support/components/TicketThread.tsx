@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Send } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
@@ -27,6 +27,12 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
   const channelReadyRef = useRef(false)
   const lastTypingSentRef = useRef(0)
   const hideTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [messages.length, peerTyping])
 
   useEffect(() => {
     if (!isSupabase) return
@@ -73,9 +79,20 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
     }
   }
 
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (!draft.trim() || sending) return
+      setSending(true)
+      onSend(draft.trim())
+        .then(() => setDraft(''))
+        .finally(() => setSending(false))
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2">
+      <div ref={scrollRef} className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
         <AnimatePresence>
           {messages.map((m) => {
             const own = m.isOwner === viewerIsOwner
@@ -123,8 +140,9 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
           <textarea
             value={draft}
             onChange={(e) => handleDraftChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             rows={2}
-            placeholder="Escreva uma mensagem..."
+            placeholder="Escreva uma mensagem... (Enter envia, Shift+Enter quebra linha)"
             className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-sm text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
           />
           <Button type="submit" disabled={sending || !draft.trim()} className="shrink-0 self-end">
