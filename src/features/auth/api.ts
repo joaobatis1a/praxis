@@ -68,11 +68,27 @@ export async function requestPasswordReset(email: string): Promise<void> {
   if (error) throw new Error('Não foi possível enviar o link de recuperação.')
 }
 
+/** Marks this tab as "mid Google OAuth redirect" before leaving the page — LoginPage reads this
+ * on the way back to skip its "você já está conectado" account-switch screen and go straight to
+ * the dashboard, since picking a Google account already expressed the intent to log in as it. */
+const OAUTH_PENDING_KEY = 'praxis-oauth-pending'
+
 export function loginWithGoogle() {
+  sessionStorage.setItem(OAUTH_PENDING_KEY, '1')
   return supabase!.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/login` },
+    options: {
+      redirectTo: `${window.location.origin}/login`,
+      queryParams: { prompt: 'select_account' },
+    },
   })
+}
+
+/** Reads and clears the flag set by loginWithGoogle — call once on LoginPage mount. */
+export function consumeOAuthPendingFlag(): boolean {
+  const pending = sessionStorage.getItem(OAUTH_PENDING_KEY)
+  if (pending) sessionStorage.removeItem(OAUTH_PENDING_KEY)
+  return !!pending
 }
 
 /** Redirects back to the signup page's code-redemption step (the only self-service path left —
@@ -80,7 +96,10 @@ export function loginWithGoogle() {
 export function signupWithGoogle() {
   return supabase!.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/signup?oauthIntent=code` },
+    options: {
+      redirectTo: `${window.location.origin}/signup?oauthIntent=code`,
+      queryParams: { prompt: 'select_account' },
+    },
   })
 }
 
