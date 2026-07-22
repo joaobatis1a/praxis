@@ -1,8 +1,27 @@
 import { motion } from 'framer-motion'
 import { Award, BookOpen, Clock, FileClock, ListChecks, UserCheck, Video } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Badge } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { Reveal } from './Reveal'
+
+function FloatingBadge({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.85, y: 8 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.5, delay, type: 'spring', stiffness: 260, damping: 20 }}
+      className={cn(
+        'animate-float-sm absolute z-10 rounded-full border border-white/10 bg-[#0b1224]/95 px-3 py-1.5 text-xs font-medium text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)] backdrop-blur',
+        className,
+      )}
+      style={{ animationDelay: '-2.2s' }}
+    >
+      {children}
+    </motion.div>
+  )
+}
 
 const rows = [
   {
@@ -142,8 +161,22 @@ export function ProductTourSection() {
                 <p className="mt-4 max-w-md text-white/55">{row.description}</p>
               </Reveal>
 
-              <Reveal delay={0.1} className="min-w-0">
-                {row.eyebrow.includes('Biblioteca') ? <LibraryMock /> : <ProcedureMock />}
+              <Reveal delay={0.1} className="relative min-w-0">
+                {row.eyebrow.includes('Biblioteca') ? (
+                  <>
+                    <LibraryMock />
+                    <FloatingBadge className="-right-3 -top-3 sm:-right-4" delay={0.5}>
+                      +312 documentos organizados
+                    </FloatingBadge>
+                  </>
+                ) : (
+                  <>
+                    <ProcedureMock />
+                    <FloatingBadge className="-left-3 -bottom-3 sm:-left-4" delay={0.5}>
+                      Concluído por 12 pessoas essa semana
+                    </FloatingBadge>
+                  </>
+                )}
               </Reveal>
             </div>
           ))}
