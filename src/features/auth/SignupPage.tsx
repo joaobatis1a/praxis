@@ -24,7 +24,7 @@ export function SignupPage() {
     clearPendingGoogleUser,
     noCompanySession,
     clearNoCompanySession,
-    ownerNoCompany,
+    maintenanceNoCompany,
   } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
@@ -44,11 +44,11 @@ export function SignupPage() {
   const identity = pendingGoogleUser ?? noCompanySession
 
   // covers the Google OAuth redirect-back landing here with a session (and profile) already set,
-  // and the Praxis owner arriving here with no company (routed to Central de Suporte instead)
+  // and a maintenance account arriving here with no company (routed to the maintenance panel instead)
   useEffect(() => {
     if (user) navigate('/dashboard')
-    else if (ownerNoCompany) navigate('/suporte')
-  }, [user, ownerNoCompany, navigate])
+    else if (maintenanceNoCompany) navigate('/manutencao')
+  }, [user, maintenanceNoCompany, navigate])
 
   function goBack() {
     setError(null)

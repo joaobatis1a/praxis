@@ -17,7 +17,7 @@ const demoAccounts = [
 ]
 
 export function LoginPage() {
-  const { login, loginWithGoogle, isAuthenticating, error, user, ownerNoCompany, noCompanySession, logout } = useAuth()
+  const { login, loginWithGoogle, isAuthenticating, error, user, maintenanceNoCompany, noCompanySession, logout } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
@@ -28,15 +28,16 @@ export function LoginPage() {
   const [resetSubmitting, setResetSubmitting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
 
-  // covers the Google OAuth redirect-back landing here with a session already set — the Praxis
-  // owner logging in with no company profile (→ Central de Suporte), and anyone else logging in
-  // with no company profile (→ the signup page's join-a-company screen). A session that already
-  // resolved to a full `user` is handled by the account-picker screen below instead of an
-  // automatic redirect, so someone who navigates back to /login can choose to switch accounts.
+  // covers the Google OAuth redirect-back landing here with a session already set — a
+  // maintenance account logging in with no company profile (→ the maintenance panel), and
+  // anyone else logging in with no company profile (→ the signup page's join-a-company screen).
+  // A session that already resolved to a full `user` is handled by the account-picker screen
+  // below instead of an automatic redirect, so someone who navigates back to /login can choose
+  // to switch accounts.
   useEffect(() => {
-    if (ownerNoCompany) navigate('/suporte')
+    if (maintenanceNoCompany) navigate('/manutencao')
     else if (noCompanySession) navigate('/signup')
-  }, [ownerNoCompany, noCompanySession, navigate])
+  }, [maintenanceNoCompany, noCompanySession, navigate])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -45,7 +46,7 @@ export function LoginPage() {
       // a fresh, successful login goes straight to the app — the account-picker screen below is
       // only for landing on /login with a session that already existed before this submit
       if (authUser) navigate('/dashboard')
-      // ownerNoCompany / noCompanySession cases still navigate via the effect above
+      // maintenanceNoCompany / noCompanySession cases still navigate via the effect above
     } catch {
       // error already surfaced via context state
     }

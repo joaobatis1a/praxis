@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { isSupabase } from '../../lib/dataSource'
-import { isPraxisOwner } from '../../lib/praxisOwner'
 import { supabase } from '../../lib/supabaseClient'
 import { CompanyInactiveError, UserInactiveError, fetchOwnProfile, loginRequest, loginWithGoogle, toPendingGoogleUser, type NoCompanySession, type PendingGoogleUser } from './api'
 import type { AuthUser } from './types'
@@ -15,12 +14,20 @@ interface AuthContextValue {
   pendingGoogleUser: PendingGoogleUser | null
   clearPendingGoogleUser: () => void
   /** set for any authenticated session with no company profile (e.g. after "Sair da empresa") —
-   * the Praxis owner (see ownerNoCompany) lands in Central de Suporte, everyone else lands on
-   * the signup page's "join a company" screen, reusing the same identity shape as a fresh Google signup. */
+   * a maintenance account (see maintenanceNoCompany) lands in the maintenance panel, everyone
+   * else lands on the signup page's "join a company" screen, reusing the same identity shape
+   * as a fresh Google signup. */
   noCompanySession: NoCompanySession | null
   clearNoCompanySession: () => void
-  /** derived from noCompanySession — true only when that session's email is the Praxis owner's */
-  ownerNoCompany: boolean
+  /** true when the current login's email is in maintenance_accounts — works whether or not
+   * the account also has a normal company profile (additive, see [[project-backlog-20260720]]) */
+  isMaintenanceAccount: boolean
+  /** false until the maintenance check above has resolved at least once for the current
+   * session — guards against briefly bouncing a real maintenance account off /manutencao
+   * on a hard refresh, before isMaintenanceAccount has had a chance to come back true */
+  maintenanceChecked: boolean
+  /** derived from noCompanySession — true only when that session's email is a maintenance account */
+  maintenanceNoCompany: boolean
   login: (email: string, password: string) => Promise<AuthUser | null>
   loginWithGoogle: () => void
   setSessionUser: (user: AuthUser) => void
@@ -38,7 +45,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [pendingGoogleUser, setPendingGoogleUser] = useState<PendingGoogleUser | null>(null)
   const [noCompanySession, setNoCompanySession] = useState<NoCompanySession | null>(null)
-  const ownerNoCompany = !!noCompanySession && isPraxisOwner(noCompanySession.email)
+  const [isMaintenanceAccount, setIsMaintenanceAccount] = useState(false)
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false)
+  const maintenanceNoCompany = !!noCompanySession && isMaintenanceAccount
+
+  // maintenance status is orthogonal to having a company profile — checked for both a normal
+  // `user` session and a bare `noCompanySession`, whichever is currently resolved
+  useEffect(() => {
+    if (!isSupabase) {
+      setMaintenanceChecked(true)
+      return
+    }
+    const email = user?.email ?? noCompanySession?.email
+    if (!email) {
+      setIsMaintenanceAccount(false)
+      setMaintenanceChecked(true)
+      return
+    }
+    let cancelled = false
+    setMaintenanceChecked(false)
+    supabase!.rpc('is_maintenance_account').then(({ data }) => {
+      if (!cancelled) {
+        setIsMaintenanceAccount(!!data)
+        setMaintenanceChecked(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.email, noCompanySession?.email])
 
   // Listen for another admin changing this user's own role/department/status live — so an
   // active session picks it up immediately instead of needing a reload to see new permissions,
@@ -194,7 +229,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearPendingGoogleUser,
         noCompanySession,
         clearNoCompanySession,
-        ownerNoCompany,
+        isMaintenanceAccount,
+        maintenanceChecked,
+        maintenanceNoCompany,
         login,
         loginWithGoogle,
         setSessionUser,

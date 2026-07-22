@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronUp, LifeBuoy, LogOut, User } from 'lucide-react'
+import { ChevronUp, LifeBuoy, LogOut, User, Wrench } from 'lucide-react'
 import { Header, Logo, Sidebar, ThemeToggle } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
-import { PRAXIS_OWNER_EMAIL } from '../../lib/praxisOwner'
 import { useTheme } from '../../lib/theme-provider'
 import { getUserDepartment } from '../../lib/userDepartment'
 import { useAuth } from '../auth/AuthContext'
@@ -12,7 +11,8 @@ import { listNotifications } from '../notifications/api'
 import { setThemePreference } from '../settings/api'
 import { getNavItemsForRole } from './navigation'
 
-const ownerNoCompanyNavItems = [{ to: '/suporte', label: 'Suporte', icon: LifeBuoy }]
+const maintenanceNavItem = { to: '/manutencao', label: 'Manutenção', icon: Wrench }
+const maintenanceNoCompanyNavItems = [{ to: '/suporte', label: 'Suporte', icon: LifeBuoy }, maintenanceNavItem]
 
 const roleLabels: Record<string, string> = {
   admin: 'Proprietário',
@@ -21,7 +21,7 @@ const roleLabels: Record<string, string> = {
 }
 
 export function AppLayout() {
-  const { user, ownerNoCompany, logout } = useAuth()
+  const { user, maintenanceNoCompany, noCompanySession, isMaintenanceAccount, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -45,9 +45,11 @@ export function AppLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
-  if (!user && !ownerNoCompany) return null
+  if (!user && !maintenanceNoCompany) return null
 
-  const items = user ? getNavItemsForRole(user.role) : ownerNoCompanyNavItems
+  const items = user
+    ? [...getNavItemsForRole(user.role), ...(isMaintenanceAccount ? [maintenanceNavItem] : [])]
+    : maintenanceNoCompanyNavItems
   const displayName = user?.name ?? 'Suporte Praxis'
   const initials = displayName
     .split(' ')
@@ -88,7 +90,7 @@ export function AppLayout() {
               </motion.div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
-                <p className="truncate text-xs text-text-muted">{user ? roleLabels[user.role] : 'Dono do Praxis'}</p>
+                <p className="truncate text-xs text-text-muted">{user ? roleLabels[user.role] : 'Manutenção Praxis'}</p>
               </div>
               <motion.span
                 animate={{ rotate: menuOpen ? 180 : 0 }}
@@ -112,7 +114,7 @@ export function AppLayout() {
                   >
                     <div className="px-2.5 py-2">
                       <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
-                      <p className="truncate text-xs text-text-muted">{user?.email ?? PRAXIS_OWNER_EMAIL}</p>
+                      <p className="truncate text-xs text-text-muted">{user?.email ?? noCompanySession?.email}</p>
                     </div>
                     <div className="my-1 border-t border-border" />
                     {user && (

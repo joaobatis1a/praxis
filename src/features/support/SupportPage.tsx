@@ -6,7 +6,6 @@ import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
-import { isPraxisOwner } from '../../lib/praxisOwner'
 import { useAuth } from '../auth/AuthContext'
 import { closeOwnTicket, createTicket, deleteTicket, listMyTickets, rowToMessage, sendMessage, type MessageRow, type TicketRow } from './api'
 import { SupportAdminInbox } from './SupportAdminInbox'
@@ -28,8 +27,8 @@ const statusVariant: Record<SupportTicketStatus, 'warning' | 'success' | 'neutra
 }
 
 export function SupportPage() {
-  const { user, ownerNoCompany } = useAuth()
-  if (ownerNoCompany || (user && isPraxisOwner(user.email))) return <SupportAdminInbox />
+  const { isMaintenanceAccount } = useAuth()
+  if (isMaintenanceAccount) return <SupportAdminInbox />
   return <SupportContact />
 }
 
