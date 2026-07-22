@@ -150,9 +150,7 @@ export function MaintenancePage() {
               <Building2 size={18} className="text-primary" />
               <h2 className="text-base font-semibold text-text-primary">Nova empresa</h2>
             </div>
-            <p className="mt-1 text-sm text-text-muted">
-              Cria a empresa e gera um código de admin — envie esse código para o responsável do cliente, ele usa em Criar conta &gt; Tenho um código.
-            </p>
+            <p className="mt-1 text-sm text-text-muted">Gera um código de admin para o responsável do cliente.</p>
 
             <form onSubmit={handleCreateCompany} className="mt-4 flex gap-2">
               <Input
@@ -176,7 +174,7 @@ export function MaintenancePage() {
               <Building2 size={18} className="text-primary" />
               <h2 className="text-base font-semibold text-text-primary">Empresas cadastradas</h2>
             </div>
-            <p className="mt-1 text-sm text-text-muted">Dados são só leitura — as ações abaixo afetam só o status/existência da empresa.</p>
+            <p className="mt-1 text-sm text-text-muted">Somente leitura, exceto pelas ações da coluna Ações.</p>
 
             <div className="mt-4">
               {loading ? (
@@ -251,19 +249,13 @@ export function MaintenancePage() {
               <Wrench size={18} className="text-primary" />
               <h2 className="text-base font-semibold text-text-primary">Contas de manutenção</h2>
             </div>
-            <p className="mt-1 text-sm text-text-muted">
-              Quem está nessa lista vê esta página e a caixa de suporte de todas as empresas, além da própria conta normal (se tiver uma).
-            </p>
+            <p className="mt-1 text-sm text-text-muted">Vê esta página e o suporte de todas as empresas.</p>
 
             <div className="mt-4">
               <Button type="button" onClick={handleGenerateAccountCode} disabled={generatingAccountCode}>
                 <KeyRound size={16} />
                 {generatingAccountCode ? 'Gerando...' : 'Gerar código de convite'}
               </Button>
-              <p className="mt-1.5 text-xs text-text-muted">
-                Código de uso único — a pessoa resgata em Configurações &gt; Tenho um código de manutenção (se já tiver conta) ou no cadastro
-                (se não tiver).
-              </p>
             </div>
 
             <div className="mt-4">
@@ -307,14 +299,14 @@ export function MaintenancePage() {
         code={generatedCompanyCode}
         onClose={() => setGeneratedCompanyCode(null)}
         title="Convite de empresa gerado"
-        description="Envie esse código para o responsável do cliente — ele usa em Criar conta > Tenho um código."
+        description="Envie esse código para o responsável do cliente. Ele usa em Criar conta > Tenho um código."
       />
 
       <InviteCodeModal
         code={generatedAccountCode}
         onClose={() => setGeneratedAccountCode(null)}
         title="Código de manutenção gerado"
-        description="Código de uso único. A pessoa resgata em Configurações > Tenho um código de manutenção (se já tiver conta) ou no cadastro (se não tiver)."
+        description="Uso único. Resgata em Configurações > Tenho um código de manutenção, ou no cadastro se ainda não tiver conta."
       />
 
       <Modal
