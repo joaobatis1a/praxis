@@ -57,7 +57,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.7 }}
             className="mt-8 max-w-md text-lg text-white/60"
           >
-            Documentação, procedimentos e a comunicação da equipe, conectados em um único sistema — para que
+            Documentação, procedimentos e a comunicação da equipe, conectados em um único sistema, para que
             o que sua equipe sabe não desapareça quando ela sai da sala.
           </motion.p>
 

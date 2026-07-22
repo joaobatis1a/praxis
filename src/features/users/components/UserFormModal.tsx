@@ -63,7 +63,7 @@ export function UserFormModal({ open, onClose, onSubmit, initialData }: UserForm
         isEditing
           ? 'Atualize as informações do colaborador.'
           : isInviteMode
-            ? 'Escolha o cargo e departamento — a pessoa preenche o próprio nome e e-mail ao entrar com o código.'
+            ? 'Escolha o cargo e departamento. A pessoa preenche o próprio nome e e-mail ao entrar com o código.'
             : 'Preencha os dados do novo colaborador.'
       }
     >

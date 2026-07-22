@@ -174,7 +174,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
               ? 'Cada arquivo vira um documento separado, com o nome do arquivo como título.'
               : canPreviewInApp
                 ? 'Vídeo, imagem e PDF ficam disponíveis para visualizar direto na página do documento.'
-                : 'Este tipo de arquivo ainda não pode ser visualizado dentro do site — só o nome fica salvo, como referência. Use o link externo abaixo se quiser que dê para abrir o conteúdo.'}
+                : 'Este tipo de arquivo ainda não pode ser visualizado dentro do site, só o nome fica salvo como referência. Use o link externo abaixo se quiser que dê para abrir o conteúdo.'}
           </p>
         </div>
 

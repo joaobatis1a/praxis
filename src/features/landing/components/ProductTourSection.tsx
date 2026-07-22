@@ -9,7 +9,7 @@ const rows = [
     eyebrow: 'Biblioteca de Conhecimento',
     title: 'Cada documento, com histórico e dono.',
     description:
-      'Categorias, pastas e subpastas organizadas como sua empresa realmente pensa. Toda edição fica registrada — versionamento e histórico completo, sem perder o que já existia.',
+      'Categorias, pastas e subpastas organizadas como sua empresa realmente pensa. Toda edição fica registrada, com versionamento e histórico completo, sem perder o que já existia.',
     icon: BookOpen,
     reverse: false,
   },
@@ -17,7 +17,7 @@ const rows = [
     eyebrow: 'Procedimentos Operacionais',
     title: 'Processos que sobrevivem à saída de alguém.',
     description:
-      'Checklists com etapas, vídeo do passo a passo e responsável definido. Um SOP no Praxis não é um PDF esquecido — é um processo vivo que qualquer pessoa da equipe consegue seguir e concluir.',
+      'Checklists com etapas, vídeo do passo a passo e responsável definido. Um SOP no Praxis não é um PDF esquecido, é um processo vivo que qualquer pessoa da equipe consegue seguir e concluir.',
     icon: ListChecks,
     reverse: true,
   },
@@ -66,7 +66,7 @@ function ProcedureMock() {
       style={{ animationDelay: '-3s' }}
     >
       <div className="flex items-center justify-between border-b border-white/10 pb-3">
-        <p className="text-sm font-medium text-white/80">Abertura de chamado — SOP</p>
+        <p className="text-sm font-medium text-white/80">Abertura de chamado</p>
         <Badge variant="success" className="border-transparent">Publicado</Badge>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/40">
