@@ -7,8 +7,8 @@ export interface MaintenanceCompany {
   status: 'ativo' | 'inativo'
   createdAt: string
   memberCount: number
-  adminName: string | null
-  adminEmail: string | null
+  adminNames: string[]
+  adminEmails: string[]
 }
 
 interface CompanyRow {
@@ -17,8 +17,8 @@ interface CompanyRow {
   status: 'ativo' | 'inativo'
   created_at: string
   member_count: number
-  admin_name: string | null
-  admin_email: string | null
+  admin_names: string[] | null
+  admin_emails: string[] | null
 }
 
 export interface MaintenanceAccount {
@@ -44,9 +44,19 @@ export async function listCompanies(): Promise<MaintenanceCompany[]> {
     status: row.status,
     createdAt: row.created_at,
     memberCount: row.member_count,
-    adminName: row.admin_name,
-    adminEmail: row.admin_email,
+    adminNames: row.admin_names ?? [],
+    adminEmails: row.admin_emails ?? [],
   }))
+}
+
+export async function setCompanyStatus(companyId: string, status: 'ativo' | 'inativo'): Promise<void> {
+  const { error } = await supabase!.rpc('set_company_status', { target_company_id: companyId, new_status: status })
+  if (error) throw new Error('Não foi possível atualizar o status da empresa.')
+}
+
+export async function deleteCompanyAsMaintenance(companyId: string): Promise<void> {
+  const { error } = await supabase!.rpc('delete_company_as_maintenance', { target_company_id: companyId })
+  if (error) throw new Error('Não foi possível excluir a empresa.')
 }
 
 export async function listMaintenanceAccounts(): Promise<MaintenanceAccount[]> {

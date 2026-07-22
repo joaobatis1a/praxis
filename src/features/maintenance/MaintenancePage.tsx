@@ -1,17 +1,33 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Navigate } from 'react-router-dom'
-import { Badge, Button, Card, Input, Skeleton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, useToast } from '../../components/ui'
-import { Building2, Plus, Trash2, UserPlus, Wrench } from 'lucide-react'
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Modal,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  useToast,
+} from '../../components/ui'
+import { Building2, Plus, Power, PowerOff, Trash2, UserPlus, Wrench } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
 import { InviteCodeModal } from '../users/components/InviteCodeModal'
 import {
   addMaintenanceAccount,
   createCompanyForClient,
+  deleteCompanyAsMaintenance,
   listCompanies,
   listMaintenanceAccounts,
   removeMaintenanceAccount,
+  setCompanyStatus,
   type MaintenanceAccount,
   type MaintenanceCompany,
 } from './api'
@@ -28,6 +44,10 @@ export function MaintenancePage() {
   const [newCompanyName, setNewCompanyName] = useState('')
   const [creatingCompany, setCreatingCompany] = useState(false)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
+  const [deletingCompany, setDeletingCompany] = useState<MaintenanceCompany | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingInFlight, setDeletingInFlight] = useState(false)
 
   useEffect(() => {
     if (!isMaintenanceAccount) return
@@ -58,6 +78,36 @@ export function MaintenancePage() {
       toast(err instanceof Error ? err.message : 'Não foi possível criar a empresa.', 'error')
     } finally {
       setCreatingCompany(false)
+    }
+  }
+
+  async function handleToggleStatus(company: MaintenanceCompany) {
+    const nextStatus = company.status === 'ativo' ? 'inativo' : 'ativo'
+    setTogglingStatusId(company.id)
+    try {
+      await setCompanyStatus(company.id, nextStatus)
+      setCompanies((prev) => prev.map((c) => (c.id === company.id ? { ...c, status: nextStatus } : c)))
+      toast(nextStatus === 'inativo' ? `${company.name} foi desativada.` : `${company.name} foi reativada.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível atualizar o status.', 'error')
+    } finally {
+      setTogglingStatusId(null)
+    }
+  }
+
+  async function handleDeleteCompany() {
+    if (!deletingCompany) return
+    setDeletingInFlight(true)
+    try {
+      await deleteCompanyAsMaintenance(deletingCompany.id)
+      setCompanies((prev) => prev.filter((c) => c.id !== deletingCompany.id))
+      toast(`${deletingCompany.name} foi excluída.`, 'error')
+      setDeletingCompany(null)
+      setDeleteConfirmText('')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível excluir a empresa.', 'error')
+    } finally {
+      setDeletingInFlight(false)
     }
   }
 
@@ -132,7 +182,7 @@ export function MaintenancePage() {
               <Building2 size={18} className="text-primary" />
               <h2 className="text-base font-semibold text-text-primary">Empresas cadastradas</h2>
             </div>
-            <p className="mt-1 text-sm text-text-muted">Somente leitura — não é possível editar dados de outra empresa por aqui.</p>
+            <p className="mt-1 text-sm text-text-muted">Dados são só leitura — as ações abaixo afetam só o status/existência da empresa.</p>
 
             <div className="mt-4">
               {loading ? (
@@ -149,9 +199,10 @@ export function MaintenancePage() {
                     <TableRow>
                       <TableHeaderCell>Empresa</TableHeaderCell>
                       <TableHeaderCell>Status</TableHeaderCell>
-                      <TableHeaderCell>Administrador</TableHeaderCell>
+                      <TableHeaderCell>Administradores</TableHeaderCell>
                       <TableHeaderCell>Usuários</TableHeaderCell>
                       <TableHeaderCell>Criada em</TableHeaderCell>
+                      <TableHeaderCell>Ações</TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -164,10 +215,14 @@ export function MaintenancePage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {company.adminName ? (
-                            <div>
-                              <p className="text-text-primary">{company.adminName}</p>
-                              <p className="text-xs text-text-muted">{company.adminEmail}</p>
+                          {company.adminNames.length > 0 ? (
+                            <div className="space-y-1">
+                              {company.adminNames.map((name, i) => (
+                                <div key={i}>
+                                  <p className="text-text-primary">{name}</p>
+                                  <p className="text-xs text-text-muted">{company.adminEmails[i]}</p>
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             '—'
@@ -175,6 +230,29 @@ export function MaintenancePage() {
                         </TableCell>
                         <TableCell>{company.memberCount}</TableCell>
                         <TableCell>{new Date(company.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(company)}
+                              disabled={togglingStatusId === company.id}
+                              aria-label={company.status === 'ativo' ? 'Desativar empresa' : 'Reativar empresa'}
+                              title={company.status === 'ativo' ? 'Desativar empresa' : 'Reativar empresa'}
+                              className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-warning-bg hover:text-warning-foreground disabled:pointer-events-none disabled:opacity-30"
+                            >
+                              {company.status === 'ativo' ? <PowerOff size={16} /> : <Power size={16} />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingCompany(company)}
+                              aria-label="Excluir empresa"
+                              title="Excluir empresa"
+                              className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-error-bg hover:text-error"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -247,6 +325,47 @@ export function MaintenancePage() {
       </motion.div>
 
       <InviteCodeModal code={generatedCode} onClose={() => setGeneratedCode(null)} />
+
+      <Modal
+        open={!!deletingCompany}
+        onClose={() => {
+          setDeletingCompany(null)
+          setDeleteConfirmText('')
+        }}
+        title="Excluir empresa"
+        description="Essa ação é permanente: apaga a empresa, todos os dados e o login de todos os colaboradores dela."
+        className="max-w-sm"
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text-primary">
+              Digite <span className="font-semibold">{deletingCompany?.name}</span> para confirmar
+            </label>
+            <Input value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setDeletingCompany(null)
+                setDeleteConfirmText('')
+              }}
+              disabled={deletingInFlight}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteCompany}
+              disabled={deletingInFlight || deleteConfirmText.trim() !== deletingCompany?.name.trim()}
+            >
+              {deletingInFlight ? 'Excluindo...' : 'Excluir empresa'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
