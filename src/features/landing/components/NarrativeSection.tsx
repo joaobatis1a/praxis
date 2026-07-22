@@ -86,10 +86,7 @@ function TimelineVisual() {
             >
               <shift.icon size={18} />
             </motion.div>
-            <div>
-              <p className="text-base font-semibold text-white">{shift.solution}</p>
-              <p className="text-sm text-white/45">{shift.description}</p>
-            </div>
+            <p className="text-base font-semibold text-white">{shift.solution}</p>
           </motion.div>
         ))}
       </div>
