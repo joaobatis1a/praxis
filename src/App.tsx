@@ -18,6 +18,7 @@ import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { ProfilePage } from './features/settings/ProfilePage'
 import { SupportPage } from './features/support/SupportPage'
+import { MaintenancePage } from './features/maintenance/MaintenancePage'
 
 function App() {
   return (
@@ -47,8 +48,9 @@ function App() {
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
 
-          {/* reachable both by normal company users and by the owner with no company (ownerNoCompany) */}
+          {/* reachable both by normal company users and by a maintenance account with no company (maintenanceNoCompany) */}
           <Route path="/suporte" element={<SupportPage />} />
+          <Route path="/manutencao" element={<MaintenancePage />} />
         </Route>
       </Route>
 
