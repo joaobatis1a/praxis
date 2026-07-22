@@ -79,17 +79,25 @@ export function LandingHeader() {
             Entrar
           </Link>
           {isSupabase ? (
-            <a
-              href={SALES_WHATSAPP_URL}
-              target="_blank"
-              rel="noreferrer"
-              className={cn(
-                buttonVariants({ size: 'sm' }),
-                'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
-              )}
-            >
-              Fale com a gente
-            </a>
+            <>
+              <Link
+                to="/signup"
+                className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden rounded-full sm:inline-flex')}
+              >
+                Tenho um código
+              </Link>
+              <a
+                href={SALES_WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={cn(
+                  buttonVariants({ size: 'sm' }),
+                  'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
+                )}
+              >
+                Fale com a gente
+              </a>
+            </>
           ) : (
             <Link
               to="/signup"
