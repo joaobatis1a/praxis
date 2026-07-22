@@ -42,6 +42,9 @@ export function MaintenancePage() {
   const [generatedAccountCode, setGeneratedAccountCode] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [newCompanyName, setNewCompanyName] = useState('')
+  const [newContactName, setNewContactName] = useState('')
+  const [newContactPhone, setNewContactPhone] = useState('')
+  const [newNotes, setNewNotes] = useState('')
   const [creatingCompany, setCreatingCompany] = useState(false)
   const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null)
   const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
@@ -69,9 +72,17 @@ export function MaintenancePage() {
     if (!name) return
     setCreatingCompany(true)
     try {
-      const code = await createCompanyForClient(name)
+      const code = await createCompanyForClient({
+        name,
+        contactName: newContactName,
+        contactPhone: newContactPhone,
+        notes: newNotes,
+      })
       setGeneratedCompanyCode(code)
       setNewCompanyName('')
+      setNewContactName('')
+      setNewContactPhone('')
+      setNewNotes('')
       const updated = await listCompanies()
       setCompanies(updated)
     } catch (err) {
@@ -152,15 +163,31 @@ export function MaintenancePage() {
             </div>
             <p className="mt-1 text-sm text-text-muted">Gera um código de admin para o responsável do cliente.</p>
 
-            <form onSubmit={handleCreateCompany} className="mt-4 flex gap-2">
+            <form onSubmit={handleCreateCompany} className="mt-4 flex flex-col gap-3">
               <Input
                 required
                 value={newCompanyName}
                 onChange={(e) => setNewCompanyName(e.target.value)}
                 placeholder="Nome da empresa"
-                className="flex-1"
               />
-              <Button type="submit" disabled={creatingCompany || !newCompanyName.trim()}>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  placeholder="Nome do contato (opcional)"
+                />
+                <Input
+                  value={newContactPhone}
+                  onChange={(e) => setNewContactPhone(e.target.value)}
+                  placeholder="Telefone do contato (opcional)"
+                />
+              </div>
+              <Input
+                value={newNotes}
+                onChange={(e) => setNewNotes(e.target.value)}
+                placeholder="Observações (opcional)"
+              />
+              <Button type="submit" disabled={creatingCompany || !newCompanyName.trim()} className="self-start">
                 <Plus size={16} />
                 {creatingCompany ? 'Criando...' : 'Criar empresa'}
               </Button>
@@ -200,7 +227,14 @@ export function MaintenancePage() {
                   <TableBody>
                     {companies.map((company) => (
                       <TableRow key={company.id}>
-                        <TableCell className="font-medium text-text-primary">{company.name}</TableCell>
+                        <TableCell className="font-medium text-text-primary">
+                          <span title={company.notes ?? undefined}>{company.name}</span>
+                          {(company.contactName || company.contactPhone) && (
+                            <p className="mt-0.5 text-xs font-normal text-text-muted">
+                              {[company.contactName, company.contactPhone].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={company.status === 'ativo' ? 'success' : 'neutral'}>
                             {company.status === 'ativo' ? 'Ativa' : 'Inativa'}

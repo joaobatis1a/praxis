@@ -9,6 +9,9 @@ export interface MaintenanceCompany {
   memberCount: number
   adminNames: string[]
   adminEmails: string[]
+  contactName: string | null
+  contactPhone: string | null
+  notes: string | null
 }
 
 interface CompanyRow {
@@ -19,6 +22,16 @@ interface CompanyRow {
   member_count: number
   admin_names: string[] | null
   admin_emails: string[] | null
+  contact_name: string | null
+  contact_phone: string | null
+  notes: string | null
+}
+
+export interface CreateCompanyInput {
+  name: string
+  contactName?: string
+  contactPhone?: string
+  notes?: string
 }
 
 export interface MaintenanceAccount {
@@ -46,6 +59,9 @@ export async function listCompanies(): Promise<MaintenanceCompany[]> {
     memberCount: row.member_count,
     adminNames: row.admin_names ?? [],
     adminEmails: row.admin_emails ?? [],
+    contactName: row.contact_name,
+    contactPhone: row.contact_phone,
+    notes: row.notes,
   }))
 }
 
@@ -72,9 +88,15 @@ export async function listMaintenanceAccounts(): Promise<MaintenanceAccount[]> {
 
 /** Creates a brand new, empty company and returns an admin invite code for it — the client's
  * first user redeems the code themselves via "Tenho um código", same as any other invite. */
-export async function createCompanyForClient(name: string): Promise<string> {
+export async function createCompanyForClient(input: CreateCompanyInput): Promise<string> {
   const code = randomCode()
-  const { error } = await supabase!.rpc('create_company_for_client', { company_name: name, invite_code: code })
+  const { error } = await supabase!.rpc('create_company_for_client', {
+    company_name: input.name,
+    invite_code: code,
+    contact_name: input.contactName?.trim() || null,
+    contact_phone: input.contactPhone?.trim() || null,
+    notes: input.notes?.trim() || null,
+  })
   if (error) throw new Error('Não foi possível criar a empresa.')
   return code
 }
