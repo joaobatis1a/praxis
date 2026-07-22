@@ -24,7 +24,7 @@ import { FolderTree } from './components/FolderTree'
 import { FolderBreadcrumb } from './components/FolderBreadcrumb'
 import { FolderFormModal } from './components/FolderFormModal'
 import { DocumentCard } from './components/DocumentCard'
-import { HorizontalDocRow } from './components/HorizontalDocRow'
+import { DocumentGridSection } from './components/DocumentGridSection'
 import { DocumentDetailModal } from './components/DocumentDetailModal'
 import { DocumentFormModal, inferTypeFromFilename, stripExtension, type DocumentFormValues } from './components/DocumentFormModal'
 
@@ -222,7 +222,7 @@ export function LibraryPage() {
 
         {!search && !selectedFolder && (
           <div className="mt-8 space-y-8">
-            <HorizontalDocRow
+            <DocumentGridSection
               title="Favoritos"
               documents={favorites}
               onOpen={setOpenDoc}
@@ -230,7 +230,7 @@ export function LibraryPage() {
               onEdit={(doc) => setDocForm({ mode: 'edit', doc })}
               onDelete={setDeletingDoc}
             />
-            <HorizontalDocRow
+            <DocumentGridSection
               title="Documentos recentes"
               documents={recent}
               onOpen={setOpenDoc}
