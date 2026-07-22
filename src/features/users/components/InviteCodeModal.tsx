@@ -13,7 +13,7 @@ export function InviteCodeModal({
   code,
   onClose,
   title = 'Convite gerado',
-  description = 'Compartilhe esse código com a pessoa — ela usa em Criar conta > Tenho um código.',
+  description = 'Compartilhe esse código com a pessoa. Ela usa em Criar conta > Tenho um código.',
 }: InviteCodeModalProps) {
   const [copied, setCopied] = useState(false)
 
