@@ -102,7 +102,7 @@ export function NarrativeSection() {
           <h2 className="mt-3 text-4xl font-bold leading-tight text-white">O que hoje vive espalhado, aqui vira uma coisa só.</h2>
         </Reveal>
 
-        <div className="mx-auto mt-16 max-w-3xl space-y-10">
+        <div className="mx-auto mt-16 max-w-4xl space-y-10 lg:max-w-5xl">
           {shifts.map((_, i) => (
             <ShiftRow key={shifts[i].solution} index={i} />
           ))}
