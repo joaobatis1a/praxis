@@ -9,6 +9,7 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 
 let notifications: AppNotification[] = structuredClone(initialNotifications)
 let disabledTypesByUser: Record<string, NotificationType[]> = {}
+let dismissedByUser: Record<string, string[]> = {}
 
 export interface NotifyInput {
   type: NotificationType
@@ -92,11 +93,11 @@ export async function listNotifications(user: NotificationRecipient): Promise<(A
     const disabled = await getDisabledTypes(user.id)
     const { data, error } = await supabase!
       .from('notifications')
-      .select('*, notification_reads(user_id)')
+      .select('*, notification_reads(user_id), notification_dismissals(user_id)')
       .order('created_at', { ascending: false })
     if (error || !data) return []
-    return (data as (NotificationRow & { notification_reads: { user_id: string }[] })[])
-      .filter((row) => !disabled.includes(row.type))
+    return (data as (NotificationRow & { notification_reads: { user_id: string }[]; notification_dismissals: { user_id: string }[] })[])
+      .filter((row) => !disabled.includes(row.type) && row.notification_dismissals.length === 0)
       .map((row) => {
         const read = row.notification_reads.length > 0
         return { ...rowToNotification(row, read ? [user.id] : []), read }
@@ -104,8 +105,9 @@ export async function listNotifications(user: NotificationRecipient): Promise<(A
   }
 
   const disabled = disabledTypesByUser[user.id] ?? []
+  const dismissed = dismissedByUser[user.id] ?? []
   const relevant = notifications
-    .filter((n) => isRelevant(n, user) && !disabled.includes(n.type))
+    .filter((n) => isRelevant(n, user) && !disabled.includes(n.type) && !dismissed.includes(n.id))
     .map((n) => ({ ...n, read: n.readBy.includes(user.id) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   return delay(relevant)
@@ -171,5 +173,41 @@ export async function markAllAsRead(ids: string[], userId: string): Promise<void
     const n = notifications.find((x) => x.id === id)
     if (n && !n.readBy.includes(userId)) n.readBy.push(userId)
   }
+  return delay(undefined)
+}
+
+/** Per-user dismiss — hides the notification from this user's list only. A notification targeted
+ * at a whole department/role is one shared row read by many people, so this can't be a real
+ * delete of the `notifications` row itself without removing it for everyone else too. */
+export async function dismissNotification(id: string, userId: string): Promise<void> {
+  if (isSupabase) {
+    const { error } = await supabase!
+      .from('notification_dismissals')
+      .upsert({ notification_id: id }, { onConflict: 'notification_id,user_id', ignoreDuplicates: true })
+    if (error) throw new Error('Não foi possível apagar a notificação.')
+    return
+  }
+
+  const current = dismissedByUser[userId] ?? []
+  dismissedByUser[userId] = current.includes(id) ? current : [...current, id]
+  return delay(undefined)
+}
+
+export async function dismissAllNotifications(ids: string[], userId: string): Promise<void> {
+  if (ids.length === 0) return
+
+  if (isSupabase) {
+    const { error } = await supabase!
+      .from('notification_dismissals')
+      .upsert(
+        ids.map((id) => ({ notification_id: id })),
+        { onConflict: 'notification_id,user_id', ignoreDuplicates: true },
+      )
+    if (error) throw new Error('Não foi possível limpar as notificações.')
+    return
+  }
+
+  const current = dismissedByUser[userId] ?? []
+  dismissedByUser[userId] = [...new Set([...current, ...ids])]
   return delay(undefined)
 }

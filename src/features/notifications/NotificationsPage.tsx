@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Award, BookOpen, CheckCheck, ClipboardList, Megaphone, Reply, ShieldCheck, UserPlus, type LucideIcon } from 'lucide-react'
+import { Award, BookOpen, CheckCheck, ClipboardList, Megaphone, Reply, ShieldCheck, Trash2, UserPlus, type LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Skeleton } from '../../components/ui'
+import { Button, Skeleton, useToast } from '../../components/ui'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { getUserDepartment } from '../../lib/userDepartment'
 import type { AppNotification, NotificationType } from '../../mocks/notifications'
 import { useAuth } from '../auth/AuthContext'
-import { listNotifications, markAllAsRead, markAsRead } from './api'
+import { dismissAllNotifications, dismissNotification, listNotifications, markAllAsRead, markAsRead } from './api'
 
 const iconByType: Record<NotificationType, LucideIcon> = {
   aviso: Megaphone,
@@ -27,8 +27,10 @@ function formatDateTime(iso: string) {
 export function NotificationsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [notifications, setNotifications] = useState<(AppNotification & { read: boolean })[]>([])
   const [loading, setLoading] = useState(true)
+  const [clearingAll, setClearingAll] = useState(false)
 
   const department = useMemo(() => getUserDepartment(user), [user])
 
@@ -59,6 +61,34 @@ export function NotificationsPage() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
   }
 
+  async function handleDismiss(id: string) {
+    if (!user) return
+    const removed = notifications.find((n) => n.id === id)
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    try {
+      await dismissNotification(id, user.id)
+    } catch (err) {
+      if (removed) setNotifications((prev) => [...prev, removed].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+      toast(err instanceof Error ? err.message : 'Não foi possível apagar a notificação.', 'error')
+    }
+  }
+
+  async function handleClearAll() {
+    if (!user || notifications.length === 0) return
+    const ids = notifications.map((n) => n.id)
+    setClearingAll(true)
+    const previous = notifications
+    setNotifications([])
+    try {
+      await dismissAllNotifications(ids, user.id)
+    } catch (err) {
+      setNotifications(previous)
+      toast(err instanceof Error ? err.message : 'Não foi possível limpar as notificações.', 'error')
+    } finally {
+      setClearingAll(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-[900px] p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -68,12 +98,20 @@ export function NotificationsPage() {
             {unreadCount > 0 ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Tudo em dia por aqui.'}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <Button variant="secondary" onClick={handleMarkAllRead}>
-            <CheckCheck size={16} />
-            Marcar todas como lidas
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <Button variant="secondary" onClick={handleMarkAllRead}>
+              <CheckCheck size={16} />
+              Marcar todas como lidas
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button variant="secondary" onClick={handleClearAll} disabled={clearingAll}>
+              <Trash2 size={16} />
+              Limpar tudo
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="mt-6">
@@ -94,14 +132,11 @@ export function NotificationsPage() {
                 const Icon = iconByType[notification.type]
                 return (
                   <motion.li key={notification.id} variants={staggerItem} layout>
-                    <motion.button
-                      type="button"
-                      onClick={() => handleOpen(notification)}
+                    <motion.div
                       whileHover={{ y: -4, scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 26 }}
                       className={cn(
-                        'group relative flex w-full items-start gap-3 rounded-lg border bg-surface-card p-4 text-left shadow-[var(--shadow-level-1)] transition-shadow hover:border-border-strong hover:shadow-[var(--shadow-level-2)]',
+                        'group relative flex w-full items-start gap-3 rounded-lg border bg-surface-card p-4 shadow-[var(--shadow-level-1)] transition-shadow hover:border-border-strong hover:shadow-[var(--shadow-level-2)]',
                         !notification.read && 'border-primary/40',
                       )}
                     >
@@ -114,7 +149,7 @@ export function NotificationsPage() {
                       >
                         <Icon size={18} />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <button type="button" onClick={() => handleOpen(notification)} className="min-w-0 flex-1 text-left">
                         <div className="flex items-center justify-between gap-2">
                           <p className={cn('text-sm', notification.read ? 'text-text-secondary' : 'font-semibold text-text-primary')}>
                             {notification.title}
@@ -122,8 +157,17 @@ export function NotificationsPage() {
                           <span className="shrink-0 text-xs text-text-muted">{formatDateTime(notification.createdAt)}</span>
                         </div>
                         <p className="mt-0.5 text-sm text-text-muted">{notification.description}</p>
-                      </div>
-                    </motion.button>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDismiss(notification.id)}
+                        aria-label="Apagar notificação"
+                        title="Apagar notificação"
+                        className="shrink-0 self-start rounded-md p-1.5 text-text-muted opacity-0 transition-opacity hover:bg-error-bg hover:text-error group-hover:opacity-100 focus-visible:opacity-100"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </motion.div>
                   </motion.li>
                 )
               })}
