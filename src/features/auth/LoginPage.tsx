@@ -5,7 +5,7 @@ import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button, Input, Logo } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
-import { requestPasswordReset } from './api'
+import { consumeOAuthPendingFlag, requestPasswordReset } from './api'
 import { GoogleIcon } from './components/GoogleIcon'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
@@ -27,17 +27,22 @@ export function LoginPage() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetSubmitting, setResetSubmitting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
+  // read once, before any redirect logic runs — true only when this page load is the browser
+  // landing back from a Google OAuth redirect just triggered from this same tab
+  const [skipAccountPicker] = useState(consumeOAuthPendingFlag)
 
   // covers the Google OAuth redirect-back landing here with a session already set — a
   // maintenance account logging in with no company profile (→ the maintenance panel), and
   // anyone else logging in with no company profile (→ the signup page's join-a-company screen).
   // A session that already resolved to a full `user` is handled by the account-picker screen
   // below instead of an automatic redirect, so someone who navigates back to /login can choose
-  // to switch accounts.
+  // to switch accounts — unless they just came from picking a Google account, which already
+  // expressed the intent to log in as it, so that case skips straight to the dashboard instead.
   useEffect(() => {
     if (maintenanceNoCompany) navigate('/manutencao')
     else if (noCompanySession) navigate('/signup')
-  }, [maintenanceNoCompany, noCompanySession, navigate])
+    else if (skipAccountPicker && user) navigate('/dashboard')
+  }, [maintenanceNoCompany, noCompanySession, skipAccountPicker, user, navigate])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -67,6 +72,9 @@ export function LoginPage() {
   }
 
   if (user) {
+    // the effect above navigates away this same tick — render nothing instead of flashing the
+    // account-switch screen for a fresh Google login
+    if (skipAccountPicker) return null
     return (
       <div className="dark relative flex h-dvh items-center justify-center overflow-hidden bg-[#050810] px-6">
         <div className="absolute inset-0 z-0 opacity-50">
