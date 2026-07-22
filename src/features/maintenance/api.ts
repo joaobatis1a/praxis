@@ -79,9 +79,14 @@ export async function createCompanyForClient(name: string): Promise<string> {
   return code
 }
 
-export async function addMaintenanceAccount(email: string): Promise<void> {
-  const { error } = await supabase!.rpc('add_maintenance_account', { target_email: email })
-  if (error) throw new Error('Não foi possível adicionar essa conta.')
+/** Generates a single-use maintenance invite code — the invitee redeems it themselves, either via
+ * "Tenho um código de manutenção" in Configurações (if they already have an account) or via the
+ * public signup page (if they don't). */
+export async function generateMaintenanceInviteCode(): Promise<string> {
+  const code = randomCode()
+  const { error } = await supabase!.from('maintenance_invite_codes').insert({ code })
+  if (error) throw new Error('Não foi possível gerar o código.')
+  return code
 }
 
 export async function removeMaintenanceAccount(email: string): Promise<void> {
@@ -93,4 +98,14 @@ export async function removeMaintenanceAccount(email: string): Promise<void> {
         : 'Não foi possível remover essa conta.',
     )
   }
+}
+
+/** Redeems a single-use maintenance invite code for the CURRENTLY authenticated session (the
+ * server matches by JWT email, never a client-supplied one). Returns false for an invalid/
+ * already-used code instead of throwing, since "código inválido" is an expected outcome, not
+ * a real failure. */
+export async function redeemMaintenanceInviteCode(code: string): Promise<boolean> {
+  const { data, error } = await supabase!.rpc('redeem_maintenance_invite_code', { invite_code: code.trim() })
+  if (error) throw new Error('Não foi possível resgatar o código.')
+  return !!data
 }

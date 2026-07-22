@@ -200,6 +200,25 @@ export interface SignupWithCodeInput {
   code: string
 }
 
+export interface SignupMaintenanceInput {
+  email: string
+  password: string
+  code: string
+}
+
+/** Creates a bare Supabase Auth account (no company, no profile row) and redeems a maintenance
+ * invite code for it in one step — for someone who doesn't have any account yet. Someone who
+ * already has an account (logged in, or mid-signup with an existing identity) redeems directly
+ * via redeemMaintenanceInviteCode in features/maintenance/api.ts instead, no new account needed. */
+export async function signupMaintenanceRequest(input: SignupMaintenanceInput): Promise<void> {
+  const { error: signUpError } = await supabase!.auth.signUp({ email: input.email, password: input.password })
+  if (signUpError) throw new Error(signUpError.message || 'Não foi possível criar sua conta.')
+
+  const { data, error } = await supabase!.rpc('redeem_maintenance_invite_code', { invite_code: input.code.trim() })
+  if (error) throw new Error('Não foi possível resgatar o código.')
+  if (!data) throw new Error('Código inválido ou já usado.')
+}
+
 export async function signupWithCodeRequest(input: SignupWithCodeInput): Promise<AuthUser> {
   if (isSupabase) {
     const { data: redeemed, error: redeemError } = await supabase!

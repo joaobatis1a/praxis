@@ -16,14 +16,14 @@ import {
   TableRow,
   useToast,
 } from '../../components/ui'
-import { Building2, Plus, Power, PowerOff, Trash2, UserPlus, Wrench } from 'lucide-react'
+import { Building2, KeyRound, Plus, Power, PowerOff, Trash2, Wrench } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
 import { InviteCodeModal } from '../users/components/InviteCodeModal'
 import {
-  addMaintenanceAccount,
   createCompanyForClient,
   deleteCompanyAsMaintenance,
+  generateMaintenanceInviteCode,
   listCompanies,
   listMaintenanceAccounts,
   removeMaintenanceAccount,
@@ -38,12 +38,12 @@ export function MaintenancePage() {
   const [companies, setCompanies] = useState<MaintenanceCompany[]>([])
   const [accounts, setAccounts] = useState<MaintenanceAccount[]>([])
   const [loading, setLoading] = useState(true)
-  const [newEmail, setNewEmail] = useState('')
-  const [adding, setAdding] = useState(false)
+  const [generatingAccountCode, setGeneratingAccountCode] = useState(false)
+  const [generatedAccountCode, setGeneratedAccountCode] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [newCompanyName, setNewCompanyName] = useState('')
   const [creatingCompany, setCreatingCompany] = useState(false)
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null)
   const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
   const [deletingCompany, setDeletingCompany] = useState<MaintenanceCompany | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
@@ -70,7 +70,7 @@ export function MaintenancePage() {
     setCreatingCompany(true)
     try {
       const code = await createCompanyForClient(name)
-      setGeneratedCode(code)
+      setGeneratedCompanyCode(code)
       setNewCompanyName('')
       const updated = await listCompanies()
       setCompanies(updated)
@@ -111,21 +111,15 @@ export function MaintenancePage() {
     }
   }
 
-  async function handleAddAccount(e: FormEvent) {
-    e.preventDefault()
-    const email = newEmail.trim().toLowerCase()
-    if (!email) return
-    setAdding(true)
+  async function handleGenerateAccountCode() {
+    setGeneratingAccountCode(true)
     try {
-      await addMaintenanceAccount(email)
-      const updated = await listMaintenanceAccounts()
-      setAccounts(updated)
-      setNewEmail('')
-      toast(`${email} agora tem acesso de manutenção.`)
+      const code = await generateMaintenanceInviteCode()
+      setGeneratedAccountCode(code)
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível adicionar essa conta.', 'error')
+      toast(err instanceof Error ? err.message : 'Não foi possível gerar o código.', 'error')
     } finally {
-      setAdding(false)
+      setGeneratingAccountCode(false)
     }
   }
 
@@ -272,20 +266,16 @@ export function MaintenancePage() {
               Quem está nessa lista vê esta página e a caixa de suporte de todas as empresas, além da própria conta normal (se tiver uma).
             </p>
 
-            <form onSubmit={handleAddAccount} className="mt-4 flex gap-2">
-              <Input
-                type="email"
-                required
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-                className="flex-1"
-              />
-              <Button type="submit" disabled={adding || !newEmail.trim()}>
-                <UserPlus size={16} />
-                {adding ? 'Adicionando...' : 'Adicionar'}
+            <div className="mt-4">
+              <Button type="button" onClick={handleGenerateAccountCode} disabled={generatingAccountCode}>
+                <KeyRound size={16} />
+                {generatingAccountCode ? 'Gerando...' : 'Gerar código de convite'}
               </Button>
-            </form>
+              <p className="mt-1.5 text-xs text-text-muted">
+                Código de uso único — a pessoa resgata em Configurações &gt; Tenho um código de manutenção (se já tiver conta) ou no cadastro
+                (se não tiver).
+              </p>
+            </div>
 
             <div className="mt-4">
               {loading ? (
@@ -324,7 +314,19 @@ export function MaintenancePage() {
         </motion.div>
       </motion.div>
 
-      <InviteCodeModal code={generatedCode} onClose={() => setGeneratedCode(null)} />
+      <InviteCodeModal
+        code={generatedCompanyCode}
+        onClose={() => setGeneratedCompanyCode(null)}
+        title="Convite de empresa gerado"
+        description="Envie esse código para o responsável do cliente — ele usa em Criar conta > Tenho um código."
+      />
+
+      <InviteCodeModal
+        code={generatedAccountCode}
+        onClose={() => setGeneratedAccountCode(null)}
+        title="Código de manutenção gerado"
+        description="Código de uso único. A pessoa resgata em Configurações > Tenho um código de manutenção (se já tiver conta) ou no cadastro (se não tiver)."
+      />
 
       <Modal
         open={!!deletingCompany}
