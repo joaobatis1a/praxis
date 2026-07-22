@@ -17,7 +17,7 @@ const demoAccounts = [
 ]
 
 export function LoginPage() {
-  const { login, loginWithGoogle, isAuthenticating, error, user, maintenanceNoCompany, noCompanySession, logout } = useAuth()
+  const { login, loginWithGoogle, isAuthenticating, error, user, maintenanceNoCompany, noCompanySession } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
@@ -69,41 +69,10 @@ export function LoginPage() {
     }
   }
 
-  if (user) {
-    // the effect above navigates away this same tick — render nothing instead of flashing the
-    // account-switch screen for a fresh Google login
-    if (justAuthenticated) return null
-    return (
-      <div className="dark relative flex h-dvh items-center justify-center overflow-hidden bg-[#050810] px-6">
-        <div className="absolute inset-0 z-0 opacity-50">
-          <KnowledgeGraph />
-        </div>
-        <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#050810] via-[#050810]/40 to-[#050810]/70" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative z-10 w-full max-w-sm rounded-lg border border-white/10 bg-white/[0.03] p-6 text-center"
-        >
-          <Logo textClassName="text-white" className="mx-auto justify-center" />
-          <p className="mt-6 text-sm text-white/50">Você já está conectado como</p>
-          <p className="mt-1 text-lg font-semibold text-white">{user.name}</p>
-          <p className="text-sm text-white/40">{user.email}</p>
-
-          <div className="mt-6 flex flex-col gap-2">
-            <Button size="lg" onClick={() => navigate('/dashboard')}>
-              Continuar
-            </Button>
-            <Button variant="secondary" size="lg" onClick={logout}>
-              Usar outra conta
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    )
-  }
-
+  // If a full `user` session is merely discovered on mount (not a fresh login this page load),
+  // the effect above does nothing — we always fall through to the plain login form below, never
+  // a custom "already logged in" interstitial. Switching accounts happens via Google's own account
+  // chooser (forced via prompt: 'select_account') or by just typing different credentials here.
   return (
     <div className="dark relative flex h-dvh overflow-hidden bg-[#050810]">
       <Link
