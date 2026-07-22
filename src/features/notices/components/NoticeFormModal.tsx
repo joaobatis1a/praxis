@@ -100,7 +100,7 @@ export function NoticeFormModal({ open, onClose, onSubmit, currentUserId }: Noti
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text-primary">Enviar para</label>
-          <p className="text-xs text-text-muted">Escolha uma ou mais pessoas e/ou setores — todos recebem o mesmo aviso.</p>
+          <p className="text-xs text-text-muted">Escolha uma ou mais pessoas e/ou setores. Todos recebem o mesmo aviso.</p>
           <RecipientPicker members={memberOptions} departments={departments} value={recipients} onChange={setRecipients} />
         </div>
 

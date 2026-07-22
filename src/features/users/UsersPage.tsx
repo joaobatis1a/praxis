@@ -339,7 +339,7 @@ export function UsersPage() {
         onClose={() => setDeletingMember(null)}
         onConfirm={handleDelete}
         title="Remover usuário"
-        description={`Tem certeza que deseja remover ${deletingMember?.name} da equipe? O login continua válido — a pessoa só perde acesso a esta empresa.`}
+        description={`Tem certeza que deseja remover ${deletingMember?.name} da equipe? O login continua válido, a pessoa só perde acesso a esta empresa.`}
         confirmLabel="Remover"
         variant="destructive"
       />
