@@ -19,6 +19,7 @@ import { SettingsPage } from './features/settings/SettingsPage'
 import { ProfilePage } from './features/settings/ProfilePage'
 import { SupportPage } from './features/support/SupportPage'
 import { MaintenancePage } from './features/maintenance/MaintenancePage'
+import { AuditLogPage } from './features/audit/AuditLogPage'
 
 function App() {
   return (
@@ -43,6 +44,9 @@ function App() {
             <Route path="/biblioteca" element={<LibraryPage />} />
             <Route path="/procedimentos" element={<ProceduresPage />} />
             <Route path="/avisos" element={<NoticesPage />} />
+            <Route element={<RequireRole roles={['admin', 'gestor']} />}>
+              <Route path="/atividade" element={<AuditLogPage />} />
+            </Route>
             <Route path="/notificacoes" element={<NotificationsPage />} />
             <Route path="/perfil" element={<ProfilePage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
