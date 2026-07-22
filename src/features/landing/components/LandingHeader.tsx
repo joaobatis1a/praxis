@@ -4,8 +4,6 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-
 import { buttonVariants } from '../../../components/ui'
 import logoSrc from '../../../assets/logo-praxis.png'
 import { cn } from '../../../lib/cn'
-import { isSupabase } from '../../../lib/dataSource'
-import { SALES_WHATSAPP_URL } from '../../../lib/salesContact'
 
 const navLinks = [
   { href: '#top', label: 'Home' },
@@ -78,37 +76,15 @@ export function LandingHeader() {
           >
             Entrar
           </Link>
-          {isSupabase ? (
-            <>
-              <Link
-                to="/signup"
-                className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden rounded-full sm:inline-flex')}
-              >
-                Tenho um código
-              </Link>
-              <a
-                href={SALES_WHATSAPP_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={cn(
-                  buttonVariants({ size: 'sm' }),
-                  'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
-                )}
-              >
-                Fale com a gente
-              </a>
-            </>
-          ) : (
-            <Link
-              to="/signup"
-              className={cn(
-                buttonVariants({ size: 'sm' }),
-                'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
-              )}
-            >
-              Criar conta
-            </Link>
-          )}
+          <Link
+            to="/signup"
+            className={cn(
+              buttonVariants({ size: 'sm' }),
+              'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
+            )}
+          >
+            Criar conta
+          </Link>
         </div>
       </div>
     </motion.header>
