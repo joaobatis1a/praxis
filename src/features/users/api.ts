@@ -114,9 +114,22 @@ export async function updateUser(id: string, input: CreateUserInput) {
   return delay(members.find((m) => m.id === id)!)
 }
 
+/** Self-account deletion ("Excluir minha conta") — removes the real Auth login too. */
 export async function deleteUser(id: string) {
   if (isSupabase) {
     const { error } = await supabase!.rpc('delete_user_and_auth', { target_user_id: id })
+    if (error) throw new Error('Não foi possível remover o colaborador.')
+    return
+  }
+  members = members.filter((m) => m.id !== id)
+  return delay(undefined)
+}
+
+/** An admin/gestor removing someone ELSE from the team — unlinks them but keeps their Auth
+ * login intact, so they can join or create another company without recreating an account. */
+export async function removeUser(id: string) {
+  if (isSupabase) {
+    const { error } = await supabase!.rpc('remove_user_from_company', { target_user_id: id })
     if (error) throw new Error('Não foi possível remover o colaborador.')
     return
   }
