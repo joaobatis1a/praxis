@@ -127,7 +127,7 @@ export function AppLayout() {
                         className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                       >
                         <User size={16} />
-                        Editar perfil
+                        Meu perfil
                       </button>
                     )}
                     <button
