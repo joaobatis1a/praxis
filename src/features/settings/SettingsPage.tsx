@@ -355,52 +355,58 @@ export function SettingsPage() {
               <AlertTriangle size={18} className="text-error" />
               <h2 className="text-base font-semibold text-text-primary">Zona de perigo</h2>
             </div>
-            <p className="mt-1 text-sm text-text-muted">
-              Sair da empresa mantém seu login ativo. Excluir a conta{user.role === 'admin' ? ' ou a empresa' : ''} é permanente e não pode ser desfeito.
-            </p>
 
-            {isSupabase && !isOnlyAdmin && (
-              <div className="mt-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-text-muted">
-                  Sai da empresa, mas mantém seu login — diferente de excluir a conta.
-                  {user.role === 'admin' ? ' Use isso depois de promover outra pessoa a Admin.' : ''}
-                </p>
-                <Button variant="secondary" onClick={() => setConfirmingLeaveCompany(true)} className="shrink-0">
-                  <LogOut size={16} />
-                  Sair da empresa
-                </Button>
-              </div>
-            )}
-
-            {isOnlyAdmin ? (
+            {isOnlyAdmin && (
               <div className="mt-4 flex flex-col items-start gap-3 rounded-md border border-warning/30 bg-warning-bg/40 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-warning-foreground">
-                  Você é o único administrador da empresa. Promova outra pessoa a Admin antes de sair ou excluir sua conta.
+                  Você é o único administrador. Promova outra pessoa antes de sair ou excluir sua conta.
                 </p>
                 <Button variant="secondary" onClick={() => navigate('/usuarios')} className="shrink-0">
                   Ir para Usuários
                 </Button>
               </div>
-            ) : (
-              <div className={`mt-4 flex justify-end ${isSupabase ? 'border-t border-error/20 pt-4' : ''}`}>
-                <Button variant="destructive" onClick={() => setConfirmingDelete(true)}>
-                  <Trash2 size={16} />
-                  Excluir minha conta
-                </Button>
-              </div>
             )}
 
-            {user.role === 'admin' && isSupabase && (
-              <div className="mt-4 flex flex-col items-start gap-3 border-t border-error/20 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-text-muted">
-                  Excluir a empresa apaga todos os dados e as contas de <span className="font-medium text-text-primary">todos os colaboradores</span>, não só a sua.
-                </p>
-                <Button variant="destructive" onClick={() => setConfirmingDeleteCompany(true)} className="shrink-0">
-                  <Trash2 size={16} />
-                  Excluir empresa
-                </Button>
-              </div>
-            )}
+            <div className="mt-4 divide-y divide-error/15">
+              {isSupabase && !isOnlyAdmin && (
+                <div className="flex flex-col items-start gap-3 py-3.5 first:pt-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Sair da empresa</p>
+                    <p className="text-xs text-text-muted">Seu login continua ativo.</p>
+                  </div>
+                  <Button variant="secondary" onClick={() => setConfirmingLeaveCompany(true)} className="shrink-0">
+                    <LogOut size={16} />
+                    Sair
+                  </Button>
+                </div>
+              )}
+
+              {user.role === 'admin' && isSupabase && (
+                <div className="flex flex-col items-start gap-3 py-3.5 first:pt-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Excluir empresa</p>
+                    <p className="text-xs text-text-muted">Apaga tudo, inclusive as contas de todos os colaboradores.</p>
+                  </div>
+                  <Button variant="destructive" onClick={() => setConfirmingDeleteCompany(true)} className="shrink-0">
+                    <Trash2 size={16} />
+                    Excluir
+                  </Button>
+                </div>
+              )}
+
+              {!isOnlyAdmin && (
+                <div className="flex flex-col items-start gap-3 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Excluir minha conta</p>
+                    <p className="text-xs text-text-muted">Ação permanente.</p>
+                  </div>
+                  <Button variant="destructive" onClick={() => setConfirmingDelete(true)} className="shrink-0">
+                    <Trash2 size={16} />
+                    Excluir
+                  </Button>
+                </div>
+              )}
+            </div>
           </Card>
         </motion.div>
       </motion.div>
@@ -420,7 +426,7 @@ export function SettingsPage() {
         onClose={() => setConfirmingLeaveCompany(false)}
         onConfirm={handleLeaveCompany}
         title="Sair da empresa"
-        description="Você deixa de fazer parte desta empresa, mas seu login continua ativo — diferente de excluir a conta. Você será desconectado."
+        description="Você deixa de fazer parte desta empresa, mas seu login continua ativo. Você será desconectado."
         confirmLabel={leavingCompany ? 'Saindo...' : 'Sair da empresa'}
       />
 
@@ -431,7 +437,7 @@ export function SettingsPage() {
           setDeleteCompanyConfirmText('')
         }}
         title="Excluir empresa"
-        description="Essa ação é permanente: apaga a empresa, todos os documentos, procedimentos e avisos, e a conta de login de todos os colaboradores — inclusive a sua."
+        description="Essa ação é permanente: apaga a empresa, todos os documentos, procedimentos e avisos, e a conta de login de todos os colaboradores, inclusive a sua."
         className="max-w-sm"
       >
         <div className="flex flex-col gap-3">
