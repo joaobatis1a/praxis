@@ -1,6 +1,7 @@
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { adminStats, colaboradorProgress, favoriteDocuments, progressHistory, recentActivity, recentProcedures } from '../../mocks/dashboard'
+import { documents as mockDocuments } from '../../mocks/library'
 import { notices as mockNotices } from '../../mocks/notices'
 import { procedures as mockProcedures } from '../../mocks/procedures'
 import { teamMembers as mockTeamMembers } from '../../mocks/teamMembers'
@@ -8,6 +9,8 @@ import type { Role } from '../auth/types'
 import { listDocuments } from '../library/api'
 import { listNotices } from '../notices/api'
 import { listCompletions } from '../procedures/api'
+
+let mockOnboardingDismissed = false
 
 function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
@@ -56,6 +59,13 @@ interface RecentNotice {
   time: string
 }
 
+export interface OnboardingStatus {
+  invitedTeam: boolean
+  publishedProcedure: boolean
+  addedDocument: boolean
+  dismissed: boolean
+}
+
 function emptyRoleBreakdown(): Record<Role, number> {
   return { admin: 0, gestor: 0, colaborador: 0 }
 }
@@ -83,6 +93,7 @@ export async function getAdminDashboard() {
       { data: docRows },
       { data: roleRows },
       notices,
+      { data: companyRow },
     ] = await Promise.all([
       supabase!.from('profiles').select('*', { count: 'exact', head: true }),
       supabase!.from('library_documents').select('*', { count: 'exact', head: true }),
@@ -92,6 +103,7 @@ export async function getAdminDashboard() {
       supabase!.from('library_documents').select('id, title, author, created_at').order('created_at', { ascending: false }).limit(30),
       supabase!.from('profiles').select('role'),
       listNotices(),
+      supabase!.from('companies').select('onboarding_dismissed').single(),
     ])
 
     const procedures = procRows ?? []
@@ -162,7 +174,14 @@ export async function getAdminDashboard() {
       progressoMedio: { value: progressoMedio },
     }
 
-    return { stats, progressHistory: progressHistoryReal, activity, draftProcedures, roleBreakdown, recentNotices }
+    const onboarding: OnboardingStatus = {
+      invitedTeam: (colaboradoresCount ?? 0) > 1,
+      publishedProcedure: published.length > 0,
+      addedDocument: (documentosCount ?? 0) > 0,
+      dismissed: (companyRow as { onboarding_dismissed: boolean } | null)?.onboarding_dismissed ?? false,
+    }
+
+    return { stats, progressHistory: progressHistoryReal, activity, draftProcedures, roleBreakdown, recentNotices, onboarding }
   }
 
   const completions = await listCompletions()
@@ -192,6 +211,13 @@ export async function getAdminDashboard() {
       time: formatRelativeTime(n.createdAt),
     }))
 
+  const onboarding: OnboardingStatus = {
+    invitedTeam: mockTeamMembers.length > 1,
+    publishedProcedure: mockProcedures.some((p) => p.status === 'publicado'),
+    addedDocument: mockDocuments.length > 0,
+    dismissed: mockOnboardingDismissed,
+  }
+
   return delay({
     stats,
     progressHistory,
@@ -199,7 +225,23 @@ export async function getAdminDashboard() {
     draftProcedures,
     roleBreakdown,
     recentNotices,
+    onboarding,
   })
+}
+
+export async function dismissOnboarding(): Promise<void> {
+  if (isSupabase) {
+    const { data: current, error: fetchError } = await supabase!.from('companies').select('id').single()
+    if (fetchError || !current) throw new Error('Não foi possível carregar a empresa.')
+    const { error } = await supabase!
+      .from('companies')
+      .update({ onboarding_dismissed: true })
+      .eq('id', (current as { id: string }).id)
+    if (error) throw new Error('Não foi possível atualizar o checklist.')
+    return
+  }
+  mockOnboardingDismissed = true
+  return delay(undefined)
 }
 
 export async function getColaboradorDashboard(userId: string) {
