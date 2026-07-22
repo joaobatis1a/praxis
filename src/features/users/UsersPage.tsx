@@ -24,7 +24,7 @@ import { useAuth } from '../auth/AuthContext'
 import type { Role } from '../auth/types'
 import { listDepartments } from '../departments/api'
 import { listCompletions, listProcedures } from '../procedures/api'
-import { createUser, deleteUser, generateInviteCode, listUsers, setUserStatus, updateUser, type CreateUserInput } from './api'
+import { createUser, generateInviteCode, listUsers, removeUser, setUserStatus, updateUser, type CreateUserInput } from './api'
 import { InviteCodeModal } from './components/InviteCodeModal'
 import { UserFormModal } from './components/UserFormModal'
 import { UserProgressModal } from './components/UserProgressModal'
@@ -127,9 +127,9 @@ export function UsersPage() {
 
   async function handleDelete() {
     if (!deletingMember) return
-    await deleteUser(deletingMember.id)
+    await removeUser(deletingMember.id)
     setMembers((prev) => prev.filter((m) => m.id !== deletingMember.id))
-    toast(`${deletingMember.name} foi excluído.`, 'error')
+    toast(`${deletingMember.name} foi removido da equipe.`, 'error')
   }
 
   const departmentOptions = [
@@ -338,9 +338,9 @@ export function UsersPage() {
         open={!!deletingMember}
         onClose={() => setDeletingMember(null)}
         onConfirm={handleDelete}
-        title="Excluir usuário"
-        description={`Tem certeza que deseja excluir ${deletingMember?.name}? Essa ação não pode ser desfeita.`}
-        confirmLabel="Excluir"
+        title="Remover usuário"
+        description={`Tem certeza que deseja remover ${deletingMember?.name} da equipe? O login continua válido — a pessoa só perde acesso a esta empresa.`}
+        confirmLabel="Remover"
         variant="destructive"
       />
 
