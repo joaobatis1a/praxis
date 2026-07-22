@@ -5,12 +5,13 @@ import { AlertCircle, ArrowLeft, Building2, KeyRound, Loader2 } from 'lucide-rea
 import { Button, Input, Logo } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
-import { finishGoogleCodeSignup, signupCompanyRequest, signupWithCodeRequest, signupWithGoogle } from './api'
+import { finishGoogleCodeSignup, signupCompanyRequest, signupMaintenanceRequest, signupWithCodeRequest, signupWithGoogle } from './api'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
+import { redeemMaintenanceInviteCode } from '../maintenance/api'
 
-type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details'
+type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details' | 'maintenance-code'
 
 const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
 
@@ -37,6 +38,7 @@ export function SignupPage() {
     noCompanySession,
     clearNoCompanySession,
     maintenanceNoCompany,
+    refreshMaintenanceStatus,
   } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
@@ -47,6 +49,8 @@ export function SignupPage() {
   const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: '' })
   const [codeConfirmPassword, setCodeConfirmPassword] = useState('')
   const [googleCode, setGoogleCode] = useState('')
+  const [maintenanceForm, setMaintenanceForm] = useState({ email: '', password: '', code: '' })
+  const [maintenanceConfirmPassword, setMaintenanceConfirmPassword] = useState('')
 
   const displayError = error || authError
   // pendingGoogleUser (fresh Google signup) and noCompanySession (logged in, no company —
@@ -67,7 +71,7 @@ export function SignupPage() {
       setStep('company')
       return
     }
-    if (step === 'code-details') {
+    if (step === 'code-details' || step === 'maintenance-code') {
       setStep('code')
       return
     }
@@ -142,6 +146,48 @@ export function SignupPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível entrar com esse código.')
     } finally {
+      setSubmitting(false)
+    }
+  }
+
+  /** identity already has a real Auth account (just no company profile) — redeem directly, no
+   * account creation needed. */
+  async function handleRedeemMaintenanceIdentity(e: FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    try {
+      const ok = await redeemMaintenanceInviteCode(maintenanceForm.code)
+      if (!ok) {
+        setError('Código inválido ou já usado.')
+        return
+      }
+      await refreshMaintenanceStatus()
+      window.history.replaceState({}, '', '/signup')
+      navigate('/manutencao')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível resgatar o código.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  /** No identity at all — creates a bare account and redeems in one step, then a full reload so
+   * AuthContext discovers the fresh session naturally (mirrors how a normal page load resolves
+   * noCompanySession → maintenanceNoCompany, avoiding any manual AuthContext state surgery). */
+  async function handleMaintenanceSignup(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (maintenanceForm.password !== maintenanceConfirmPassword) {
+      setError('As senhas não coincidem.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await signupMaintenanceRequest(maintenanceForm)
+      window.location.href = '/manutencao'
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível criar sua conta.')
       setSubmitting(false)
     }
   }
@@ -345,6 +391,19 @@ export function SignupPage() {
                   {submitting ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
+
+              {isSupabase && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null)
+                    setStep('maintenance-code')
+                  }}
+                  className="mt-4 text-sm text-white/50 underline decoration-white/20 underline-offset-4 hover:text-white"
+                >
+                  É um código de manutenção?
+                </button>
+              )}
             </>
           )}
 
@@ -405,6 +464,19 @@ export function SignupPage() {
                   </button>
                 </div>
               )}
+
+              {isSupabase && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null)
+                    setStep('maintenance-code')
+                  }}
+                  className="mt-6 text-sm text-white/50 underline decoration-white/20 underline-offset-4 hover:text-white"
+                >
+                  É um código de manutenção?
+                </button>
+              )}
             </>
           )}
 
@@ -455,6 +527,91 @@ export function SignupPage() {
                 <Button type="submit" size="lg" disabled={submitting} className="mt-2">
                   {submitting && <Loader2 size={18} className="animate-spin" />}
                   {submitting ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
+            </>
+          )}
+
+          {step === 'maintenance-code' && identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Código de manutenção</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Entrando como <span className="text-white/80">{identity.email}</span>.
+              </p>
+
+              <form onSubmit={handleRedeemMaintenanceIdentity} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="Código"
+                  required
+                  autoFocus
+                  placeholder="Ex: ABCD-1234"
+                  value={maintenanceForm.code}
+                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, code: e.target.value })}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                  {submitting && <Loader2 size={18} className="animate-spin" />}
+                  {submitting ? 'Resgatando...' : 'Resgatar'}
+                </Button>
+              </form>
+            </>
+          )}
+
+          {step === 'maintenance-code' && !identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Código de manutenção</h1>
+              <p className="mt-1 text-sm text-white/50">Cria seu login e ativa o acesso de manutenção.</p>
+
+              <form onSubmit={handleMaintenanceSignup} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="E-mail"
+                  type="email"
+                  required
+                  autoFocus
+                  value={maintenanceForm.email}
+                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, email: e.target.value })}
+                />
+                <Input
+                  label="Senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={maintenanceForm.password}
+                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, password: e.target.value })}
+                />
+                <Input
+                  label="Confirmar senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={maintenanceConfirmPassword}
+                  onChange={(e) => setMaintenanceConfirmPassword(e.target.value)}
+                />
+                <Input
+                  label="Código"
+                  required
+                  placeholder="Ex: ABCD-1234"
+                  value={maintenanceForm.code}
+                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, code: e.target.value })}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                  {submitting && <Loader2 size={18} className="animate-spin" />}
+                  {submitting ? 'Criando...' : 'Criar conta'}
                 </Button>
               </form>
             </>

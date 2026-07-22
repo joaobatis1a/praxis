@@ -28,6 +28,8 @@ interface AuthContextValue {
   maintenanceChecked: boolean
   /** derived from noCompanySession — true only when that session's email is a maintenance account */
   maintenanceNoCompany: boolean
+  /** re-runs the maintenance check without a full login — call after redeeming a maintenance invite code */
+  refreshMaintenanceStatus: () => Promise<void>
   login: (email: string, password: string) => Promise<AuthUser | null>
   loginWithGoogle: () => void
   setSessionUser: (user: AuthUser) => void
@@ -74,6 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [user?.email, noCompanySession?.email])
+
+  /** Re-runs the maintenance check on demand — used right after redeeming a maintenance invite
+   * code, since the automatic check above only fires when user/noCompanySession identity changes,
+   * not when someone gains the privilege mid-session without a new login. */
+  async function refreshMaintenanceStatus() {
+    if (!isSupabase) return
+    const { data } = await supabase!.rpc('is_maintenance_account')
+    setIsMaintenanceAccount(!!data)
+  }
 
   // Listen for another admin changing this user's own role/department/status live — so an
   // active session picks it up immediately instead of needing a reload to see new permissions,
@@ -232,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMaintenanceAccount,
         maintenanceChecked,
         maintenanceNoCompany,
+        refreshMaintenanceStatus,
         login,
         loginWithGoogle,
         setSessionUser,
