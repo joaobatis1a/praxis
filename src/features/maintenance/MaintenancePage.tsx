@@ -209,18 +209,7 @@ export function MaintenancePage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {company.adminNames.length > 0 ? (
-                            <div className="space-y-1">
-                              {company.adminNames.map((name, i) => (
-                                <div key={i}>
-                                  <p className="text-text-primary">{name}</p>
-                                  <p className="text-xs text-text-muted">{company.adminEmails[i]}</p>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            '—'
-                          )}
+                          <AdminList names={company.adminNames} emails={company.adminEmails} />
                         </TableCell>
                         <TableCell>{company.memberCount}</TableCell>
                         <TableCell>{new Date(company.createdAt).toLocaleDateString('pt-BR')}</TableCell>
@@ -368,6 +357,36 @@ export function MaintenancePage() {
           </div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function AdminList({ names, emails }: { names: string[]; emails: string[] }) {
+  const [expanded, setExpanded] = useState(false)
+
+  if (names.length === 0) return <>—</>
+
+  const visibleCount = expanded ? names.length : 1
+  const hiddenCount = names.length - visibleCount
+
+  return (
+    <div className="space-y-1">
+      {names.slice(0, visibleCount).map((name, i) => (
+        <div key={i}>
+          <p className="text-text-primary">{name}</p>
+          <p className="text-xs text-text-muted">{emails[i]}</p>
+        </div>
+      ))}
+      {hiddenCount > 0 && (
+        <button type="button" onClick={() => setExpanded(true)} className="text-xs font-medium text-primary hover:underline">
+          Ver mais (+{hiddenCount})
+        </button>
+      )}
+      {expanded && names.length > 1 && (
+        <button type="button" onClick={() => setExpanded(false)} className="text-xs font-medium text-primary hover:underline">
+          Ver menos
+        </button>
+      )}
     </div>
   )
 }
