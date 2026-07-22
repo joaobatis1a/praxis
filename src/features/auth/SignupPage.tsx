@@ -5,7 +5,7 @@ import { AlertCircle, ArrowLeft, Building2, KeyRound, Loader2 } from 'lucide-rea
 import { Button, Input, Logo } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
-import { finishGoogleCodeSignup, finishGoogleCompanySignup, signupCompanyRequest, signupWithCodeRequest, signupWithGoogle } from './api'
+import { finishGoogleCodeSignup, signupCompanyRequest, signupWithCodeRequest, signupWithGoogle } from './api'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
@@ -14,8 +14,20 @@ type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details'
 
 const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
 
+// Company creation is self-service only in the demo (mock) deployment — the real deployment is
+// sales-led, so a company only ever gets created from the maintenance panel (see
+// createCompanyForClient in features/maintenance/api.ts). isSupabase is a module-level constant,
+// so this is safe to read once here instead of inside the component.
+const initialStep: Step = isSupabase
+  ? 'code'
+  : initialOauthIntent === 'code'
+    ? 'code'
+    : initialOauthIntent === 'company'
+      ? 'company'
+      : 'choice'
+
 export function SignupPage() {
-  const [step, setStep] = useState<Step>(initialOauthIntent === 'code' ? 'code' : initialOauthIntent === 'company' ? 'company' : 'choice')
+  const [step, setStep] = useState<Step>(initialStep)
   const {
     setSessionUser,
     user,
@@ -34,7 +46,6 @@ export function SignupPage() {
   const [companyConfirmPassword, setCompanyConfirmPassword] = useState('')
   const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: '' })
   const [codeConfirmPassword, setCodeConfirmPassword] = useState('')
-  const [googleCompanyName, setGoogleCompanyName] = useState('')
   const [googleCode, setGoogleCode] = useState('')
 
   const displayError = error || authError
@@ -63,7 +74,7 @@ export function SignupPage() {
     if (pendingGoogleUser) clearPendingGoogleUser()
     if (noCompanySession) clearNoCompanySession()
     window.history.replaceState({}, '', '/signup')
-    setStep('choice')
+    setStep(isSupabase ? 'code' : 'choice')
   }
 
   function handleCompanyNext(e: FormEvent) {
@@ -118,23 +129,6 @@ export function SignupPage() {
     }
   }
 
-  async function handleFinishGoogleCompany(e: FormEvent) {
-    e.preventDefault()
-    if (!identity) return
-    setSubmitting(true)
-    setError(null)
-    try {
-      const authUser = await finishGoogleCompanySignup(googleCompanyName.trim(), identity)
-      window.history.replaceState({}, '', '/signup')
-      setSessionUser(authUser)
-      navigate('/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível criar a empresa.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   async function handleFinishGoogleCode(e: FormEvent) {
     e.preventDefault()
     if (!identity) return
@@ -157,7 +151,8 @@ export function SignupPage() {
       <button
         type="button"
         onClick={() => {
-          if (step === 'choice') navigate('/')
+          const isRootStep = isSupabase ? step === 'code' : step === 'choice'
+          if (isRootStep) navigate('/')
           else goBack()
         }}
         className="absolute left-6 top-6 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-white/60 transition-colors hover:text-white"
@@ -239,37 +234,6 @@ export function SignupPage() {
             </>
           )}
 
-          {step === 'company' && identity && (
-            <>
-              <h1 className="mt-8 text-2xl font-bold text-white">Só falta o nome da empresa</h1>
-              <p className="mt-1 text-sm text-white/50">
-                Entrando como <span className="text-white/80">{identity.email}</span>. Você será o administrador.
-              </p>
-
-              <form onSubmit={handleFinishGoogleCompany} className="mt-6 flex flex-col gap-4">
-                <Input
-                  label="Nome da empresa"
-                  required
-                  autoFocus
-                  value={googleCompanyName}
-                  onChange={(e) => setGoogleCompanyName(e.target.value)}
-                />
-
-                {displayError && (
-                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {displayError}
-                  </div>
-                )}
-
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
-                  {submitting && <Loader2 size={18} className="animate-spin" />}
-                  {submitting ? 'Criando...' : 'Criar empresa'}
-                </Button>
-              </form>
-            </>
-          )}
-
           {step === 'company' && !identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Crie sua empresa</h1>
@@ -295,24 +259,6 @@ export function SignupPage() {
                   Próximo
                 </Button>
               </form>
-
-              {isSupabase && (
-                <>
-                  <div className="mt-6 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-white/10" />
-                    <span className="text-xs text-white/40">ou</span>
-                    <div className="h-px flex-1 bg-white/10" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => signupWithGoogle('company')}
-                    className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
-                  >
-                    <GoogleIcon />
-                    Continuar com Google
-                  </button>
-                </>
-              )}
             </>
           )}
 
@@ -438,7 +384,7 @@ export function SignupPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => signupWithGoogle('code')}
+                    onClick={() => signupWithGoogle()}
                     className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
                   >
                     <GoogleIcon />

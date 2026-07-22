@@ -6,13 +6,12 @@ import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
+import { SALES_WHATSAPP_URL } from '../../lib/salesContact'
 import { useAuth } from '../auth/AuthContext'
 import { closeOwnTicket, createTicket, deleteTicket, listMyTickets, rowToMessage, sendMessage, type MessageRow, type TicketRow } from './api'
 import { SupportAdminInbox } from './SupportAdminInbox'
 import { TicketThread } from './components/TicketThread'
 import type { SupportTicket, SupportTicketStatus } from './types'
-
-const SUPPORT_WHATSAPP = '5581982594090'
 
 const statusLabel: Record<SupportTicketStatus, string> = {
   aberto: 'Aguardando resposta',
@@ -149,7 +148,7 @@ function SupportContact() {
               </div>
             </div>
             <a
-              href={`https://wa.me/${SUPPORT_WHATSAPP}`}
+              href={SALES_WHATSAPP_URL}
               target="_blank"
               rel="noreferrer"
               className={cn(buttonVariants({ variant: 'primary' }), 'shrink-0')}

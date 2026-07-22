@@ -75,11 +75,12 @@ export function loginWithGoogle() {
   })
 }
 
-/** `intent` tells the signup page which mini-form to show once Google redirects back with no profile yet. */
-export function signupWithGoogle(intent: 'company' | 'code') {
+/** Redirects back to the signup page's code-redemption step (the only self-service path left —
+ * see createCompanyForClient in features/maintenance/api.ts for how companies get created now). */
+export function signupWithGoogle() {
   return supabase!.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/signup?oauthIntent=${intent}` },
+    options: { redirectTo: `${window.location.origin}/signup?oauthIntent=code` },
   })
 }
 
@@ -92,7 +93,7 @@ export interface PendingGoogleUser {
 /** Same shape as PendingGoogleUser, reused for any authenticated-but-no-profile session
  * (e.g. after "Sair da empresa") — kept as a distinct name since it comes from a different
  * origin (plain login, not a fresh Google signup) even though the data and downstream
- * handling (finishGoogleCompanySignup/finishGoogleCodeSignup) are identical. */
+ * handling (finishGoogleCodeSignup) is identical. */
 export type NoCompanySession = PendingGoogleUser
 
 export function toPendingGoogleUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown> }): PendingGoogleUser {
@@ -101,22 +102,6 @@ export function toPendingGoogleUser(user: { id: string; email?: string; user_met
     email: user.email ?? '',
     name: (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || user.email || 'Usuário',
   }
-}
-
-/** Attaches a new company (as admin) to an existing Supabase Auth user who has no profile yet —
- * used both by the post-Google signup mini-form and by the join-a-company screen after
- * "Sair da empresa". */
-export async function finishGoogleCompanySignup(companyName: string, user: PendingGoogleUser): Promise<AuthUser> {
-  const { data: company, error: companyError } = await supabase!.from('companies').insert({ name: companyName }).select().single()
-  if (companyError || !company) throw new Error('Não foi possível criar a empresa.')
-
-  const { data: profile, error: profileError } = await supabase!
-    .from('profiles')
-    .insert({ id: user.id, company_id: company.id, name: user.name, email: user.email, role: 'admin' satisfies Role })
-    .select()
-    .single()
-  if (profileError || !profile) throw new Error('Não foi possível criar seu perfil.')
-  return profileToAuthUser(profile as ProfileRow)
 }
 
 /** Redeems an invite code and attaches its company/role to an existing Supabase Auth user who
@@ -182,37 +167,10 @@ export interface SignupCompanyInput {
   password: string
 }
 
+/** Mock/demo mode only — the real deployment doesn't allow self-service company creation
+ * anymore (see createCompanyForClient in features/maintenance/api.ts), so SignupPage never
+ * calls this when isSupabase is true. */
 export async function signupCompanyRequest(input: SignupCompanyInput): Promise<AuthUser> {
-  if (isSupabase) {
-    const { data: signUpData, error: signUpError } = await supabase!.auth.signUp({
-      email: input.email,
-      password: input.password,
-    })
-    if (signUpError || !signUpData.user) throw new Error(signUpError?.message ?? 'Não foi possível criar sua conta.')
-
-    const { data: company, error: companyError } = await supabase!
-      .from('companies')
-      .insert({ name: input.companyName })
-      .select()
-      .single()
-    if (companyError || !company) throw new Error('Não foi possível criar a empresa.')
-
-    const { data: profile, error: profileError } = await supabase!
-      .from('profiles')
-      .insert({
-        id: signUpData.user.id,
-        company_id: company.id,
-        name: input.name,
-        email: input.email,
-        role: 'admin' satisfies Role,
-      })
-      .select()
-      .single()
-    if (profileError || !profile) throw new Error('Não foi possível criar seu perfil.')
-
-    return profileToAuthUser(profile as ProfileRow)
-  }
-
   await delay(700)
 
   if (mockUsers.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) {
