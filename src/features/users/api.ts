@@ -1,4 +1,5 @@
 import { isSupabase } from '../../lib/dataSource'
+import { randomCode } from '../../lib/randomCode'
 import { supabase } from '../../lib/supabaseClient'
 import { teamMembers, type TeamMember, type UserStatus } from '../../mocks/teamMembers'
 import type { Role } from '../auth/types'
@@ -67,13 +68,6 @@ export function createUser(input: CreateUserInput) {
 export interface GenerateInviteCodeInput {
   role: Role
   department: string
-}
-
-function randomCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no ambiguous chars (0/O, 1/I)
-  let code = ''
-  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)]
-  return `${code.slice(0, 4)}-${code.slice(4)}`
 }
 
 /** Supabase mode: admin/gestor generates a code instead of creating the account directly — the invitee signs up themselves via "Tenho um código". */

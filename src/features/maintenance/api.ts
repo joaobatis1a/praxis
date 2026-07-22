@@ -1,3 +1,4 @@
+import { randomCode } from '../../lib/randomCode'
 import { supabase } from '../../lib/supabaseClient'
 
 export interface MaintenanceCompany {
@@ -57,6 +58,15 @@ export async function listMaintenanceAccounts(): Promise<MaintenanceAccount[]> {
     addedBy: row.added_by,
     createdAt: row.created_at,
   }))
+}
+
+/** Creates a brand new, empty company and returns an admin invite code for it — the client's
+ * first user redeems the code themselves via "Tenho um código", same as any other invite. */
+export async function createCompanyForClient(name: string): Promise<string> {
+  const code = randomCode()
+  const { error } = await supabase!.rpc('create_company_for_client', { company_name: name, invite_code: code })
+  if (error) throw new Error('Não foi possível criar a empresa.')
+  return code
 }
 
 export async function addMaintenanceAccount(email: string): Promise<void> {

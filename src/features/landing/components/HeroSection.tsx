@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Award, BookOpen, FileText } from 'lucide-react'
 import { Badge, buttonVariants } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
+import { isSupabase } from '../../../lib/dataSource'
+import { SALES_WHATSAPP_URL } from '../../../lib/salesContact'
 import { useCountUp } from '../../../lib/useCountUp'
 
 const headline = ['Onde o conhecimento', 'da sua empresa', 'ganha memória.']
@@ -65,16 +67,31 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.85 }}
             className="mt-10 flex flex-wrap items-center gap-4"
           >
-            <Link
-              to="/signup"
-              className={cn(
-                buttonVariants({ size: 'lg' }),
-                'group shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',
-              )}
-            >
-              Começar agora
-              <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-            </Link>
+            {isSupabase ? (
+              <a
+                href={SALES_WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={cn(
+                  buttonVariants({ size: 'lg' }),
+                  'group shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',
+                )}
+              >
+                Fale com a gente
+                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+              </a>
+            ) : (
+              <Link
+                to="/signup"
+                className={cn(
+                  buttonVariants({ size: 'lg' }),
+                  'group shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',
+                )}
+              >
+                Começar agora
+                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
             <a
               href="#solucao"
               className="text-sm font-medium text-white/70 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white hover:decoration-white/60"

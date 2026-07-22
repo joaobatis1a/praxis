@@ -2,11 +2,13 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Navigate } from 'react-router-dom'
 import { Badge, Button, Card, Input, Skeleton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, useToast } from '../../components/ui'
-import { Building2, Trash2, UserPlus, Wrench } from 'lucide-react'
+import { Building2, Plus, Trash2, UserPlus, Wrench } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
+import { InviteCodeModal } from '../users/components/InviteCodeModal'
 import {
   addMaintenanceAccount,
+  createCompanyForClient,
   listCompanies,
   listMaintenanceAccounts,
   removeMaintenanceAccount,
@@ -23,6 +25,9 @@ export function MaintenancePage() {
   const [newEmail, setNewEmail] = useState('')
   const [adding, setAdding] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [newCompanyName, setNewCompanyName] = useState('')
+  const [creatingCompany, setCreatingCompany] = useState(false)
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isMaintenanceAccount) return
@@ -37,6 +42,24 @@ export function MaintenancePage() {
   // real maintenance account gets flashed to /dashboard on every hard refresh of this page
   if (!maintenanceChecked) return null
   if (!isMaintenanceAccount) return <Navigate to="/dashboard" replace />
+
+  async function handleCreateCompany(e: FormEvent) {
+    e.preventDefault()
+    const name = newCompanyName.trim()
+    if (!name) return
+    setCreatingCompany(true)
+    try {
+      const code = await createCompanyForClient(name)
+      setGeneratedCode(code)
+      setNewCompanyName('')
+      const updated = await listCompanies()
+      setCompanies(updated)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar a empresa.', 'error')
+    } finally {
+      setCreatingCompany(false)
+    }
+  }
 
   async function handleAddAccount(e: FormEvent) {
     e.preventDefault()
@@ -77,6 +100,32 @@ export function MaintenancePage() {
       <p className="mt-1 text-sm text-text-muted">Visão geral das empresas cadastradas e das contas com acesso de manutenção.</p>
 
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mt-6 space-y-6">
+        <motion.div variants={staggerItem}>
+          <Card>
+            <div className="flex items-center gap-2">
+              <Building2 size={18} className="text-primary" />
+              <h2 className="text-base font-semibold text-text-primary">Nova empresa</h2>
+            </div>
+            <p className="mt-1 text-sm text-text-muted">
+              Cria a empresa e gera um código de admin — envie esse código para o responsável do cliente, ele usa em Criar conta &gt; Tenho um código.
+            </p>
+
+            <form onSubmit={handleCreateCompany} className="mt-4 flex gap-2">
+              <Input
+                required
+                value={newCompanyName}
+                onChange={(e) => setNewCompanyName(e.target.value)}
+                placeholder="Nome da empresa"
+                className="flex-1"
+              />
+              <Button type="submit" disabled={creatingCompany || !newCompanyName.trim()}>
+                <Plus size={16} />
+                {creatingCompany ? 'Criando...' : 'Criar empresa'}
+              </Button>
+            </form>
+          </Card>
+        </motion.div>
+
         <motion.div variants={staggerItem}>
           <Card>
             <div className="flex items-center gap-2">
@@ -196,6 +245,8 @@ export function MaintenancePage() {
           </Card>
         </motion.div>
       </motion.div>
+
+      <InviteCodeModal code={generatedCode} onClose={() => setGeneratedCode(null)} />
     </div>
   )
 }
