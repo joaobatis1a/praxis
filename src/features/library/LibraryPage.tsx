@@ -130,16 +130,6 @@ export function LibraryPage() {
     }
   }
 
-  async function handleAddCategory(name: string) {
-    try {
-      const updated = await addCategory(name)
-      setTree(updated)
-      toast(`Categoria "${name}" criada.`)
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível criar a categoria.', 'error')
-    }
-  }
-
   async function handleAddFolder(parentId: string, name: string) {
     try {
       const updated = await addFolder(parentId, name)
@@ -180,7 +170,6 @@ export function LibraryPage() {
           nodes={tree}
           selectedId={selectedFolder}
           onSelect={setSelectedFolder}
-          onAddCategory={handleAddCategory}
           onAddFolder={handleAddFolder}
           onRenameFolder={handleRenameFolder}
           onRequestDelete={(id, name) => setDeletingFolder({ id, name })}
@@ -188,7 +177,7 @@ export function LibraryPage() {
       </aside>
 
       <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-text-primary">Biblioteca de Conhecimento</h1>
             <p className="mt-1 text-sm text-text-muted">{docs.length} documentos disponíveis</p>
@@ -207,7 +196,7 @@ export function LibraryPage() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -8, transition: { duration: 0.12 } }}
                     transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-                    className="absolute right-0 top-full z-20 mt-2 w-52 rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)]"
+                    className="absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)] sm:left-auto sm:right-0"
                   >
                     <button
                       type="button"
