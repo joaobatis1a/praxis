@@ -15,7 +15,7 @@ const roleLabels: Record<Role, string> = {
 }
 
 export function ProfilePage() {
-  const { user, setSessionUser } = useAuth()
+  const { user, setSessionUser, noCompanySession, isMaintenanceAccount } = useAuth()
   const { toast } = useToast()
 
   const [name, setName] = useState(user?.name ?? '')
@@ -47,7 +47,36 @@ export function ProfilePage() {
     }
   }
 
-  if (!user) return null
+  if (!user && !noCompanySession) return null
+
+  if (!user) {
+    // a bare maintenance/support session — no profiles row exists, so there's nothing to edit,
+    // just the account identity behind the login
+    return (
+      <div className="mx-auto max-w-[720px] p-6 lg:p-8">
+        <motion.h1 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-bold text-text-primary">
+          Meu perfil
+        </motion.h1>
+        <p className="mt-1 text-sm text-text-muted">Seus dados pessoais de acesso.</p>
+
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+          <Card>
+            <div className="flex items-center gap-2">
+              <UserIcon size={18} className="text-primary" />
+              <h2 className="text-base font-semibold text-text-primary">Dados pessoais</h2>
+            </div>
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="Nome" value={noCompanySession?.name ?? ''} disabled />
+                <Input label="E-mail" value={noCompanySession?.email ?? ''} disabled hint="O e-mail não pode ser alterado." />
+              </div>
+              <Badge variant="primary">{isMaintenanceAccount ? 'Manutenção' : 'Suporte'}</Badge>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-[720px] p-6 lg:p-8">
