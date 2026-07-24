@@ -53,7 +53,7 @@ export function ProcedureCard({ procedure, onOpen, onEdit, onDelete }: Procedure
       </div>
 
       <button type="button" onClick={onOpen} className="mt-3 text-left">
-        <p className="line-clamp-2 text-sm font-semibold text-text-primary transition-colors group-hover:text-primary">
+        <p className="text-sm font-semibold text-text-primary transition-colors group-hover:text-primary">
           {procedure.title}
         </p>
       </button>

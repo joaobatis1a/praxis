@@ -245,10 +245,10 @@ export function UsersPage() {
                     </motion.div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className="truncate text-sm font-medium text-text-primary">{member.name}</p>
+                        <p className="text-sm font-medium text-text-primary">{member.name}</p>
                         {isSelf && <Badge variant="primary">Você</Badge>}
                       </div>
-                      <p className="truncate text-xs text-text-muted">{member.email}</p>
+                      <p className="text-xs text-text-muted">{member.email}</p>
                     </div>
                   </div>
                 </TableCell>

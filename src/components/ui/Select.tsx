@@ -113,7 +113,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
           triggerClassName,
         )}
       >
-        <span className="truncate">{selected?.label ?? 'Selecionar'}</span>
+        <span>{selected?.label ?? 'Selecionar'}</span>
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 24 }}
@@ -154,7 +154,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
                         setOpen(false)
                       }}
                       className={cn(
-                        'flex w-full items-center gap-2 whitespace-nowrap rounded-sm px-2.5 py-2 text-left text-sm transition-colors',
+                        'flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-left text-sm transition-colors',
                         isSelected ? 'text-primary' : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary',
                       )}
                     >
@@ -169,7 +169,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
                           </motion.span>
                         )}
                       </span>
-                      <span className="truncate">{option.label}</span>
+                      <span>{option.label}</span>
                     </button>
                   </motion.li>
                 )

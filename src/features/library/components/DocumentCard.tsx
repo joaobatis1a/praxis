@@ -77,14 +77,14 @@ export function DocumentCard({ document, onOpen, onToggleFavorite, onEdit, onDel
       </div>
 
       <button type="button" onClick={onOpen} className="mt-3 text-left">
-        <p className="line-clamp-2 text-sm font-semibold text-text-primary transition-colors group-hover:text-primary">
+        <p className="text-sm font-semibold text-text-primary transition-colors group-hover:text-primary">
           {document.title}
         </p>
       </button>
 
       <div className="mt-auto pt-4">
-        <div className="flex items-center justify-between text-xs text-text-muted">
-          <span className="truncate">{document.author}</span>
+        <div className="flex items-center justify-between gap-2 text-xs text-text-muted">
+          <span>{document.author}</span>
           <span className="shrink-0">{formatDate(document.updatedAt)}</span>
         </div>
         <button

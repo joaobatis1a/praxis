@@ -148,7 +148,7 @@ export function ProcedureDetailModal({
               download={procedure.videoName}
               className="mt-2 flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5 text-sm text-text-primary hover:bg-surface-hover"
             >
-              <span className="truncate">{procedure.videoName}</span>
+              <span>{procedure.videoName}</span>
               <Download size={16} className="shrink-0 text-text-muted" />
             </a>
           )}
@@ -178,7 +178,7 @@ export function ProcedureDetailModal({
               className="flex items-center gap-2 rounded-md border border-border-strong bg-surface px-3 py-2.5 text-sm font-medium text-primary hover:bg-surface-hover"
             >
               <ExternalLink size={16} className="shrink-0" />
-              <span className="truncate">{link.label}</span>
+              <span>{link.label}</span>
             </a>
           ))}
         </div>
