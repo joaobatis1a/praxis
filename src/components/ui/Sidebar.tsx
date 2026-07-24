@@ -76,25 +76,17 @@ export function Sidebar({ sections, header, footer, open = false, onClose }: Sid
                       className={({ isActive }) =>
                         cn(
                           'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-text-secondary transition-colors',
-                          'hover:text-text-primary',
-                          isActive && 'text-primary hover:text-primary',
+                          isActive ? 'text-primary hover:text-primary' : 'hover:bg-surface-hover hover:text-text-primary',
                         )
                       }
                     >
                       {({ isActive }) => (
                         <>
-                          {isActive ? (
+                          {isActive && (
                             <motion.span
                               layoutId="sidebar-active-bg"
                               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                               className="absolute inset-0 z-0 rounded-md bg-primary/10"
-                            />
-                          ) : (
-                            <motion.span
-                              variants={{ hover: { opacity: 1 }, initial: { opacity: 0 } }}
-                              initial="initial"
-                              animate="initial"
-                              className="absolute inset-0 z-0 rounded-md bg-surface-hover"
                             />
                           )}
                           {isActive && (
