@@ -166,7 +166,12 @@ export function UsersPage() {
         </Button>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="mt-6 flex flex-wrap items-center gap-3"
+      >
         <div className="relative min-w-[220px] flex-1">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
@@ -187,7 +192,7 @@ export function UsersPage() {
         <Select value={roleFilter} onChange={setRoleFilter} options={roleOptions} aria-label="Filtrar por cargo" />
 
         <Select value={statusFilter} onChange={setStatusFilter} options={statusOptions} aria-label="Filtrar por status" />
-      </div>
+      </motion.div>
 
       <div className="mt-6">
         <Table>
@@ -220,7 +225,14 @@ export function UsersPage() {
             {filtered.map((member) => {
               const isSelf = member.id === user?.id
               return (
-              <MotionTableRow key={member.id} variants={staggerItem} layout className={isSelf ? 'bg-primary/5' : undefined}>
+              <MotionTableRow
+                key={member.id}
+                variants={staggerItem}
+                layout
+                whileHover={{ x: 3 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                className={isSelf ? 'bg-primary/5' : undefined}
+              >
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <motion.div
