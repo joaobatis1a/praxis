@@ -89,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Listen for another admin changing this user's own role/department/status live — so an
   // active session picks it up immediately instead of needing a reload to see new permissions,
   // and an account marked inativo gets signed out right away rather than keeping a stale session.
+  // Also covers being removed from the company entirely (profiles row deleted, login kept per
+  // 031) — previously only UPDATE was watched, so a removed user's session kept working (against
+  // RLS that now silently returned nothing) until they happened to reload.
   useEffect(() => {
     if (!isSupabase || !user) return
     const userId = user.id
@@ -96,8 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .channel(`profile-self-${userId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
         (payload) => {
+          if (payload.eventType === 'DELETE') {
+            setUser(null)
+            supabase!.auth.getUser().then(({ data }) => {
+              if (data.user) setNoCompanySession(toPendingGoogleUser(data.user))
+            })
+            return
+          }
           const next = payload.new as { role: string; department: string | null; status: 'ativo' | 'inativo' }
           if (next.status === 'inativo') {
             setUser(null)
@@ -113,6 +123,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase!.removeChannel(channel)
     }
   }, [user?.id])
+
+  // Same idea, one level up: an admin/maintenance account deactivating this user's whole company
+  // should sign everyone in it out immediately, not just at their next login attempt.
+  useEffect(() => {
+    if (!isSupabase || !user?.companyId) return
+    const companyId = user.companyId
+    const channel = supabase!
+      .channel(`company-self-${companyId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'companies', filter: `id=eq.${companyId}` },
+        (payload) => {
+          const next = payload.new as { status: 'ativo' | 'inativo' }
+          if (next.status === 'inativo') {
+            setUser(null)
+            setError('Sua empresa foi desativada. Entre em contato com o suporte.')
+            supabase!.auth.signOut()
+          }
+        },
+      )
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
+  }, [user?.companyId])
+
+  // Mirrors the profile-self channel above for a maintenance account's own row: without this, a
+  // revoked maintenance session kept setIsMaintenanceAccount(true) (and access to /manutencao)
+  // until the next full reload, since the check further up only re-runs on identity change.
+  useEffect(() => {
+    if (!isSupabase || !isMaintenanceAccount) return
+    const email = user?.email ?? noCompanySession?.email
+    if (!email) return
+    const channel = supabase!
+      .channel(`maintenance-self-${email}`)
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'maintenance_accounts', filter: `email=eq.${email}` },
+        () => {
+          setIsMaintenanceAccount(false)
+          if (!user) {
+            // a bare maintenance session (no company at all) has nothing left to show without this
+            setError('Seu acesso de manutenção foi removido.')
+            setNoCompanySession(null)
+            supabase!.auth.signOut()
+          }
+        },
+      )
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
+  }, [isMaintenanceAccount, user?.email, noCompanySession?.email])
 
   useEffect(() => {
     if (isSupabase) {
