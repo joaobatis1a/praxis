@@ -188,12 +188,12 @@ export function LibraryPage() {
       </aside>
 
       <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold text-text-primary">Biblioteca de Conhecimento</h1>
             <p className="mt-1 text-sm text-text-muted">{docs.length} documentos disponíveis</p>
           </div>
-          <div className="relative">
+          <div className="relative shrink-0">
             <Button onClick={() => setAddMenuOpen((v) => !v)}>
               <Plus size={16} />
               Novo
