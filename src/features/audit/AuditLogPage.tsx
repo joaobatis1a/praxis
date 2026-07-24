@@ -97,10 +97,17 @@ export function AuditLogPage() {
 
   return (
     <div className="mx-auto max-w-[900px] p-6 lg:p-8">
-      <h1 className="text-2xl font-bold text-text-primary">Atividade</h1>
-      <p className="mt-1 text-sm text-text-muted">Quem mudou o quê e quando, na sua empresa.</p>
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-2xl font-bold text-text-primary">Atividade</h1>
+        <p className="mt-1 text-sm text-text-muted">Quem mudou o quê e quando, na sua empresa.</p>
+      </motion.div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="mt-6 flex flex-wrap gap-3"
+      >
         <Select value={entityFilter} onChange={setEntityFilter} options={filterOptions} triggerClassName="w-48" />
         <input
           type="text"
@@ -109,7 +116,7 @@ export function AuditLogPage() {
           placeholder="Buscar por pessoa ou item..."
           className="h-10 flex-1 min-w-[200px] rounded-md border border-border bg-surface-card px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
         />
-      </div>
+      </motion.div>
 
       <div className="mt-6">
         {loading ? (
@@ -131,11 +138,18 @@ export function AuditLogPage() {
                 <motion.li
                   key={entry.id}
                   variants={staggerItem}
-                  className="flex items-start gap-3 rounded-md p-2.5 transition-colors hover:bg-surface-hover"
+                  layout
+                  whileHover={{ x: 4 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                  className="group flex items-start gap-3 rounded-md p-2.5 transition-colors hover:bg-surface-hover"
                 >
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-text-secondary">
+                  <motion.div
+                    whileHover={{ scale: 1.15, rotate: -6 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                    className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-text-secondary transition-colors group-hover:bg-primary/15 group-hover:text-primary"
+                  >
                     <Icon size={15} />
-                  </div>
+                  </motion.div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-text-secondary">
                       <span className="font-medium text-text-primary">{entry.actorName}</span> {describeEntry(entry)}
