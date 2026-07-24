@@ -159,7 +159,7 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           notificationCount={unreadCount}
-          onNotificationsClick={() => navigate('/notificacoes')}
+          onNotificationsClick={user ? () => navigate('/notificacoes') : undefined}
           onMenuClick={() => setSidebarOpen(true)}
           rightSlot={
             <ThemeToggle
