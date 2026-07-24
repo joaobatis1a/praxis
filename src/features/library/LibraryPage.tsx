@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FolderPlus, Plus, Search } from 'lucide-react'
+import { FilePlus, FolderPlus, Plus, Search } from 'lucide-react'
 import type { FolderNode, LibraryDocument } from '../../mocks/library'
 import { Button, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
@@ -40,6 +40,7 @@ export function LibraryPage() {
   const [openDoc, setOpenDoc] = useState<LibraryDocument | null>(null)
   const [docForm, setDocForm] = useState<DocFormState>(null)
   const [folderFormOpen, setFolderFormOpen] = useState(false)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
   const [deletingDoc, setDeletingDoc] = useState<LibraryDocument | null>(null)
   const [deletingFolder, setDeletingFolder] = useState<{ id: string; name: string } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -192,15 +193,48 @@ export function LibraryPage() {
             <h1 className="text-2xl font-bold text-text-primary">Biblioteca de Conhecimento</h1>
             <p className="mt-1 text-sm text-text-muted">{docs.length} documentos disponíveis</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setFolderFormOpen(true)}>
-              <FolderPlus size={16} />
-              Nova pasta
-            </Button>
-            <Button onClick={() => setDocForm({ mode: 'create' })}>
+          <div className="relative">
+            <Button onClick={() => setAddMenuOpen((v) => !v)}>
               <Plus size={16} />
-              Novo documento
+              Novo
             </Button>
+            <AnimatePresence>
+              {addMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setAddMenuOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -8, transition: { duration: 0.12 } }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                    className="absolute right-0 top-full z-20 mt-2 w-52 rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)]"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddMenuOpen(false)
+                        setDocForm({ mode: 'create' })
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                    >
+                      <FilePlus size={16} />
+                      Novo documento
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddMenuOpen(false)
+                        setFolderFormOpen(true)
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                    >
+                      <FolderPlus size={16} />
+                      Nova pasta
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
