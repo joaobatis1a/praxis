@@ -34,25 +34,27 @@ export function Header({
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
         {rightSlot}
 
-        <motion.button
-          type="button"
-          onClick={onNotificationsClick}
-          whileHover={{ rotate: [0, -14, 11, -8, 5, 0] }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ duration: 0.5 }}
-          aria-label="Notificações"
-          className="relative rounded-md p-2 text-text-secondary hover:bg-surface-hover hover:text-text-primary"
-        >
-          <Bell size={20} />
-          {notificationCount > 0 && (
-            <span
-              className={cn(
-                'absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-primary',
-                'ring-2 ring-surface-card',
-              )}
-            />
-          )}
-        </motion.button>
+        {onNotificationsClick && (
+          <motion.button
+            type="button"
+            onClick={onNotificationsClick}
+            whileHover={{ rotate: [0, -14, 11, -8, 5, 0] }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ duration: 0.5 }}
+            aria-label="Notificações"
+            className="relative rounded-md p-2 text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+          >
+            <Bell size={20} />
+            {notificationCount > 0 && (
+              <span
+                className={cn(
+                  'absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-primary',
+                  'ring-2 ring-surface-card',
+                )}
+              />
+            )}
+          </motion.button>
+        )}
 
         {avatar}
       </div>
