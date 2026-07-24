@@ -38,8 +38,8 @@ export function RecentNoticesCard({ notices }: { notices: RecentNotice[] }) {
                 <Megaphone size={15} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-text-secondary">{n.description}</p>
-                <p className="mt-0.5 truncate text-xs text-text-muted">
+                <p className="text-sm text-text-secondary">{n.description}</p>
+                <p className="mt-0.5 text-xs text-text-muted">
                   {n.authorName} → {n.recipientLabel} · {n.time}
                 </p>
               </div>

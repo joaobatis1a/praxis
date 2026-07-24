@@ -190,7 +190,7 @@ function SupportContact() {
                           onClick={() => setExpanded(isOpen ? null : ticket.id)}
                           className="min-w-0 flex-1 text-left"
                         >
-                          <p className="truncate text-sm font-medium text-text-primary">{ticket.title}</p>
+                          <p className="text-sm font-medium text-text-primary">{ticket.title}</p>
                         </button>
                         <div className="flex shrink-0 items-center gap-1.5">
                           <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>

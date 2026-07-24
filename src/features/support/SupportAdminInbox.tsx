@@ -134,7 +134,7 @@ export function SupportAdminInbox() {
                     >
                       <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
                       <p className="text-xs text-text-muted">{ticket.userEmail}</p>
-                      <p className="mt-2 truncate text-sm text-text-secondary">{ticket.title}</p>
+                      <p className="mt-2 text-sm text-text-secondary">{ticket.title}</p>
                     </button>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>

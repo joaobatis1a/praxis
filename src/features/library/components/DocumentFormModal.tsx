@@ -135,7 +135,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
             <div className="space-y-1.5">
               {batchFiles.map((f, i) => (
                 <div key={`${f.name}-${i}`} className="flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2">
-                  <span className="truncate text-sm text-text-primary">{f.name}</span>
+                  <span className="text-sm text-text-primary">{f.name}</span>
                   <button
                     type="button"
                     onClick={() => removeBatchFile(i)}
@@ -149,7 +149,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
             </div>
           ) : fileName ? (
             <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5">
-              <span className="truncate text-sm text-text-primary">{fileName}</span>
+              <span className="text-sm text-text-primary">{fileName}</span>
               <button
                 type="button"
                 onClick={removeFile}

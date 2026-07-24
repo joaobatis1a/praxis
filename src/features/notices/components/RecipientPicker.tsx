@@ -174,8 +174,8 @@ export function RecipientPicker({ members, departments, value, onChange }: Recip
                         {selected && <Check size={13} strokeWidth={3} />}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate">{m.name}</p>
-                        <p className="truncate text-xs text-text-muted">{m.department}</p>
+                        <p>{m.name}</p>
+                        <p className="text-xs text-text-muted">{m.department}</p>
                       </div>
                     </motion.button>
                   )
@@ -203,7 +203,7 @@ export function RecipientPicker({ members, departments, value, onChange }: Recip
                           {selected && <Check size={13} strokeWidth={3} />}
                         </span>
                         <Building2 size={13} className="shrink-0 text-text-muted" />
-                        <span className="truncate">{dept}</span>
+                        <span>{dept}</span>
                       </motion.button>
                     )
                   })}

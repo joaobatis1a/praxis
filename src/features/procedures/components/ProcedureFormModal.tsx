@@ -240,9 +240,9 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
           <input ref={videoInputRef} type="file" className="hidden" onChange={(e) => handleVideoChange(e.target.files?.[0])} />
           {form.videoName ? (
             <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5">
-              <span className="flex min-w-0 items-center gap-2 truncate text-sm text-text-primary">
+              <span className="flex min-w-0 items-center gap-2 text-sm text-text-primary">
                 <Video size={16} className="shrink-0 text-primary" />
-                <span className="truncate">{form.videoName}</span>
+                <span>{form.videoName}</span>
               </span>
               <button
                 type="button"

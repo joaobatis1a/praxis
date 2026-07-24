@@ -168,7 +168,7 @@ function FolderTreeItem({ node, depth, selectedId, onSelect, onAddFolder, onRena
           >
             {isSelected ? <FolderOpen size={15} /> : <Folder size={15} />}
           </motion.span>
-          <span className="truncate">{node.name}</span>
+          <span>{node.name}</span>
         </button>
 
         <motion.button

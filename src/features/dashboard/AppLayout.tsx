@@ -94,8 +94,8 @@ export function AppLayout() {
                 {initials}
               </motion.div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
-                <p className="truncate text-xs text-text-muted">{user ? roleLabels[user.role] : 'Manutenção Praxis'}</p>
+                <p className="text-sm font-medium text-text-primary">{displayName}</p>
+                <p className="text-xs text-text-muted">{user ? roleLabels[user.role] : 'Manutenção Praxis'}</p>
               </div>
               <motion.span
                 animate={{ rotate: menuOpen ? 180 : 0 }}
@@ -118,8 +118,8 @@ export function AppLayout() {
                     className="absolute bottom-full left-0 z-20 mb-2 w-full rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)]"
                   >
                     <div className="px-2.5 py-2">
-                      <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
-                      <p className="truncate text-xs text-text-muted">{user?.email ?? noCompanySession?.email}</p>
+                      <p className="text-sm font-medium text-text-primary">{displayName}</p>
+                      <p className="text-xs text-text-muted">{user?.email ?? noCompanySession?.email}</p>
                     </div>
                     <div className="my-1 border-t border-border" />
                     {(user || maintenanceNoCompany) && (
