@@ -229,8 +229,9 @@ export function UsersPage() {
                 key={member.id}
                 variants={staggerItem}
                 layout
-                whileHover={{ x: 3 }}
+                whileHover={{ y: -3, boxShadow: '0 10px 20px -8px rgb(0 0 0 / 0.25)', zIndex: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                style={{ position: 'relative' }}
                 className={isSelf ? 'bg-primary/5' : undefined}
               >
                 <TableCell>
