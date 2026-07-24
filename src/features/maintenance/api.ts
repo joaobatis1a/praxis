@@ -70,6 +70,15 @@ export async function setCompanyStatus(companyId: string, status: 'ativo' | 'ina
   if (error) throw new Error('Não foi possível atualizar o status da empresa.')
 }
 
+/** Looks up the invite code a company was created with — the code is reusable and persists
+ * indefinitely (unlike single-use maintenance codes), so this recovers it if the "invite gerado"
+ * modal was closed by accident instead of forcing a whole new company to be created. */
+export async function getCompanyInviteCode(companyId: string): Promise<string | null> {
+  const { data, error } = await supabase!.rpc('get_company_invite_code', { target_company_id: companyId })
+  if (error) throw new Error('Não foi possível recuperar o código de convite.')
+  return data ?? null
+}
+
 export async function deleteCompanyAsMaintenance(companyId: string): Promise<void> {
   const { error } = await supabase!.rpc('delete_company_as_maintenance', { target_company_id: companyId })
   if (error) throw new Error('Não foi possível excluir a empresa.')

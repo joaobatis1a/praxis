@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronUp, LifeBuoy, LogOut, User, Wrench } from 'lucide-react'
+import { ChevronUp, LifeBuoy, LogOut, User, Users, Wrench } from 'lucide-react'
 import { Header, Logo, Sidebar, ThemeToggle } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useTheme } from '../../lib/theme-provider'
@@ -12,7 +12,12 @@ import { setThemePreference } from '../settings/api'
 import { getNavItemsForRole } from './navigation'
 
 const maintenanceNavItem = { to: '/manutencao', label: 'Manutenção', icon: Wrench }
-const maintenanceNoCompanyNavItems = [{ to: '/suporte', label: 'Suporte', icon: LifeBuoy }, maintenanceNavItem]
+const maintenanceTeamNavItem = { to: '/time', label: 'Time', icon: Users }
+const maintenanceNoCompanyNavItems = [
+  { to: '/suporte', label: 'Suporte', icon: LifeBuoy },
+  maintenanceNavItem,
+  maintenanceTeamNavItem,
+]
 
 const roleLabels: Record<string, string> = {
   admin: 'Proprietário',
@@ -48,7 +53,7 @@ export function AppLayout() {
   if (!user && !maintenanceNoCompany) return null
 
   const items = user
-    ? [...getNavItemsForRole(user.role), ...(isMaintenanceAccount ? [maintenanceNavItem] : [])]
+    ? [...getNavItemsForRole(user.role), ...(isMaintenanceAccount ? [maintenanceNavItem, maintenanceTeamNavItem] : [])]
     : maintenanceNoCompanyNavItems
   const displayName = user?.name ?? 'Suporte Praxis'
   const initials = displayName
@@ -117,11 +122,12 @@ export function AppLayout() {
                       <p className="truncate text-xs text-text-muted">{user?.email ?? noCompanySession?.email}</p>
                     </div>
                     <div className="my-1 border-t border-border" />
-                    {user && (
+                    {(user || maintenanceNoCompany) && (
                       <button
                         type="button"
                         onClick={() => {
                           setMenuOpen(false)
+                          setSidebarOpen(false)
                           navigate('/perfil')
                         }}
                         className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
@@ -132,7 +138,11 @@ export function AppLayout() {
                     )}
                     <button
                       type="button"
-                      onClick={logout}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        setSidebarOpen(false)
+                        logout()
+                      }}
                       className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-error hover:bg-error-bg"
                     >
                       <LogOut size={16} />
@@ -160,7 +170,7 @@ export function AppLayout() {
           }
         />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </main>
       </div>

@@ -19,6 +19,7 @@ import { SettingsPage } from './features/settings/SettingsPage'
 import { ProfilePage } from './features/settings/ProfilePage'
 import { SupportPage } from './features/support/SupportPage'
 import { MaintenancePage } from './features/maintenance/MaintenancePage'
+import { MaintenanceTeamPage } from './features/maintenance/MaintenanceTeamPage'
 import { AuditLogPage } from './features/audit/AuditLogPage'
 
 function App() {
@@ -48,13 +49,14 @@ function App() {
               <Route path="/atividade" element={<AuditLogPage />} />
             </Route>
             <Route path="/notificacoes" element={<NotificationsPage />} />
-            <Route path="/perfil" element={<ProfilePage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
 
           {/* reachable both by normal company users and by a maintenance account with no company (maintenanceNoCompany) */}
           <Route path="/suporte" element={<SupportPage />} />
           <Route path="/manutencao" element={<MaintenancePage />} />
+          <Route path="/time" element={<MaintenanceTeamPage />} />
+          <Route path="/perfil" element={<ProfilePage />} />
         </Route>
       </Route>
 

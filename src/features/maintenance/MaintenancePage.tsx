@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Navigate } from 'react-router-dom'
 import {
@@ -7,6 +7,7 @@ import {
   Card,
   Input,
   Modal,
+  Select,
   Skeleton,
   Table,
   TableBody,
@@ -16,34 +17,43 @@ import {
   TableRow,
   useToast,
 } from '../../components/ui'
-import { Building2, KeyRound, Plus, Power, PowerOff, Trash2, Wrench } from 'lucide-react'
+import { Building2, KeyRound, Plus, Power, PowerOff, Search, Trash2 } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
 import { InviteCodeModal } from '../users/components/InviteCodeModal'
 import {
   createCompanyForClient,
   deleteCompanyAsMaintenance,
-  generateMaintenanceInviteCode,
+  getCompanyInviteCode,
   listCompanies,
-  listMaintenanceAccounts,
-  removeMaintenanceAccount,
   setCompanyStatus,
-  type MaintenanceAccount,
   type MaintenanceCompany,
 } from './api'
+
+const statusOptions = [
+  { value: 'todas', label: 'Todos os status' },
+  { value: 'ativo', label: 'Ativas' },
+  { value: 'inativo', label: 'Inativas' },
+]
+
+const sortOptions = [
+  { value: 'recent', label: 'Mais recentes' },
+  { value: 'oldest', label: 'Mais antigas' },
+  { value: 'name', label: 'Nome (A-Z)' },
+]
 
 export function MaintenancePage() {
   const { isMaintenanceAccount, maintenanceChecked } = useAuth()
   const { toast } = useToast()
   const [companies, setCompanies] = useState<MaintenanceCompany[]>([])
-  const [accounts, setAccounts] = useState<MaintenanceAccount[]>([])
   const [loading, setLoading] = useState(true)
-  const [generatingAccountCode, setGeneratingAccountCode] = useState(false)
-  const [generatedAccountCode, setGeneratedAccountCode] = useState<string | null>(null)
-  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('todas')
+  const [sortBy, setSortBy] = useState('recent')
   const [newCompanyName, setNewCompanyName] = useState('')
   const [creatingCompany, setCreatingCompany] = useState(false)
   const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null)
+  const [loadingCodeId, setLoadingCodeId] = useState<string | null>(null)
   const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
   const [deletingCompany, setDeletingCompany] = useState<MaintenanceCompany | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
@@ -51,12 +61,22 @@ export function MaintenancePage() {
 
   useEffect(() => {
     if (!isMaintenanceAccount) return
-    Promise.all([listCompanies(), listMaintenanceAccounts()]).then(([companyData, accountData]) => {
-      setCompanies(companyData)
-      setAccounts(accountData)
+    listCompanies().then((data) => {
+      setCompanies(data)
       setLoading(false)
     })
   }, [isMaintenanceAccount])
+
+  const filteredCompanies = useMemo(() => {
+    return companies
+      .filter((c) => statusFilter === 'todas' || c.status === statusFilter)
+      .filter((c) => !search.trim() || c.name.toLowerCase().includes(search.trim().toLowerCase()))
+      .sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name)
+        if (sortBy === 'oldest') return a.createdAt.localeCompare(b.createdAt)
+        return b.createdAt.localeCompare(a.createdAt)
+      })
+  }, [companies, search, statusFilter, sortBy])
 
   // wait for the async maintenance check before deciding to bounce someone away — otherwise a
   // real maintenance account gets flashed to /dashboard on every hard refresh of this page
@@ -95,6 +115,22 @@ export function MaintenancePage() {
     }
   }
 
+  async function handleViewInviteCode(company: MaintenanceCompany) {
+    setLoadingCodeId(company.id)
+    try {
+      const code = await getCompanyInviteCode(company.id)
+      if (!code) {
+        toast('Nenhum código de convite encontrado para esta empresa.', 'error')
+        return
+      }
+      setGeneratedCompanyCode(code)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível recuperar o código.', 'error')
+    } finally {
+      setLoadingCodeId(null)
+    }
+  }
+
   async function handleDeleteCompany() {
     if (!deletingCompany) return
     setDeletingInFlight(true)
@@ -111,37 +147,12 @@ export function MaintenancePage() {
     }
   }
 
-  async function handleGenerateAccountCode() {
-    setGeneratingAccountCode(true)
-    try {
-      const code = await generateMaintenanceInviteCode()
-      setGeneratedAccountCode(code)
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível gerar o código.', 'error')
-    } finally {
-      setGeneratingAccountCode(false)
-    }
-  }
-
-  async function handleRemoveAccount(account: MaintenanceAccount) {
-    setRemovingId(account.id)
-    try {
-      await removeMaintenanceAccount(account.email)
-      setAccounts((prev) => prev.filter((a) => a.id !== account.id))
-      toast(`${account.email} foi removido da manutenção.`)
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível remover essa conta.', 'error')
-    } finally {
-      setRemovingId(null)
-    }
-  }
-
   return (
     <div className="mx-auto max-w-[1200px] p-6 lg:p-8">
       <motion.h1 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="text-2xl font-bold text-text-primary">
         Manutenção
       </motion.h1>
-      <p className="mt-1 text-sm text-text-muted">Visão geral das empresas cadastradas e das contas com acesso de manutenção.</p>
+      <p className="mt-1 text-sm text-text-muted">Visão geral das empresas cadastradas.</p>
 
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mt-6 space-y-6">
         <motion.div variants={staggerItem}>
@@ -176,6 +187,20 @@ export function MaintenancePage() {
             </div>
             <p className="mt-1 text-sm text-text-muted">Somente leitura, exceto pelas ações da coluna Ações.</p>
 
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="relative min-w-[220px] flex-1">
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome da empresa..."
+                  className="h-10 w-full rounded-md border border-border bg-surface-card pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+                />
+              </div>
+              <Select value={statusFilter} onChange={setStatusFilter} options={statusOptions} aria-label="Filtrar por status" />
+              <Select value={sortBy} onChange={setSortBy} options={sortOptions} aria-label="Ordenar" />
+            </div>
+
             <div className="mt-4">
               {loading ? (
                 <div className="space-y-2">
@@ -183,8 +208,8 @@ export function MaintenancePage() {
                     <Skeleton key={i} className="h-12" />
                   ))}
                 </div>
-              ) : companies.length === 0 ? (
-                <p className="py-6 text-center text-sm text-text-muted">Nenhuma empresa cadastrada.</p>
+              ) : filteredCompanies.length === 0 ? (
+                <p className="py-6 text-center text-sm text-text-muted">Nenhuma empresa encontrada.</p>
               ) : (
                 <Table>
                   <TableHead>
@@ -198,7 +223,7 @@ export function MaintenancePage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {companies.map((company) => (
+                    {filteredCompanies.map((company) => (
                       <TableRow key={company.id}>
                         <TableCell className="font-medium text-text-primary">
                           <span title={company.notes ?? undefined}>{company.name}</span>
@@ -220,6 +245,16 @@ export function MaintenancePage() {
                         <TableCell>{new Date(company.createdAt).toLocaleDateString('pt-BR')}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleViewInviteCode(company)}
+                              disabled={loadingCodeId === company.id}
+                              aria-label="Ver código de convite"
+                              title="Ver código de convite"
+                              className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-primary/10 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+                            >
+                              <KeyRound size={16} />
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleToggleStatus(company)}
@@ -249,57 +284,6 @@ export function MaintenancePage() {
             </div>
           </Card>
         </motion.div>
-
-        <motion.div variants={staggerItem}>
-          <Card>
-            <div className="flex items-center gap-2">
-              <Wrench size={18} className="text-primary" />
-              <h2 className="text-base font-semibold text-text-primary">Contas de manutenção</h2>
-            </div>
-            <p className="mt-1 text-sm text-text-muted">Vê esta página e o suporte de todas as empresas.</p>
-
-            <div className="mt-4">
-              <Button type="button" onClick={handleGenerateAccountCode} disabled={generatingAccountCode}>
-                <KeyRound size={16} />
-                {generatingAccountCode ? 'Gerando...' : 'Gerar código de convite'}
-              </Button>
-            </div>
-
-            <div className="mt-4">
-              {loading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 2 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12" />
-                  ))}
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {accounts.map((account) => (
-                    <div key={account.id} className="flex items-center justify-between gap-4 py-3">
-                      <div>
-                        <p className="text-sm font-medium text-text-primary">{account.email}</p>
-                        <p className="text-xs text-text-muted">
-                          Adicionado em {new Date(account.createdAt).toLocaleDateString('pt-BR')}
-                          {account.addedBy ? ` por ${account.addedBy}` : ''}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAccount(account)}
-                        disabled={removingId === account.id || accounts.length === 1}
-                        aria-label="Remover conta de manutenção"
-                        title={accounts.length === 1 ? 'Não é possível remover a última conta de manutenção' : undefined}
-                        className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-error-bg hover:text-error disabled:pointer-events-none disabled:opacity-30"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
-        </motion.div>
       </motion.div>
 
       <InviteCodeModal
@@ -307,13 +291,6 @@ export function MaintenancePage() {
         onClose={() => setGeneratedCompanyCode(null)}
         title="Convite de empresa gerado"
         description="Envie esse código para o responsável do cliente. Ele usa em Criar conta > Tenho um código."
-      />
-
-      <InviteCodeModal
-        code={generatedAccountCode}
-        onClose={() => setGeneratedAccountCode(null)}
-        title="Código de manutenção gerado"
-        description="Uso único. Resgata em Configurações > Tenho um código de manutenção, ou no cadastro se ainda não tiver conta."
       />
 
       <Modal
