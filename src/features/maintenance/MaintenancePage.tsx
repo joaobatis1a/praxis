@@ -42,9 +42,6 @@ export function MaintenancePage() {
   const [generatedAccountCode, setGeneratedAccountCode] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [newCompanyName, setNewCompanyName] = useState('')
-  const [newContactName, setNewContactName] = useState('')
-  const [newContactPhone, setNewContactPhone] = useState('')
-  const [newNotes, setNewNotes] = useState('')
   const [creatingCompany, setCreatingCompany] = useState(false)
   const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null)
   const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null)
@@ -72,17 +69,9 @@ export function MaintenancePage() {
     if (!name) return
     setCreatingCompany(true)
     try {
-      const code = await createCompanyForClient({
-        name,
-        contactName: newContactName,
-        contactPhone: newContactPhone,
-        notes: newNotes,
-      })
+      const code = await createCompanyForClient({ name })
       setGeneratedCompanyCode(code)
       setNewCompanyName('')
-      setNewContactName('')
-      setNewContactPhone('')
-      setNewNotes('')
       const updated = await listCompanies()
       setCompanies(updated)
     } catch (err) {
@@ -163,29 +152,13 @@ export function MaintenancePage() {
             </div>
             <p className="mt-1 text-sm text-text-muted">Gera um código de admin para o responsável do cliente.</p>
 
-            <form onSubmit={handleCreateCompany} className="mt-4 flex flex-col gap-3">
+            <form onSubmit={handleCreateCompany} className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Input
                 required
                 value={newCompanyName}
                 onChange={(e) => setNewCompanyName(e.target.value)}
                 placeholder="Nome da empresa"
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  value={newContactName}
-                  onChange={(e) => setNewContactName(e.target.value)}
-                  placeholder="Nome do contato (opcional)"
-                />
-                <Input
-                  value={newContactPhone}
-                  onChange={(e) => setNewContactPhone(e.target.value)}
-                  placeholder="Telefone do contato (opcional)"
-                />
-              </div>
-              <Input
-                value={newNotes}
-                onChange={(e) => setNewNotes(e.target.value)}
-                placeholder="Observações (opcional)"
+                className="flex-1"
               />
               <Button type="submit" disabled={creatingCompany || !newCompanyName.trim()} className="self-start">
                 <Plus size={16} />
