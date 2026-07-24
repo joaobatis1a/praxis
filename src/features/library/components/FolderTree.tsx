@@ -243,12 +243,9 @@ interface FolderTreeProps extends TreeActions {
   nodes: FolderNode[]
   selectedId: string | null
   onSelect: (id: string | null) => void
-  onAddCategory: (name: string) => void
 }
 
-export function FolderTree({ nodes, selectedId, onSelect, onAddCategory, onAddFolder, onRenameFolder, onRequestDelete }: FolderTreeProps) {
-  const [addingCategory, setAddingCategory] = useState(false)
-
+export function FolderTree({ nodes, selectedId, onSelect, onAddFolder, onRenameFolder, onRequestDelete }: FolderTreeProps) {
   return (
     <div>
       <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-text-muted">Categorias</p>
@@ -277,31 +274,7 @@ export function FolderTree({ nodes, selectedId, onSelect, onAddCategory, onAddFo
           >
             Todos os documentos
           </button>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.85 }}
-            onClick={() => setAddingCategory(true)}
-            aria-label="Nova categoria"
-            className={cn('relative', actionButtonClass)}
-          >
-            <Plus size={13} />
-          </motion.button>
         </div>
-
-        <AnimatePresence initial={false}>
-          {addingCategory && (
-            <InlineTextForm
-              depth={0}
-              placeholder="Nome da categoria"
-              onCancel={() => setAddingCategory(false)}
-              onSubmit={(name) => {
-                onAddCategory(name)
-                setAddingCategory(false)
-              }}
-            />
-          )}
-        </AnimatePresence>
 
         {nodes.map((node) => (
           <FolderTreeItem
