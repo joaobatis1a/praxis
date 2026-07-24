@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Bell, Building2, KeyRound, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Bell, Building2, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
@@ -10,7 +10,6 @@ import type { NotificationType } from '../../mocks/notifications'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { addDepartment, deleteDepartment, listDepartments } from '../departments/api'
-import { redeemMaintenanceInviteCode } from '../maintenance/api'
 import { deleteUser, listUsers } from '../users/api'
 import { deleteCompany, getCompany, getNotificationPreferences, leaveCompany, setNotificationPreference, updateCompany } from './api'
 
@@ -37,12 +36,9 @@ const notificationTypeInfo: Record<NotificationType, { label: string; descriptio
 }
 
 export function SettingsPage() {
-  const { user, logout, isMaintenanceAccount, refreshMaintenanceStatus } = useAuth()
+  const { user, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
-
-  const [maintenanceCode, setMaintenanceCode] = useState('')
-  const [redeemingMaintenanceCode, setRedeemingMaintenanceCode] = useState(false)
 
   const [disabledTypes, setDisabledTypes] = useState<NotificationType[]>([])
   const [loadingPrefs, setLoadingPrefs] = useState(true)
@@ -187,27 +183,6 @@ export function SettingsPage() {
     }
   }
 
-  async function handleRedeemMaintenanceCode(e: FormEvent) {
-    e.preventDefault()
-    const code = maintenanceCode.trim()
-    if (!code) return
-    setRedeemingMaintenanceCode(true)
-    try {
-      const ok = await redeemMaintenanceInviteCode(code)
-      if (!ok) {
-        toast('Código inválido ou já usado.', 'error')
-        return
-      }
-      await refreshMaintenanceStatus()
-      setMaintenanceCode('')
-      toast('Acesso de manutenção ativado.')
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível resgatar o código.', 'error')
-    } finally {
-      setRedeemingMaintenanceCode(false)
-    }
-  }
-
   if (!user) return null
 
   const adminCount = allMembers.filter((m) => m.role === 'admin').length
@@ -319,30 +294,6 @@ export function SettingsPage() {
                 </div>
                 <Button type="submit" variant="secondary" disabled={savingDepartment || !newDepartment.trim()}>
                   {savingDepartment ? 'Adicionando...' : 'Adicionar'}
-                </Button>
-              </form>
-            </Card>
-          </motion.div>
-        )}
-
-        {isSupabase && !isMaintenanceAccount && (
-          <motion.div variants={staggerItem}>
-            <Card>
-              <div className="flex items-center gap-2">
-                <KeyRound size={18} className="text-primary" />
-                <h2 className="text-base font-semibold text-text-primary">Tenho um código de manutenção</h2>
-              </div>
-              <p className="mt-1 text-sm text-text-muted">Recebeu um código de acesso de manutenção? Resgate aqui sem sair da sua empresa.</p>
-
-              <form onSubmit={handleRedeemMaintenanceCode} className="mt-4 flex gap-2">
-                <Input
-                  value={maintenanceCode}
-                  onChange={(e) => setMaintenanceCode(e.target.value)}
-                  placeholder="Ex: ABCD-1234"
-                  className="flex-1"
-                />
-                <Button type="submit" disabled={redeemingMaintenanceCode || !maintenanceCode.trim()}>
-                  {redeemingMaintenanceCode ? 'Resgatando...' : 'Resgatar'}
                 </Button>
               </form>
             </Card>
