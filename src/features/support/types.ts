@@ -15,6 +15,9 @@ export interface SupportTicket {
   userId: string
   userName: string
   userEmail: string
+  userRole: 'admin' | 'gestor' | 'colaborador'
+  companyName: string
+  companyNumber: number | null
   title: string
   status: SupportTicketStatus
   createdAt: string

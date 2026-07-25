@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient'
 export interface MaintenanceCompany {
   id: string
   name: string
+  companyNumber: number
   status: 'ativo' | 'inativo'
   createdAt: string
   memberCount: number
@@ -17,6 +18,7 @@ export interface MaintenanceCompany {
 interface CompanyRow {
   id: string
   name: string
+  company_number: number
   status: 'ativo' | 'inativo'
   created_at: string
   member_count: number
@@ -54,6 +56,7 @@ export async function listCompanies(): Promise<MaintenanceCompany[]> {
   return (data as CompanyRow[]).map((row) => ({
     id: row.id,
     name: row.name,
+    companyNumber: row.company_number,
     status: row.status,
     createdAt: row.created_at,
     memberCount: row.member_count,
@@ -106,7 +109,9 @@ export async function createCompanyForClient(input: CreateCompanyInput): Promise
     contact_phone: input.contactPhone?.trim() || null,
     notes: input.notes?.trim() || null,
   })
-  if (error) throw new Error('Não foi possível criar a empresa.')
+  if (error) {
+    throw new Error(error.message.includes('empresa com esse nome') ? error.message : 'Não foi possível criar a empresa.')
+  }
   return code
 }
 

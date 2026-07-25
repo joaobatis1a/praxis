@@ -1,5 +1,6 @@
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
+import { company as mockCompany } from '../../mocks/company'
 import { mockSupportTickets } from '../../mocks/supportTickets'
 import type { AuthUser } from '../auth/types'
 import type { SupportMessage, SupportTicket, SupportTicketStatus } from './types'
@@ -13,6 +14,9 @@ export interface TicketRow {
   user_id: string
   user_name: string
   user_email: string
+  user_role: 'admin' | 'gestor' | 'colaborador'
+  company_name: string
+  company_number: number | null
   title: string
   status: SupportTicketStatus
   created_at: string
@@ -46,6 +50,9 @@ export function rowToTicket(row: TicketRow, messages: SupportMessage[]): Support
     userId: row.user_id,
     userName: row.user_name,
     userEmail: row.user_email,
+    userRole: row.user_role,
+    companyName: row.company_name,
+    companyNumber: row.company_number,
     title: row.title,
     status: row.status,
     createdAt: row.created_at,
@@ -91,6 +98,9 @@ export async function createTicket(user: AuthUser, title: string, message: strin
     userId: user.id,
     userName: user.name,
     userEmail: user.email,
+    userRole: user.role,
+    companyName: mockCompany.name,
+    companyNumber: 1,
     title,
     status: 'aberto',
     createdAt: now,
