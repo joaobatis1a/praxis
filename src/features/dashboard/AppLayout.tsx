@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronUp, LifeBuoy, LogOut, User, Users, Wrench } from 'lucide-react'
-import { Header, Logo, Sidebar, ThemeToggle } from '../../components/ui'
+import { Avatar, Header, Logo, Sidebar, ThemeToggle } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useTheme } from '../../lib/theme-provider'
 import { getUserDepartment } from '../../lib/userDepartment'
@@ -56,12 +56,6 @@ export function AppLayout() {
     ? [...getNavItemsForRole(user.role), ...(isMaintenanceAccount ? [maintenanceNavItem, maintenanceTeamNavItem] : [])]
     : maintenanceNoCompanyNavItems
   const displayName = user?.name ?? 'Suporte Praxis'
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 
   return (
     <div className="flex h-dvh bg-background">
@@ -89,9 +83,9 @@ export function AppLayout() {
               <motion.div
                 whileHover={{ scale: 1.08, rotate: -4 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+                className="shrink-0"
               >
-                {initials}
+                <Avatar name={displayName} avatarUrl={user?.avatarUrl} size={36} className="text-sm" />
               </motion.div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-text-primary">{displayName}</p>

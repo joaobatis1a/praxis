@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, Pencil, Plus, PowerOff, Search, Trash2, UserCheck } from 'lucide-react'
 import {
+  Avatar,
   Badge,
   Button,
   ConfirmDialog,
@@ -42,15 +43,6 @@ const permissionLabels: Record<Role, string> = {
   admin: 'Acesso total',
   gestor: 'Gestão de equipe',
   colaborador: 'Padrão',
-}
-
-function initialsOf(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 }
 
 export function UsersPage() {
@@ -239,9 +231,9 @@ export function UsersPage() {
                     <motion.div
                       whileHover={{ scale: 1.1, rotate: -4 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+                      className="shrink-0"
                     >
-                      {initialsOf(member.name)}
+                      <Avatar name={member.name} avatarUrl={member.avatarUrl} size={36} className="text-sm" />
                     </motion.div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
