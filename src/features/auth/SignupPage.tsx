@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { AlertCircle, ArrowLeft, Building2, KeyRound, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Building2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react'
 import { Button, Input, Logo } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
@@ -27,6 +27,19 @@ const initialStep: Step = isSupabase
       ? 'company'
       : 'choice'
 
+function PasswordToggle({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={shown ? 'Ocultar senha' : 'Mostrar senha'}
+      className="rounded-sm p-1.5 text-white/40 hover:text-white"
+    >
+      {shown ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  )
+}
+
 export function SignupPage() {
   const [step, setStep] = useState<Step>(initialStep)
   const {
@@ -43,6 +56,7 @@ export function SignupPage() {
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const [companyForm, setCompanyForm] = useState({ companyName: '', name: '', email: '', password: '' })
   const [companyConfirmPassword, setCompanyConfirmPassword] = useState('')
@@ -332,19 +346,21 @@ export function SignupPage() {
                 />
                 <Input
                   label="Senha"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={companyForm.password}
                   onChange={(e) => setCompanyForm({ ...companyForm, password: e.target.value })}
+                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
                 <Input
                   label="Confirmar senha"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={companyConfirmPassword}
                   onChange={(e) => setCompanyConfirmPassword(e.target.value)}
+                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
 
                 {displayError && (
@@ -502,19 +518,21 @@ export function SignupPage() {
                 />
                 <Input
                   label="Senha"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={codeForm.password}
                   onChange={(e) => setCodeForm({ ...codeForm, password: e.target.value })}
+                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
                 <Input
                   label="Confirmar senha"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={codeConfirmPassword}
                   onChange={(e) => setCodeConfirmPassword(e.target.value)}
+                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
 
                 {displayError && (
@@ -580,19 +598,21 @@ export function SignupPage() {
                 />
                 <Input
                   label="Senha"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={maintenanceForm.password}
                   onChange={(e) => setMaintenanceForm({ ...maintenanceForm, password: e.target.value })}
+                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
                 <Input
                   label="Confirmar senha"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={6}
                   value={maintenanceConfirmPassword}
                   onChange={(e) => setMaintenanceConfirmPassword(e.target.value)}
+                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
                 <Input
                   label="Código"
