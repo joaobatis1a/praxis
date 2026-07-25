@@ -1,14 +1,14 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, KeyRound, Save, User as UserIcon } from 'lucide-react'
-import { Badge, Button, Card, Input, Select, useToast } from '../../components/ui'
+import { Camera, Eye, EyeOff, KeyRound, Save, User as UserIcon } from 'lucide-react'
+import { Avatar, Badge, Button, Card, Input, Select, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { getUserDepartment } from '../../lib/userDepartment'
-import type { Role } from '../auth/types'
+import type { AuthUser, Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { listDepartments } from '../departments/api'
-import { getCompany, updateProfile } from './api'
+import { getCompany, removeAvatar, updateProfile, uploadAvatar } from './api'
 
 const roleLabels: Record<Role, string> = {
   admin: 'Proprietário',
@@ -16,13 +16,69 @@ const roleLabels: Record<Role, string> = {
   colaborador: 'Colaborador',
 }
 
-function initialsOf(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
+function AvatarUploadField({ user, onUpdated }: { user: AuthUser; onUpdated: (avatarUrl: string | null) => void }) {
+  const { toast } = useToast()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  if (!isSupabase) return <Avatar name={user.name} avatarUrl={user.avatarUrl} size={64} className="text-xl" />
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadAvatar(user.id, file)
+      onUpdated(url)
+      toast('Foto de perfil atualizada.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar a foto.', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleRemove() {
+    setUploading(true)
+    try {
+      await removeAvatar(user.id)
+      onUpdated(null)
+      toast('Foto removida.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível remover a foto.', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative">
+        <Avatar name={user.name} avatarUrl={user.avatarUrl} size={64} className="text-xl" />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          aria-label="Alterar foto de perfil"
+          className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-card bg-primary text-white transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
+        >
+          <Camera size={12} />
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      </div>
+      {user.avatarUrl && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={uploading}
+          className="text-xs font-medium text-text-muted transition-colors hover:text-error disabled:pointer-events-none disabled:opacity-60"
+        >
+          Remover foto
+        </button>
+      )}
+    </div>
+  )
 }
 
 function PasswordCard() {
@@ -177,11 +233,7 @@ export function ProfilePage() {
               <h2 className="text-base font-semibold text-text-primary">Dados pessoais</h2>
             </div>
             <div className="mt-4 space-y-4">
-              {displayName && (
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-lg font-semibold text-primary">
-                  {initialsOf(displayName)}
-                </div>
-              )}
+              {displayName && <Avatar name={displayName} size={56} className="text-lg" />}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="Nome" value={displayName} disabled />
                 <Input label="E-mail" value={noCompanySession?.email ?? ''} disabled hint="O e-mail não pode ser alterado." />
@@ -210,9 +262,7 @@ export function ProfilePage() {
             <h2 className="text-base font-semibold text-text-primary">Dados pessoais</h2>
           </div>
           <div className="mt-4 space-y-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-lg font-semibold text-primary">
-              {initialsOf(name || user.name)}
-            </div>
+            <AvatarUploadField user={user} onUpdated={(avatarUrl) => setSessionUser({ ...user, avatarUrl })} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
               <Input label="E-mail" value={user.email} disabled hint="O e-mail não pode ser alterado." />

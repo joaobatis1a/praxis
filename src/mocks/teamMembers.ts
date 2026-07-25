@@ -9,6 +9,8 @@ export interface TeamMember {
   role: Role
   department: string
   status: UserStatus
+  /** only populated when VITE_DATA_SOURCE=supabase — mock mode has no real file storage */
+  avatarUrl?: string | null
 }
 
 export const teamMembers: TeamMember[] = [

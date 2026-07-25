@@ -18,6 +18,7 @@ interface ProfileRow {
   role: Role
   department: string | null
   status: UserStatus
+  avatar_url: string | null
 }
 
 function profileToTeamMember(profile: ProfileRow): TeamMember {
@@ -28,6 +29,7 @@ function profileToTeamMember(profile: ProfileRow): TeamMember {
     role: profile.role,
     department: profile.department ?? '',
     status: profile.status,
+    avatarUrl: profile.avatar_url,
   }
 }
 

@@ -69,6 +69,34 @@ export function updateProfile(userId: string, input: UpdateProfileInput) {
   return updateUser(userId, input as CreateUserInput)
 }
 
+const AVATAR_BUCKET = 'avatars'
+
+/** Supabase mode only — uploads to a fixed per-user path (upsert, so a re-upload just replaces
+ * the file at the same path) and saves the public URL, cache-busted with a version query param
+ * since the path itself never changes across uploads. */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${userId}/avatar.${ext}`
+  const { error: uploadError } = await supabase!.storage
+    .from(AVATAR_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type })
+  if (uploadError) throw new Error('Não foi possível enviar a foto.')
+
+  const { data } = supabase!.storage.from(AVATAR_BUCKET).getPublicUrl(path)
+  const avatarUrl = `${data.publicUrl}?v=${Date.now()}`
+  const { error: updateError } = await supabase!.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId)
+  if (updateError) throw new Error('Não foi possível salvar a foto de perfil.')
+  return avatarUrl
+}
+
+/** Supabase mode only — clears the profile's avatar_url. Leaves the file itself in storage
+ * (a harmless orphan under that user's own path, overwritten on their next upload anyway)
+ * rather than tracking the exact extension just to delete it. */
+export async function removeAvatar(userId: string): Promise<void> {
+  const { error } = await supabase!.from('profiles').update({ avatar_url: null }).eq('id', userId)
+  if (error) throw new Error('Não foi possível remover a foto de perfil.')
+}
+
 /** Supabase mode only — deletes the company and every member's real Auth account, not just their profile. */
 export async function deleteCompany(companyId: string) {
   const { error } = await supabase!.rpc('delete_company_and_users', { target_company_id: companyId })

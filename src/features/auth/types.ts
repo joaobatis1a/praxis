@@ -10,4 +10,6 @@ export interface AuthUser {
   department?: string
   /** cross-device theme preference, only populated when VITE_DATA_SOURCE=supabase */
   theme?: 'light' | 'dark' | null
+  /** only populated when VITE_DATA_SOURCE=supabase — mock mode has no real file storage */
+  avatarUrl?: string | null
 }
