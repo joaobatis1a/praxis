@@ -5,10 +5,10 @@ import { Avatar, Badge, Button, Card, Input, Select, useToast } from '../../comp
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { getUserDepartment } from '../../lib/userDepartment'
-import type { AuthUser, Role } from '../auth/types'
+import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { listDepartments } from '../departments/api'
-import { getCompany, removeAvatar, updateProfile, uploadAvatar } from './api'
+import { getCompany, removeAvatar, removeNoCompanyAvatar, updateProfile, uploadAvatar, uploadNoCompanyAvatar } from './api'
 
 const roleLabels: Record<Role, string> = {
   admin: 'Proprietário',
@@ -16,12 +16,24 @@ const roleLabels: Record<Role, string> = {
   colaborador: 'Colaborador',
 }
 
-function AvatarUploadField({ user, onUpdated }: { user: AuthUser; onUpdated: (avatarUrl: string | null) => void }) {
+function AvatarUploadField({
+  name,
+  avatarUrl,
+  onUpload,
+  onRemove,
+  onUpdated,
+}: {
+  name: string
+  avatarUrl: string | null | undefined
+  onUpload: (file: File) => Promise<string>
+  onRemove: () => Promise<void>
+  onUpdated: (avatarUrl: string | null) => void
+}) {
   const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
 
-  if (!isSupabase) return <Avatar name={user.name} avatarUrl={user.avatarUrl} size={64} className="text-xl" />
+  if (!isSupabase) return <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -29,7 +41,7 @@ function AvatarUploadField({ user, onUpdated }: { user: AuthUser; onUpdated: (av
     if (!file) return
     setUploading(true)
     try {
-      const url = await uploadAvatar(user.id, file)
+      const url = await onUpload(file)
       onUpdated(url)
       toast('Foto de perfil atualizada.')
     } catch (err) {
@@ -42,7 +54,7 @@ function AvatarUploadField({ user, onUpdated }: { user: AuthUser; onUpdated: (av
   async function handleRemove() {
     setUploading(true)
     try {
-      await removeAvatar(user.id)
+      await onRemove()
       onUpdated(null)
       toast('Foto removida.')
     } catch (err) {
@@ -55,7 +67,7 @@ function AvatarUploadField({ user, onUpdated }: { user: AuthUser; onUpdated: (av
   return (
     <div className="flex items-center gap-4">
       <div className="relative">
-        <Avatar name={user.name} avatarUrl={user.avatarUrl} size={64} className="text-xl" />
+        <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -67,7 +79,7 @@ function AvatarUploadField({ user, onUpdated }: { user: AuthUser; onUpdated: (av
         </button>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       </div>
-      {user.avatarUrl && (
+      {avatarUrl && (
         <button
           type="button"
           onClick={handleRemove}
@@ -173,7 +185,7 @@ function PasswordCard() {
 }
 
 export function ProfilePage() {
-  const { user, setSessionUser, noCompanySession, isMaintenanceAccount } = useAuth()
+  const { user, setSessionUser, noCompanySession, updateNoCompanySession, isMaintenanceAccount } = useAuth()
   const { toast } = useToast()
 
   const [name, setName] = useState(user?.name ?? '')
@@ -233,7 +245,16 @@ export function ProfilePage() {
               <h2 className="text-base font-semibold text-text-primary">Dados pessoais</h2>
             </div>
             <div className="mt-4 space-y-4">
-              {displayName && <Avatar name={displayName} size={56} className="text-lg" />}
+              {displayName && isMaintenanceAccount && noCompanySession && (
+                <AvatarUploadField
+                  name={displayName}
+                  avatarUrl={noCompanySession.avatarUrl}
+                  onUpload={(file) => uploadNoCompanyAvatar(noCompanySession.id, file)}
+                  onRemove={() => removeNoCompanyAvatar()}
+                  onUpdated={(avatarUrl) => updateNoCompanySession({ avatarUrl })}
+                />
+              )}
+              {displayName && !isMaintenanceAccount && <Avatar name={displayName} size={56} className="text-lg" />}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="Nome" value={displayName} disabled />
                 <Input label="E-mail" value={noCompanySession?.email ?? ''} disabled hint="O e-mail não pode ser alterado." />
@@ -262,7 +283,13 @@ export function ProfilePage() {
             <h2 className="text-base font-semibold text-text-primary">Dados pessoais</h2>
           </div>
           <div className="mt-4 space-y-4">
-            <AvatarUploadField user={user} onUpdated={(avatarUrl) => setSessionUser({ ...user, avatarUrl })} />
+            <AvatarUploadField
+              name={user.name}
+              avatarUrl={user.avatarUrl}
+              onUpload={(file) => uploadAvatar(user.id, file)}
+              onRemove={() => removeAvatar(user.id)}
+              onUpdated={(avatarUrl) => setSessionUser({ ...user, avatarUrl })}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
               <Input label="E-mail" value={user.email} disabled hint="O e-mail não pode ser alterado." />

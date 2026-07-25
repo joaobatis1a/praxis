@@ -19,6 +19,9 @@ interface AuthContextValue {
    * as a fresh Google signup. */
   noCompanySession: NoCompanySession | null
   clearNoCompanySession: () => void
+  /** patches the current no-company session in place (e.g. after uploading a profile photo) —
+   * mirrors setSessionUser, since this session has no profiles row for AuthContext to re-fetch */
+  updateNoCompanySession: (patch: Partial<NoCompanySession>) => void
   /** true when the current login's email is in maintenance_accounts — works whether or not
    * the account also has a normal company profile (additive, see [[project-backlog-20260720]]) */
   isMaintenanceAccount: boolean
@@ -292,6 +295,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isSupabase) supabase!.auth.signOut()
   }
 
+  function updateNoCompanySession(patch: Partial<NoCompanySession>) {
+    setNoCompanySession((prev) => (prev ? { ...prev, ...patch } : prev))
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -303,6 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearPendingGoogleUser,
         noCompanySession,
         clearNoCompanySession,
+        updateNoCompanySession,
         isMaintenanceAccount,
         maintenanceChecked,
         maintenanceNoCompany,

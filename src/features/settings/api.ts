@@ -73,10 +73,10 @@ export function updateProfile(userId: string, input: UpdateProfileInput) {
 
 const AVATAR_BUCKET = 'avatars'
 
-/** Supabase mode only — uploads to a fixed per-user path (upsert, so a re-upload just replaces
- * the file at the same path) and saves the public URL, cache-busted with a version query param
- * since the path itself never changes across uploads. */
-export async function uploadAvatar(userId: string, file: File): Promise<string> {
+/** Shared by uploadAvatar/uploadNoCompanyAvatar — uploads to a fixed per-user path (upsert, so a
+ * re-upload just replaces the file at the same path) and returns the public URL, cache-busted
+ * with a version query param since the path itself never changes across uploads. */
+async function uploadAvatarFile(userId: string, file: File): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg'
   const path = `${userId}/avatar.${ext}`
   const { error: uploadError } = await supabase!.storage
@@ -85,7 +85,12 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
   if (uploadError) throw new Error('Não foi possível enviar a foto.')
 
   const { data } = supabase!.storage.from(AVATAR_BUCKET).getPublicUrl(path)
-  const avatarUrl = `${data.publicUrl}?v=${Date.now()}`
+  return `${data.publicUrl}?v=${Date.now()}`
+}
+
+/** Supabase mode only — company users have a profiles row, so the URL is saved there. */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const avatarUrl = await uploadAvatarFile(userId, file)
   const { error: updateError } = await supabase!.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId)
   if (updateError) throw new Error('Não foi possível salvar a foto de perfil.')
   return avatarUrl
@@ -96,6 +101,21 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
  * rather than tracking the exact extension just to delete it. */
 export async function removeAvatar(userId: string): Promise<void> {
   const { error } = await supabase!.from('profiles').update({ avatar_url: null }).eq('id', userId)
+  if (error) throw new Error('Não foi possível remover a foto de perfil.')
+}
+
+/** Supabase mode only — for bare no-company sessions (maintenance/support): there's no profiles
+ * row to store this on, so it lives in the Supabase Auth user's own metadata instead, the same
+ * place toPendingGoogleUser already reads the display name/Google photo from. */
+export async function uploadNoCompanyAvatar(userId: string, file: File): Promise<string> {
+  const avatarUrl = await uploadAvatarFile(userId, file)
+  const { error } = await supabase!.auth.updateUser({ data: { avatar_url: avatarUrl } })
+  if (error) throw new Error('Não foi possível salvar a foto de perfil.')
+  return avatarUrl
+}
+
+export async function removeNoCompanyAvatar(): Promise<void> {
+  const { error } = await supabase!.auth.updateUser({ data: { avatar_url: null } })
   if (error) throw new Error('Não foi possível remover a foto de perfil.')
 }
 
