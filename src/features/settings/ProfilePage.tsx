@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
-import { Camera, Eye, EyeOff, KeyRound, Save, User as UserIcon } from 'lucide-react'
-import { Avatar, Badge, Button, Card, Input, Select, useToast } from '../../components/ui'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Camera, Eye, EyeOff, Image, KeyRound, Save, Trash2, User as UserIcon } from 'lucide-react'
+import { Avatar, Badge, Button, Card, Input, Modal, Select, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { getUserDepartment } from '../../lib/userDepartment'
@@ -32,6 +32,8 @@ function AvatarUploadField({
   const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [viewing, setViewing] = useState(false)
 
   if (!isSupabase) return <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
 
@@ -52,6 +54,7 @@ function AvatarUploadField({
   }
 
   async function handleRemove() {
+    setMenuOpen(false)
     setUploading(true)
     try {
       await onRemove()
@@ -70,25 +73,69 @@ function AvatarUploadField({
         <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => setMenuOpen((v) => !v)}
           disabled={uploading}
-          aria-label="Alterar foto de perfil"
+          aria-label="Opções da foto de perfil"
           className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-card bg-primary text-white transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
         >
           <Camera size={12} />
         </button>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -8, transition: { duration: 0.12 } }}
+                transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                className="absolute left-0 top-full z-20 mt-2 w-44 rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)]"
+              >
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setViewing(true)
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    <Image size={16} />
+                    Ver foto
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    inputRef.current?.click()
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  <Camera size={16} />
+                  {avatarUrl ? 'Trocar foto' : 'Enviar foto'}
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemove}
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-error hover:bg-error-bg"
+                  >
+                    <Trash2 size={16} />
+                    Remover foto
+                  </button>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
-      {avatarUrl && (
-        <button
-          type="button"
-          onClick={handleRemove}
-          disabled={uploading}
-          className="text-xs font-medium text-text-muted transition-colors hover:text-error disabled:pointer-events-none disabled:opacity-60"
-        >
-          Remover foto
-        </button>
-      )}
+
+      <Modal open={viewing} onClose={() => setViewing(false)} title="Foto de perfil">
+        {avatarUrl && <img src={avatarUrl} alt={name} className="mx-auto max-h-[60vh] w-auto rounded-md object-contain" />}
+      </Modal>
     </div>
   )
 }
