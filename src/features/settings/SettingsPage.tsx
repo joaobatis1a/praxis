@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Bell, Building2, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Bell, Building2, Camera, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
@@ -11,7 +11,93 @@ import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { addDepartment, deleteDepartment, listDepartments } from '../departments/api'
 import { deleteUser, listUsers } from '../users/api'
-import { deleteCompany, getCompany, getNotificationPreferences, leaveCompany, setNotificationPreference, updateCompany } from './api'
+import {
+  deleteCompany,
+  getCompany,
+  getNotificationPreferences,
+  leaveCompany,
+  removeCompanyLogo,
+  setNotificationPreference,
+  updateCompany,
+  uploadCompanyLogo,
+} from './api'
+
+function CompanyLogoField({
+  companyId,
+  logoUrl,
+  onUpdated,
+}: {
+  companyId: string
+  logoUrl: string | null
+  onUpdated: (logoUrl: string | null) => void
+}) {
+  const { toast } = useToast()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadCompanyLogo(companyId, file)
+      onUpdated(url)
+      toast('Logo atualizada.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar a logo.', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleRemove() {
+    setUploading(true)
+    try {
+      await removeCompanyLogo(companyId)
+      onUpdated(null)
+      toast('Logo removida.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível remover a logo.', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo da empresa" className="h-full w-full object-contain p-1.5" />
+          ) : (
+            <Building2 size={22} className="text-text-muted" />
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          aria-label="Alterar logo da empresa"
+          className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-card bg-primary text-white transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
+        >
+          <Camera size={12} />
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      </div>
+      {logoUrl && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={uploading}
+          className="text-xs font-medium text-text-muted transition-colors hover:text-error disabled:pointer-events-none disabled:opacity-60"
+        >
+          Remover logo
+        </button>
+      )}
+    </div>
+  )
+}
 
 const notificationTypeInfo: Record<NotificationType, { label: string; description: string; roles?: Role[] }> = {
   aviso: { label: 'Avisos', description: 'Quando você recebe um aviso de alguém ou do seu setor.' },
@@ -44,6 +130,7 @@ export function SettingsPage() {
   const [loadingPrefs, setLoadingPrefs] = useState(true)
 
   const [companyName, setCompanyName] = useState('')
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null)
   const [savingCompany, setSavingCompany] = useState(false)
 
   const [allMembers, setAllMembers] = useState<TeamMember[]>([])
@@ -75,6 +162,7 @@ export function SettingsPage() {
     if (user?.role !== 'admin') return
     getCompany().then((c) => {
       setCompanyName(c.name)
+      setCompanyLogoUrl(c.logoUrl ?? null)
     })
   }, [user])
 
@@ -233,6 +321,9 @@ export function SettingsPage() {
                 <h2 className="text-base font-semibold text-text-primary">Empresa</h2>
               </div>
               <div className="mt-4 space-y-4">
+                {isSupabase && user.companyId && (
+                  <CompanyLogoField companyId={user.companyId} logoUrl={companyLogoUrl} onUpdated={setCompanyLogoUrl} />
+                )}
                 <Input label="Nome da empresa" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
                 <div className="flex justify-end">
                   <Button onClick={handleSaveCompany} disabled={savingCompany || !companyName.trim()}>

@@ -15,13 +15,15 @@ let companyState: Company = structuredClone(initialCompany)
 interface CompanyRow {
   id: string
   name: string
+  logo_url: string | null
 }
 
 export async function getCompany(): Promise<Company> {
   if (isSupabase) {
-    const { data, error } = await supabase!.from('companies').select('name').single()
+    const { data, error } = await supabase!.from('companies').select('name, logo_url').single()
     if (error || !data) throw new Error('Não foi possível carregar os dados da empresa.')
-    return { name: (data as CompanyRow).name }
+    const row = data as CompanyRow
+    return { name: row.name, logoUrl: row.logo_url }
   }
   return delay({ ...companyState })
 }
@@ -95,6 +97,32 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
 export async function removeAvatar(userId: string): Promise<void> {
   const { error } = await supabase!.from('profiles').update({ avatar_url: null }).eq('id', userId)
   if (error) throw new Error('Não foi possível remover a foto de perfil.')
+}
+
+const LOGO_BUCKET = 'company-logos'
+
+/** Supabase mode only — same upsert-fixed-path convention as uploadAvatar, keyed by companyId
+ * instead of userId. Only an admin can call this (companies_update_by_admin RLS covers the
+ * column write; company_logos_insert_admin/update_admin cover the storage object itself). */
+export async function uploadCompanyLogo(companyId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'png'
+  const path = `${companyId}/logo.${ext}`
+  const { error: uploadError } = await supabase!.storage
+    .from(LOGO_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type })
+  if (uploadError) throw new Error('Não foi possível enviar a logo.')
+
+  const { data } = supabase!.storage.from(LOGO_BUCKET).getPublicUrl(path)
+  const logoUrl = `${data.publicUrl}?v=${Date.now()}`
+  const { error: updateError } = await supabase!.from('companies').update({ logo_url: logoUrl }).eq('id', companyId)
+  if (updateError) throw new Error('Não foi possível salvar a logo da empresa.')
+  return logoUrl
+}
+
+/** Supabase mode only — clears the company's logo_url. Same orphan-file tradeoff as removeAvatar. */
+export async function removeCompanyLogo(companyId: string): Promise<void> {
+  const { error } = await supabase!.from('companies').update({ logo_url: null }).eq('id', companyId)
+  if (error) throw new Error('Não foi possível remover a logo da empresa.')
 }
 
 /** Supabase mode only — deletes the company and every member's real Auth account, not just their profile. */
