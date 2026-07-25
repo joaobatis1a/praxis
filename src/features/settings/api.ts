@@ -82,7 +82,7 @@ async function uploadAvatarFile(userId: string, file: File): Promise<string> {
   const { error: uploadError } = await supabase!.storage
     .from(AVATAR_BUCKET)
     .upload(path, file, { upsert: true, contentType: file.type })
-  if (uploadError) throw new Error('Não foi possível enviar a foto.')
+  if (uploadError) throw new Error(`Não foi possível enviar a foto: ${uploadError.message}`)
 
   const { data } = supabase!.storage.from(AVATAR_BUCKET).getPublicUrl(path)
   return `${data.publicUrl}?v=${Date.now()}`
@@ -130,7 +130,7 @@ export async function uploadCompanyLogo(companyId: string, file: File): Promise<
   const { error: uploadError } = await supabase!.storage
     .from(LOGO_BUCKET)
     .upload(path, file, { upsert: true, contentType: file.type })
-  if (uploadError) throw new Error('Não foi possível enviar a logo.')
+  if (uploadError) throw new Error(`Não foi possível enviar a logo: ${uploadError.message}`)
 
   const { data } = supabase!.storage.from(LOGO_BUCKET).getPublicUrl(path)
   const logoUrl = `${data.publicUrl}?v=${Date.now()}`
