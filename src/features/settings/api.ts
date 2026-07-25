@@ -92,7 +92,7 @@ async function uploadAvatarFile(userId: string, file: File): Promise<string> {
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
   const avatarUrl = await uploadAvatarFile(userId, file)
   const { error: updateError } = await supabase!.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId)
-  if (updateError) throw new Error('Não foi possível salvar a foto de perfil.')
+  if (updateError) throw new Error(`Não foi possível salvar a foto de perfil: ${updateError.message}`)
   return avatarUrl
 }
 
@@ -101,7 +101,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
  * rather than tracking the exact extension just to delete it. */
 export async function removeAvatar(userId: string): Promise<void> {
   const { error } = await supabase!.from('profiles').update({ avatar_url: null }).eq('id', userId)
-  if (error) throw new Error('Não foi possível remover a foto de perfil.')
+  if (error) throw new Error(`Não foi possível remover a foto de perfil: ${error.message}`)
 }
 
 /** Supabase mode only — for bare no-company sessions (maintenance/support): there's no profiles
@@ -110,13 +110,13 @@ export async function removeAvatar(userId: string): Promise<void> {
 export async function uploadNoCompanyAvatar(userId: string, file: File): Promise<string> {
   const avatarUrl = await uploadAvatarFile(userId, file)
   const { error } = await supabase!.auth.updateUser({ data: { avatar_url: avatarUrl } })
-  if (error) throw new Error('Não foi possível salvar a foto de perfil.')
+  if (error) throw new Error(`Não foi possível salvar a foto de perfil: ${error.message}`)
   return avatarUrl
 }
 
 export async function removeNoCompanyAvatar(): Promise<void> {
   const { error } = await supabase!.auth.updateUser({ data: { avatar_url: null } })
-  if (error) throw new Error('Não foi possível remover a foto de perfil.')
+  if (error) throw new Error(`Não foi possível remover a foto de perfil: ${error.message}`)
 }
 
 const LOGO_BUCKET = 'company-logos'
@@ -135,14 +135,14 @@ export async function uploadCompanyLogo(companyId: string, file: File): Promise<
   const { data } = supabase!.storage.from(LOGO_BUCKET).getPublicUrl(path)
   const logoUrl = `${data.publicUrl}?v=${Date.now()}`
   const { error: updateError } = await supabase!.from('companies').update({ logo_url: logoUrl }).eq('id', companyId)
-  if (updateError) throw new Error('Não foi possível salvar a logo da empresa.')
+  if (updateError) throw new Error(`Não foi possível salvar a logo da empresa: ${updateError.message}`)
   return logoUrl
 }
 
 /** Supabase mode only — clears the company's logo_url. Same orphan-file tradeoff as removeAvatar. */
 export async function removeCompanyLogo(companyId: string): Promise<void> {
   const { error } = await supabase!.from('companies').update({ logo_url: null }).eq('id', companyId)
-  if (error) throw new Error('Não foi possível remover a logo da empresa.')
+  if (error) throw new Error(`Não foi possível remover a logo da empresa: ${error.message}`)
 }
 
 /** Supabase mode only — deletes the company and every member's real Auth account, not just their profile. */
