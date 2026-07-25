@@ -25,6 +25,12 @@ const statusVariant: Record<SupportTicketStatus, 'warning' | 'success' | 'neutra
 
 const statusOrder: SupportTicketStatus[] = ['aberto', 'resolvido', 'encerrado']
 
+const roleLabel: Record<SupportTicket['userRole'], string> = {
+  admin: 'Proprietário',
+  gestor: 'Gestor',
+  colaborador: 'Colaborador',
+}
+
 export function SupportAdminInbox() {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -132,8 +138,15 @@ export function SupportAdminInbox() {
                       onClick={() => setExpanded(isOpen ? null : ticket.id)}
                       className="min-w-0 flex-1 text-left"
                     >
-                      <p className="text-sm font-semibold text-text-primary">{ticket.userName}</p>
+                      <p className="text-sm font-semibold text-text-primary">
+                        {ticket.userName}
+                        <span className="font-normal text-text-muted"> · {roleLabel[ticket.userRole]}</span>
+                      </p>
                       <p className="text-xs text-text-muted">{ticket.userEmail}</p>
+                      <p className="mt-1 text-xs text-text-muted">
+                        {ticket.companyName}
+                        {ticket.companyNumber != null && ` (#${ticket.companyNumber})`}
+                      </p>
                       <p className="mt-2 text-sm text-text-secondary">{ticket.title}</p>
                     </button>
                     <div className="flex shrink-0 items-center gap-1.5">

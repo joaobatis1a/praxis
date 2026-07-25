@@ -227,6 +227,7 @@ export function MaintenancePage() {
                       <TableRow key={company.id}>
                         <TableCell className="font-medium text-text-primary">
                           <span title={company.notes ?? undefined}>{company.name}</span>
+                          <span className="ml-1.5 font-normal text-text-muted">#{company.companyNumber}</span>
                           {(company.contactName || company.contactPhone) && (
                             <p className="mt-0.5 text-xs font-normal text-text-muted">
                               {[company.contactName, company.contactPhone].filter(Boolean).join(' · ')}
