@@ -109,6 +109,9 @@ export interface PendingGoogleUser {
   id: string
   email: string
   name: string
+  /** there's no profiles row for a bare no-company session, so this lives in the Supabase Auth
+   * user's own metadata instead (see uploadNoCompanyAvatar in settings/api.ts) */
+  avatarUrl?: string | null
 }
 
 /** Same shape as PendingGoogleUser, reused for any authenticated-but-no-profile session
@@ -122,6 +125,7 @@ export function toPendingGoogleUser(user: { id: string; email?: string; user_met
     id: user.id,
     email: user.email ?? '',
     name: (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || user.email || 'Usuário',
+    avatarUrl: (user.user_metadata?.avatar_url as string) || null,
   }
 }
 

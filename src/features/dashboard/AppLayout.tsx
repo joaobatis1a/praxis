@@ -85,7 +85,7 @@ export function AppLayout() {
                 transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                 className="shrink-0"
               >
-                <Avatar name={displayName} avatarUrl={user?.avatarUrl} size={36} className="text-sm" />
+                <Avatar name={displayName} avatarUrl={user?.avatarUrl ?? noCompanySession?.avatarUrl} size={36} className="text-sm" />
               </motion.div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-text-primary">{displayName}</p>
