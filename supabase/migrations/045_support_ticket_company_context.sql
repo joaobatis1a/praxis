@@ -17,7 +17,13 @@ select setval('public.companies_company_number_seq', coalesce((select max(compan
 
 alter table public.companies alter column company_number set default nextval('public.companies_company_number_seq');
 alter table public.companies alter column company_number set not null;
-alter table public.companies add constraint companies_company_number_key unique (company_number);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'companies_company_number_key') then
+    alter table public.companies add constraint companies_company_number_key unique (company_number);
+  end if;
+end $$;
 
 -- 2. Reject creating a company with a name (trimmed, case-insensitive) that already exists.
 drop function if exists public.create_company_for_client(text, text, text, text, text);
@@ -113,15 +119,42 @@ set user_role = coalesce((select role::text from public.profiles p where p.id = 
     company_number = (select company_number from public.companies c where c.id = t.company_id)
 where t.user_role is null;
 
-alter table public.support_tickets alter column user_role set default (
+-- A column DEFAULT can't hold a bare subquery (Postgres error 0A000) — only a function call is
+-- allowed there, so each lookup gets wrapped in its own STABLE function, same as the existing
+-- current_company_id() default already used by this table's own company_id column.
+create or replace function public.current_profile_role()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
   select role::text from public.profiles where id = auth.uid()
-);
-alter table public.support_tickets alter column company_name set default (
+$$;
+
+create or replace function public.current_company_name()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
   select name from public.companies where id = public.current_company_id()
-);
-alter table public.support_tickets alter column company_number set default (
+$$;
+
+create or replace function public.current_company_number()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public
+as $$
   select company_number from public.companies where id = public.current_company_id()
-);
+$$;
+
+alter table public.support_tickets alter column user_role set default public.current_profile_role();
+alter table public.support_tickets alter column company_name set default public.current_company_name();
+alter table public.support_tickets alter column company_number set default public.current_company_number();
 
 alter table public.support_tickets alter column user_role set not null;
 alter table public.support_tickets alter column company_name set not null;
