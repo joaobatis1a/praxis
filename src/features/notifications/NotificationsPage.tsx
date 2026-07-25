@@ -98,7 +98,7 @@ export function NotificationsPage() {
             {unreadCount > 0 ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Tudo em dia por aqui.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {unreadCount > 0 && (
             <Button variant="secondary" onClick={handleMarkAllRead}>
               <CheckCheck size={16} />
