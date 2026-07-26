@@ -393,6 +393,109 @@ export async function deleteProcedure(id: string): Promise<void> {
   return delay(undefined)
 }
 
+const ATTACHMENT_BUCKET = 'procedure-attachments'
+
+export interface ProcedureAttachment {
+  id: string
+  procedureId: string
+  name: string
+  url: string
+  type: string
+  uploadedBy: string
+  createdAt: string
+}
+
+interface AttachmentRow {
+  id: string
+  procedure_id: string
+  file_name: string
+  file_path: string
+  file_type: string
+  uploaded_by: string
+  created_at: string
+}
+
+let mockAttachments: ProcedureAttachment[] = []
+
+async function rowToAttachment(row: AttachmentRow): Promise<ProcedureAttachment> {
+  const { data } = await supabase!.storage.from(ATTACHMENT_BUCKET).createSignedUrl(row.file_path, SIGNED_URL_TTL)
+  return {
+    id: row.id,
+    procedureId: row.procedure_id,
+    name: row.file_name,
+    url: data?.signedUrl ?? '',
+    type: row.file_type,
+    uploadedBy: row.uploaded_by,
+    createdAt: row.created_at,
+  }
+}
+
+/** Separate from the procedure's own video field and from the create/edit form entirely — each
+ * attachment can be added or removed on its own, without resubmitting the whole procedure. */
+export async function listAttachments(procedureId: string): Promise<ProcedureAttachment[]> {
+  if (isSupabase) {
+    const { data, error } = await supabase!
+      .from('procedure_attachments')
+      .select('*')
+      .eq('procedure_id', procedureId)
+      .order('created_at', { ascending: false })
+    if (error || !data) return []
+    return Promise.all((data as AttachmentRow[]).map(rowToAttachment))
+  }
+  return delay(mockAttachments.filter((a) => a.procedureId === procedureId))
+}
+
+export async function uploadAttachment(procedureId: string, file: File, uploadedBy: string): Promise<ProcedureAttachment> {
+  if (isSupabase) {
+    const companyId = await fetchOwnCompanyId()
+    const ext = file.name.split('.').pop()
+    const path = `${companyId}/${procedureId}-${Date.now()}${ext ? `.${ext}` : ''}`
+    const { error: uploadError } = await supabase!.storage.from(ATTACHMENT_BUCKET).upload(path, file, { contentType: file.type })
+    if (uploadError) throw new Error(`Não foi possível enviar o arquivo: ${uploadError.message}`)
+    const { data, error } = await supabase!
+      .from('procedure_attachments')
+      .insert({
+        procedure_id: procedureId,
+        file_name: file.name,
+        file_path: path,
+        file_type: file.type || 'application/octet-stream',
+        uploaded_by: uploadedBy,
+      })
+      .select()
+      .single()
+    if (error || !data) {
+      await supabase!.storage.from(ATTACHMENT_BUCKET).remove([path])
+      throw new Error('Não foi possível salvar o anexo.')
+    }
+    return rowToAttachment(data as AttachmentRow)
+  }
+
+  const attachment: ProcedureAttachment = {
+    id: `attach-${Date.now()}`,
+    procedureId,
+    name: file.name,
+    url: URL.createObjectURL(file),
+    type: file.type || 'application/octet-stream',
+    uploadedBy,
+    createdAt: new Date().toISOString(),
+  }
+  mockAttachments = [attachment, ...mockAttachments]
+  return delay(attachment)
+}
+
+export async function deleteAttachment(attachmentId: string): Promise<void> {
+  if (isSupabase) {
+    const { data: current } = await supabase!.from('procedure_attachments').select('file_path').eq('id', attachmentId).single()
+    const filePath = (current as { file_path: string } | null)?.file_path
+    const { error } = await supabase!.from('procedure_attachments').delete().eq('id', attachmentId)
+    if (error) throw new Error('Não foi possível remover o anexo.')
+    if (filePath) await supabase!.storage.from(ATTACHMENT_BUCKET).remove([filePath])
+    return
+  }
+  mockAttachments = mockAttachments.filter((a) => a.id !== attachmentId)
+  return delay(undefined)
+}
+
 export async function listCompletions(): Promise<ProcedureCompletion[]> {
   if (isSupabase) {
     const { data, error } = await supabase!.from('procedure_completions').select('*').order('completed_at', { ascending: false })
