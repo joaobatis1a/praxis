@@ -11,7 +11,7 @@ import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
 import { redeemMaintenanceInviteCode } from '../maintenance/api'
 
-type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details' | 'maintenance-code'
+type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details' | 'maintenance-code' | 'maintenance-details'
 
 const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
 
@@ -20,7 +20,9 @@ const initialOauthIntent = new URLSearchParams(window.location.search).get('oaut
 // createCompanyForClient in features/maintenance/api.ts). isSupabase is a module-level constant,
 // so this is safe to read once here instead of inside the component.
 const initialStep: Step = isSupabase
-  ? 'code'
+  ? initialOauthIntent === 'maintenance'
+    ? 'maintenance-code'
+    : 'code'
   : initialOauthIntent === 'code'
     ? 'code'
     : initialOauthIntent === 'company'
@@ -85,7 +87,15 @@ export function SignupPage() {
       setStep('company')
       return
     }
-    if (step === 'code-details' || step === 'maintenance-code') {
+    if (step === 'code-details') {
+      setStep('code')
+      return
+    }
+    if (step === 'maintenance-details') {
+      setStep('maintenance-code')
+      return
+    }
+    if (step === 'maintenance-code') {
       setStep('code')
       return
     }
@@ -107,6 +117,13 @@ export function SignupPage() {
     if (!codeForm.code.trim()) return
     setError(null)
     setStep('code-details')
+  }
+
+  function handleMaintenanceCodeNext(e: FormEvent) {
+    e.preventDefault()
+    if (!maintenanceForm.code.trim()) return
+    setError(null)
+    setStep('maintenance-details')
   }
 
   async function handleCompanySubmit(e: FormEvent) {
@@ -585,7 +602,50 @@ export function SignupPage() {
           {step === 'maintenance-code' && !identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Código de manutenção</h1>
-              <p className="mt-1 text-sm text-white/50">Cria seu login e ativa o acesso de manutenção.</p>
+              <p className="mt-1 text-sm text-white/50">Ativa o acesso de manutenção.</p>
+
+              <form onSubmit={handleMaintenanceCodeNext} className="mt-6 flex flex-col gap-4">
+                <Input
+                  label="Código"
+                  required
+                  autoFocus
+                  placeholder="Ex: ABCD-1234"
+                  value={maintenanceForm.code}
+                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, code: e.target.value })}
+                />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" className="mt-2">
+                  Próximo
+                </Button>
+              </form>
+
+              <div className="mt-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-xs text-white/40">ou</span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+              <button
+                type="button"
+                onClick={() => signupWithGoogle('maintenance')}
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2.5 rounded-md border border-white/15 bg-white/[0.03] text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] hover:text-white"
+              >
+                <GoogleIcon />
+                Continuar com Google
+              </button>
+            </>
+          )}
+
+          {step === 'maintenance-details' && !identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Seus dados</h1>
+              <p className="mt-1 text-sm text-white/50">Código: <span className="text-white/80">{maintenanceForm.code}</span></p>
 
               <form onSubmit={handleMaintenanceSignup} className="mt-6 flex flex-col gap-4">
                 <Input
@@ -613,13 +673,6 @@ export function SignupPage() {
                   value={maintenanceConfirmPassword}
                   onChange={(e) => setMaintenanceConfirmPassword(e.target.value)}
                   endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
-                />
-                <Input
-                  label="Código"
-                  required
-                  placeholder="Ex: ABCD-1234"
-                  value={maintenanceForm.code}
-                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, code: e.target.value })}
                 />
 
                 {displayError && (

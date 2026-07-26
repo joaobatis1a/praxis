@@ -94,12 +94,14 @@ export function consumeOAuthPendingFlag(): boolean {
 }
 
 /** Redirects back to the signup page's code-redemption step (the only self-service path left —
- * see createCompanyForClient in features/maintenance/api.ts for how companies get created now). */
-export function signupWithGoogle() {
+ * see createCompanyForClient in features/maintenance/api.ts for how companies get created now).
+ * intent 'maintenance' comes back to the maintenance-code step instead, for someone who'd rather
+ * authenticate with Google than type an email/password for a maintenance account. */
+export function signupWithGoogle(intent: 'code' | 'maintenance' = 'code') {
   return supabase!.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/signup?oauthIntent=code`,
+      redirectTo: `${window.location.origin}/signup?oauthIntent=${intent}`,
       queryParams: { prompt: 'select_account' },
     },
   })
