@@ -55,7 +55,7 @@ export function AppLayout() {
   const items = user
     ? [...getNavItemsForRole(user.role), ...(isMaintenanceAccount ? [maintenanceNavItem, maintenanceTeamNavItem] : [])]
     : maintenanceNoCompanyNavItems
-  const displayName = user?.name ?? 'Suporte Praxis'
+  const displayName = user?.name ?? noCompanySession?.name ?? 'Suporte Praxis'
 
   return (
     <div className="flex h-dvh bg-background">
@@ -89,7 +89,7 @@ export function AppLayout() {
               </motion.div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-text-primary">{displayName}</p>
-                <p className="text-xs text-text-muted">{user ? roleLabels[user.role] : 'Manutenção Praxis'}</p>
+                <p className="text-xs text-text-muted">{user ? roleLabels[user.role] : isMaintenanceAccount ? 'Manutenção' : 'Suporte'}</p>
               </div>
               <motion.span
                 animate={{ rotate: menuOpen ? 180 : 0 }}
