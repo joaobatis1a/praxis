@@ -157,6 +157,9 @@ function AvatarUploadField({
 
 function PasswordCard() {
   const { toast } = useToast()
+  const { user, noCompanySession } = useAuth()
+  const email = user?.email ?? noCompanySession?.email ?? ''
+  const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -166,6 +169,10 @@ function PasswordCard() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!currentPassword) {
+      toast('Informe sua senha atual.', 'error')
+      return
+    }
     if (password.length < 6) {
       toast('A senha precisa ter pelo menos 6 caracteres.', 'error')
       return
@@ -176,8 +183,14 @@ function PasswordCard() {
     }
     setSaving(true)
     try {
+      // Anyone with an open session could otherwise set a brand-new password with zero proof of
+      // knowing the current one (e.g. a shared/unlocked device) — re-authenticating first closes
+      // that gap without needing any new infra (no email/SMTP dependency).
+      const { error: signInError } = await supabase!.auth.signInWithPassword({ email, password: currentPassword })
+      if (signInError) throw new Error('Senha atual incorreta.')
       const { error } = await supabase!.auth.updateUser({ password })
       if (error) throw new Error(error.message)
+      setCurrentPassword('')
       setPassword('')
       setConfirmPassword('')
       toast('Senha atualizada.')
@@ -198,6 +211,22 @@ function PasswordCard() {
         <p className="mt-1 text-sm text-text-muted">Altere sua senha de acesso.</p>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <Input
+            label="Senha atual"
+            type={showPassword ? 'text' : 'password'}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            endAdornment={
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                className="rounded-sm p-1.5 text-text-muted hover:text-text-primary"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            }
+          />
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Nova senha"
@@ -235,7 +264,7 @@ function PasswordCard() {
             />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving || !password || !confirmPassword}>
+            <Button type="submit" disabled={saving || !currentPassword || !password || !confirmPassword}>
               <KeyRound size={16} />
               {saving ? 'Salvando...' : 'Atualizar senha'}
             </Button>
