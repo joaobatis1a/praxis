@@ -33,6 +33,7 @@ export interface MessageRow {
   is_owner: boolean
   message: string
   created_at: string
+  is_system: boolean
 }
 
 export function rowToMessage(row: MessageRow): SupportMessage {
@@ -45,6 +46,7 @@ export function rowToMessage(row: MessageRow): SupportMessage {
     isOwner: row.is_owner,
     message: row.message,
     createdAt: row.created_at,
+    isSystem: row.is_system,
   }
 }
 
@@ -108,7 +110,7 @@ export async function createTicket(user: AuthUser, title: string, message: strin
     title,
     status: 'aberto',
     createdAt: now,
-    messages: [{ id: `msg-${Date.now()}`, ticketId: id, senderId: user.id, senderName: user.name, senderAvatarUrl: user.avatarUrl ?? null, isOwner: false, message, createdAt: now }],
+    messages: [{ id: `msg-${Date.now()}`, ticketId: id, senderId: user.id, senderName: user.name, senderAvatarUrl: user.avatarUrl ?? null, isOwner: false, message, createdAt: now, isSystem: false }],
   }
   mockSupportTickets.unshift(ticket)
   return ticket
@@ -168,9 +170,23 @@ export async function sendMessage(ticketId: string, sender: { id: string; name: 
     isOwner,
     message,
     createdAt: new Date().toISOString(),
+    isSystem: false,
   }
   ticket.messages.push(msg)
-  if (ticket.status === 'encerrado') ticket.status = 'aberto'
+  if (ticket.status === 'encerrado') {
+    ticket.status = 'aberto'
+    ticket.messages.push({
+      id: `msg-${Date.now()}-system`,
+      ticketId,
+      senderId: null,
+      senderName: 'Sistema',
+      senderAvatarUrl: null,
+      isOwner: false,
+      message: 'Chamado reaberto automaticamente.',
+      createdAt: new Date().toISOString(),
+      isSystem: true,
+    })
+  }
   return msg
 }
 
