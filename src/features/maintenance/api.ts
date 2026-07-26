@@ -5,6 +5,7 @@ export interface MaintenanceCompany {
   id: string
   name: string
   companyNumber: number
+  logoUrl: string | null
   status: 'ativo' | 'inativo'
   createdAt: string
   memberCount: number
@@ -19,6 +20,7 @@ interface CompanyRow {
   id: string
   name: string
   company_number: number
+  logo_url: string | null
   status: 'ativo' | 'inativo'
   created_at: string
   member_count: number
@@ -57,6 +59,7 @@ export async function listCompanies(): Promise<MaintenanceCompany[]> {
     id: row.id,
     name: row.name,
     companyNumber: row.company_number,
+    logoUrl: row.logo_url,
     status: row.status,
     createdAt: row.created_at,
     memberCount: row.member_count,
@@ -99,10 +102,11 @@ export async function listMaintenanceAccounts(): Promise<MaintenanceAccount[]> {
 }
 
 /** Creates a brand new, empty company and returns an admin invite code for it — the client's
- * first user redeems the code themselves via "Tenho um código", same as any other invite. */
-export async function createCompanyForClient(input: CreateCompanyInput): Promise<string> {
+ * first user redeems the code themselves via "Tenho um código", same as any other invite.
+ * Also returns the new company's id so a logo picked at creation time can be uploaded right after. */
+export async function createCompanyForClient(input: CreateCompanyInput): Promise<{ code: string; companyId: string }> {
   const code = randomCode()
-  const { error } = await supabase!.rpc('create_company_for_client', {
+  const { data, error } = await supabase!.rpc('create_company_for_client', {
     company_name: input.name,
     invite_code: code,
     contact_name: input.contactName?.trim() || null,
@@ -112,7 +116,7 @@ export async function createCompanyForClient(input: CreateCompanyInput): Promise
   if (error) {
     throw new Error(error.message.includes('empresa com esse nome') ? error.message : 'Não foi possível criar a empresa.')
   }
-  return code
+  return { code, companyId: data as string }
 }
 
 /** Generates a single-use maintenance invite code — the invitee redeems it themselves, either via

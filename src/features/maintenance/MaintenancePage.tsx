@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Navigate } from 'react-router-dom'
 import {
@@ -17,9 +17,10 @@ import {
   TableRow,
   useToast,
 } from '../../components/ui'
-import { Building2, KeyRound, Plus, Power, PowerOff, Search, Trash2 } from 'lucide-react'
+import { Building2, Camera, KeyRound, Plus, Power, PowerOff, Search, Trash2, X } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
+import { uploadCompanyLogo } from '../settings/api'
 import { InviteCodeModal } from '../users/components/InviteCodeModal'
 import {
   createCompanyForClient,
@@ -29,6 +30,18 @@ import {
   setCompanyStatus,
   type MaintenanceCompany,
 } from './api'
+
+function CompanyLogoThumb({ logoUrl, name }: { logoUrl: string | null; name: string }) {
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
+      {logoUrl ? (
+        <img src={logoUrl} alt={name} className="h-full w-full object-contain" />
+      ) : (
+        <Building2 size={16} className="text-text-muted" />
+      )}
+    </div>
+  )
+}
 
 const statusOptions = [
   { value: 'todas', label: 'Todos os status' },
@@ -51,6 +64,9 @@ export function MaintenancePage() {
   const [statusFilter, setStatusFilter] = useState('todas')
   const [sortBy, setSortBy] = useState('recent')
   const [newCompanyName, setNewCompanyName] = useState('')
+  const [newCompanyLogo, setNewCompanyLogo] = useState<File | null>(null)
+  const [newCompanyLogoPreview, setNewCompanyLogoPreview] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const [creatingCompany, setCreatingCompany] = useState(false)
   const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null)
   const [loadingCodeId, setLoadingCodeId] = useState<string | null>(null)
@@ -83,15 +99,36 @@ export function MaintenancePage() {
   if (!maintenanceChecked) return null
   if (!isMaintenanceAccount) return <Navigate to="/dashboard" replace />
 
+  function handleLogoChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setNewCompanyLogo(file)
+    setNewCompanyLogoPreview(URL.createObjectURL(file))
+  }
+
+  function clearNewCompanyLogo() {
+    setNewCompanyLogo(null)
+    setNewCompanyLogoPreview(null)
+  }
+
   async function handleCreateCompany(e: FormEvent) {
     e.preventDefault()
     const name = newCompanyName.trim()
     if (!name) return
     setCreatingCompany(true)
     try {
-      const code = await createCompanyForClient({ name })
+      const { code, companyId } = await createCompanyForClient({ name })
+      if (newCompanyLogo) {
+        try {
+          await uploadCompanyLogo(companyId, newCompanyLogo)
+        } catch {
+          toast('Empresa criada, mas não foi possível enviar a foto.', 'error')
+        }
+      }
       setGeneratedCompanyCode(code)
       setNewCompanyName('')
+      clearNewCompanyLogo()
       const updated = await listCompanies()
       setCompanies(updated)
     } catch (err) {
@@ -163,7 +200,32 @@ export function MaintenancePage() {
             </div>
             <p className="mt-1 text-sm text-text-muted">Gera um código de admin para o responsável do cliente.</p>
 
-            <form onSubmit={handleCreateCompany} className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <form onSubmit={handleCreateCompany} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  aria-label="Adicionar foto da empresa"
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-dashed border-border-strong bg-surface text-text-muted transition-colors hover:border-primary hover:text-primary"
+                >
+                  {newCompanyLogoPreview ? (
+                    <img src={newCompanyLogoPreview} alt="" className="h-full w-full object-contain" />
+                  ) : (
+                    <Camera size={16} />
+                  )}
+                </button>
+                {newCompanyLogoPreview && (
+                  <button
+                    type="button"
+                    onClick={clearNewCompanyLogo}
+                    aria-label="Remover foto selecionada"
+                    className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-white"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </div>
               <Input
                 required
                 value={newCompanyName}
@@ -226,13 +288,18 @@ export function MaintenancePage() {
                     {filteredCompanies.map((company) => (
                       <TableRow key={company.id}>
                         <TableCell className="font-medium text-text-primary">
-                          <span title={company.notes ?? undefined}>{company.name}</span>
-                          <span className="ml-1.5 font-normal text-text-muted">#{company.companyNumber}</span>
-                          {(company.contactName || company.contactPhone) && (
-                            <p className="mt-0.5 text-xs font-normal text-text-muted">
-                              {[company.contactName, company.contactPhone].filter(Boolean).join(' · ')}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2.5">
+                            <CompanyLogoThumb logoUrl={company.logoUrl} name={company.name} />
+                            <div>
+                              <span title={company.notes ?? undefined}>{company.name}</span>
+                              <span className="ml-1.5 font-normal text-text-muted">#{company.companyNumber}</span>
+                              {(company.contactName || company.contactPhone) && (
+                                <p className="mt-0.5 text-xs font-normal text-text-muted">
+                                  {[company.contactName, company.contactPhone].filter(Boolean).join(' · ')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={company.status === 'ativo' ? 'success' : 'neutral'}>
