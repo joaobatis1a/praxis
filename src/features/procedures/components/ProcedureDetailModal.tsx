@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Award, CheckCircle2, ClipboardList, Clock, Download, ExternalLink, Maximize2, Paperclip, Pencil, Trash2, UserCheck, Video, X } from 'lucide-react'
-import { Badge, Button, Checkbox, Modal, ProgressBar } from '../../../components/ui'
+import { Award, CheckCircle2, ClipboardList, Clock, Download, ExternalLink, FileUp, Maximize2, Paperclip, Pencil, Trash2, UserCheck, Video, X } from 'lucide-react'
+import { Badge, Button, Checkbox, Modal, ProgressBar, useToast } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
 import type { Procedure } from '../../../mocks/procedures'
+import { useAuth } from '../../auth/AuthContext'
+import { deleteAttachment, listAttachments, uploadAttachment, type ProcedureAttachment } from '../api'
 
 type FileKind = 'video' | 'image' | 'pdf' | 'other'
 
@@ -39,6 +41,46 @@ export function ProcedureDetailModal({
   onComplete: (procedure: Procedure) => void
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [attachments, setAttachments] = useState<ProcedureAttachment[]>([])
+  const [uploadingAttachment, setUploadingAttachment] = useState(false)
+  const attachmentInputRef = useRef<HTMLInputElement>(null)
+  const { user } = useAuth()
+  const { toast } = useToast()
+
+  const procedureId = procedure?.id
+
+  useEffect(() => {
+    if (!procedureId) {
+      setAttachments([])
+      return
+    }
+    listAttachments(procedureId).then(setAttachments)
+  }, [procedureId])
+
+  async function handleAttachmentPick(files: FileList | null) {
+    if (!files || files.length === 0 || !procedureId) return
+    setUploadingAttachment(true)
+    try {
+      for (const file of Array.from(files)) {
+        const attachment = await uploadAttachment(procedureId, file, user?.name ?? 'Você')
+        setAttachments((prev) => [attachment, ...prev])
+      }
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar o arquivo.', 'error')
+    } finally {
+      setUploadingAttachment(false)
+      if (attachmentInputRef.current) attachmentInputRef.current.value = ''
+    }
+  }
+
+  async function handleAttachmentDelete(attachment: ProcedureAttachment) {
+    try {
+      await deleteAttachment(attachment.id)
+      setAttachments((prev) => prev.filter((a) => a.id !== attachment.id))
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível remover o arquivo.', 'error')
+    }
+  }
 
   if (!procedure) return null
   const total = procedure.steps.length
@@ -183,6 +225,55 @@ export function ProcedureDetailModal({
           ))}
         </div>
       )}
+
+      <div className="mt-5">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
+          <Paperclip size={14} />
+          Anexos
+        </h3>
+        <div className="mt-2 space-y-1.5">
+          {attachments.map((attachment) => (
+            <div
+              key={attachment.id}
+              className="flex items-center justify-between gap-2 rounded-md border border-border-strong bg-surface-card px-3 py-2 text-sm"
+            >
+              <a
+                href={attachment.url}
+                target="_blank"
+                rel="noreferrer"
+                download={attachment.name}
+                className="min-w-0 flex-1 truncate font-medium text-text-primary hover:text-primary"
+              >
+                {attachment.name}
+              </a>
+              <button
+                type="button"
+                onClick={() => handleAttachmentDelete(attachment)}
+                aria-label={`Remover ${attachment.name}`}
+                className="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-error"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+          <input
+            ref={attachmentInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => handleAttachmentPick(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => attachmentInputRef.current?.click()}
+            disabled={uploadingAttachment}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-strong bg-surface py-2 text-xs font-medium text-text-muted transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+          >
+            <FileUp size={14} />
+            {uploadingAttachment ? 'Enviando...' : 'Adicionar arquivo'}
+          </button>
+        </div>
+      </div>
 
       <div className="mt-5">
         <div className="flex items-center justify-between text-xs text-text-muted">
