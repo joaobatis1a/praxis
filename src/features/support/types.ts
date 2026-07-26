@@ -9,6 +9,7 @@ export interface SupportMessage {
   isOwner: boolean
   message: string
   createdAt: string
+  isSystem: boolean
 }
 
 export interface SupportTicket {

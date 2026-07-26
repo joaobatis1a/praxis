@@ -106,6 +106,20 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, showPeerAvatar
       <div ref={scrollRef} className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
         <AnimatePresence>
           {messages.map((m) => {
+            if (m.isSystem) {
+              return (
+                <motion.div
+                  key={m.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                  className="flex justify-center"
+                >
+                  <span className="rounded-full bg-surface-hover px-3 py-1 text-xs text-text-muted">{m.message}</span>
+                </motion.div>
+              )
+            }
             const own = m.isOwner === viewerIsOwner
             return (
               <motion.div

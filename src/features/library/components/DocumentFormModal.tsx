@@ -43,12 +43,16 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
   const [type, setType] = useState<DocType>('doc')
   const [fileName, setFileName] = useState<string | null>(null)
   const [file, setFile] = useState<File | undefined>(undefined)
+  const [batchMode, setBatchMode] = useState(false)
   const [batchFiles, setBatchFiles] = useState<File[]>([])
   const [externalLinks, setExternalLinks] = useState<ExternalLinkValue[]>([])
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const isBatch = !isEditing && batchFiles.length > 1
+  // Driven by an explicit flag, not batchFiles.length > 1 — removing items down to just 1 left
+  // must still show it as an (single-item) batch instead of silently falling back to the
+  // single-file view, which had no file/fileName set and made that last item look deleted.
+  const isBatch = !isEditing && batchMode
 
   useEffect(() => {
     if (open) {
@@ -56,6 +60,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
       setType(initialData?.type ?? 'doc')
       setFileName(initialData?.fileName ?? null)
       setFile(undefined)
+      setBatchMode(false)
       setBatchFiles([])
       setExternalLinks(initialData?.externalLinks ?? [])
     }
@@ -64,13 +69,18 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
 
   function handleFilesChange(picked: FileList | null) {
     if (!picked || picked.length === 0) return
-    if (picked.length > 1 && !isEditing) {
-      setBatchFiles(Array.from(picked))
+    const files = Array.from(picked)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+
+    if (!isEditing && (batchMode || files.length > 1)) {
+      setBatchMode(true)
+      setBatchFiles((prev) => [...prev, ...files])
       setFileName(null)
       setFile(undefined)
       return
     }
-    const first = picked[0]
+    const first = files[0]
+    setBatchMode(false)
     setBatchFiles([])
     setFileName(first.name)
     setFile(first)
@@ -81,12 +91,14 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
   function removeFile() {
     setFileName(null)
     setFile(undefined)
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function removeBatchFile(index: number) {
-    setBatchFiles((prev) => prev.filter((_, i) => i !== index))
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    setBatchFiles((prev) => {
+      const next = prev.filter((_, i) => i !== index)
+      if (next.length === 0) setBatchMode(false)
+      return next
+    })
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -146,6 +158,14 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
                   </button>
                 </div>
               ))}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-strong bg-surface py-2 text-xs font-medium text-text-muted transition-colors hover:border-primary hover:text-primary"
+              >
+                <FileUp size={14} />
+                Adicionar mais arquivos
+              </button>
             </div>
           ) : fileName ? (
             <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface-card px-3 py-2.5">
@@ -203,7 +223,7 @@ export function DocumentFormModal({ open, onClose, onSubmit, onSubmitBatch, fold
             {saving
               ? 'Salvando...'
               : isBatch
-                ? `Criar ${batchFiles.length} documentos`
+                ? `Criar ${batchFiles.length} documento${batchFiles.length === 1 ? '' : 's'}`
                 : isEditing
                   ? 'Salvar alterações'
                   : 'Criar documento'}
