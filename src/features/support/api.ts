@@ -167,12 +167,16 @@ export async function sendMessage(ticketId: string, sender: { id: string; name: 
     createdAt: new Date().toISOString(),
   }
   ticket.messages.push(msg)
+  if (ticket.status === 'encerrado') ticket.status = 'aberto'
   return msg
 }
 
+/** Either the ticket's own user or any maintenance account can close/reopen it (see
+ * 052_support_ticket_simplified_status.sql) — replying to a closed ticket also reopens it
+ * automatically server-side, so there's no separate manual "reopen" path needed in practice. */
 export async function setTicketStatus(ticketId: string, status: SupportTicketStatus): Promise<void> {
   if (isSupabase) {
-    const { error } = await supabase!.from('support_tickets').update({ status }).eq('id', ticketId)
+    const { error } = await supabase!.rpc('set_support_ticket_status', { p_ticket_id: ticketId, p_status: status })
     if (error) throw new Error('Não foi possível atualizar o status.')
     return
   }
@@ -180,18 +184,6 @@ export async function setTicketStatus(ticketId: string, status: SupportTicketSta
   await delay(200)
   const ticket = mockSupportTickets.find((t) => t.id === ticketId)
   if (ticket) ticket.status = status
-}
-
-export async function closeOwnTicket(ticketId: string): Promise<void> {
-  if (isSupabase) {
-    const { error } = await supabase!.rpc('close_own_support_ticket', { p_ticket_id: ticketId })
-    if (error) throw new Error('Não foi possível encerrar o chamado.')
-    return
-  }
-
-  await delay(200)
-  const ticket = mockSupportTickets.find((t) => t.id === ticketId)
-  if (ticket && ticket.status === 'resolvido') ticket.status = 'encerrado'
 }
 
 /** Hides the ticket from the caller's own side only (see 049_support_ticket_per_side_delete.sql) —

@@ -8,20 +8,18 @@ import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { SALES_WHATSAPP_URL } from '../../lib/salesContact'
 import { useAuth } from '../auth/AuthContext'
-import { closeOwnTicket, createTicket, deleteTicket, listMyTickets, rowToMessage, sendMessage, type MessageRow, type TicketRow } from './api'
+import { createTicket, deleteTicket, listMyTickets, rowToMessage, sendMessage, setTicketStatus, type MessageRow, type TicketRow } from './api'
 import { SupportAdminInbox } from './SupportAdminInbox'
 import { TicketThread } from './components/TicketThread'
 import type { SupportTicket, SupportTicketStatus } from './types'
 
 const statusLabel: Record<SupportTicketStatus, string> = {
-  aberto: 'Aguardando resposta',
-  resolvido: 'Resolvido',
+  aberto: 'Aberto',
   encerrado: 'Encerrado',
 }
 
-const statusVariant: Record<SupportTicketStatus, 'warning' | 'success' | 'neutral'> = {
+const statusVariant: Record<SupportTicketStatus, 'warning' | 'neutral'> = {
   aberto: 'warning',
-  resolvido: 'success',
   encerrado: 'neutral',
 }
 
@@ -117,6 +115,9 @@ function SupportContact() {
     try {
       const msg = await sendMessage(ticketId, { id: user.id, name: user.name }, text, false)
       addMessage(ticketId, msg)
+      // replying to a closed ticket reopens it server-side (trigger) — reflect that immediately
+      // instead of waiting for the realtime UPDATE event to arrive
+      setTickets((prev) => prev.map((t) => (t.id === ticketId && t.status === 'encerrado' ? { ...t, status: 'aberto' } : t)))
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.', 'error')
     }
@@ -124,7 +125,7 @@ function SupportContact() {
 
   async function handleCloseTicket(ticketId: string) {
     try {
-      await closeOwnTicket(ticketId)
+      await setTicketStatus(ticketId, 'encerrado')
       setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status: 'encerrado' } : t)))
       toast('Chamado encerrado.')
     } catch (err) {
@@ -210,7 +211,7 @@ function SupportContact() {
                         </button>
                         <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0">
                           <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
-                          {ticket.status === 'resolvido' && (
+                          {ticket.status === 'aberto' && (
                             <button
                               type="button"
                               onClick={() => handleCloseTicket(ticket.id)}
@@ -255,7 +256,6 @@ function SupportContact() {
                                 ticketId={ticket.id}
                                 messages={ticket.messages}
                                 viewerIsOwner={false}
-                                canReply={ticket.status !== 'encerrado'}
                                 onSend={(text) => handleSendMessage(ticket.id, text)}
                               />
                             </div>
