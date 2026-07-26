@@ -32,7 +32,10 @@ const roleLabel: Record<SupportTicket['userRole'], string> = {
 }
 
 export function SupportAdminInbox() {
-  const { user } = useAuth()
+  const { user, noCompanySession } = useAuth()
+  // A bare maintenance account (redeemed via a maintenance code, no company) has no `user` —
+  // only `noCompanySession` — but can still reply here, so it needs its own identity fallback.
+  const sender = user ?? noCompanySession
   const { toast } = useToast()
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,9 +86,9 @@ export function SupportAdminInbox() {
   }, [])
 
   async function handleSendMessage(ticketId: string, text: string) {
-    if (!user) return
+    if (!sender) return
     try {
-      const msg = await sendMessage(ticketId, { id: user.id, name: user.name }, text, true)
+      const msg = await sendMessage(ticketId, { id: sender.id, name: sender.name }, text, true)
       addMessage(ticketId, msg)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.', 'error')
