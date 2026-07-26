@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { AnimatePresence, motion } from 'framer-motion'
 import { AlertTriangle, Bell, Building2, Camera, Image, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
+import { Button, Card, ConfirmDialog, ImageCropModal, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import type { TeamMember } from '../../mocks/teamMembers'
@@ -36,11 +36,17 @@ function CompanyLogoField({
   const [uploading, setUploading] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [viewing, setViewing] = useState(false)
+  const [cropFile, setCropFile] = useState<File | null>(null)
 
-  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+  function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
+    setCropFile(file)
+  }
+
+  async function handleCropConfirm(file: File) {
+    setCropFile(null)
     setUploading(true)
     try {
       const url = await uploadCompanyLogo(companyId, file)
@@ -140,6 +146,15 @@ function CompanyLogoField({
       <Modal open={viewing} onClose={() => setViewing(false)} title="Logo da empresa">
         {logoUrl && <img src={logoUrl} alt="Logo da empresa" className="mx-auto max-h-[60vh] w-auto rounded-md object-contain" />}
       </Modal>
+
+      <ImageCropModal
+        file={cropFile}
+        open={!!cropFile}
+        onCancel={() => setCropFile(null)}
+        onConfirm={handleCropConfirm}
+        shape="square"
+        title="Ajustar logo da empresa"
+      />
     </div>
   )
 }

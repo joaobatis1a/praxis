@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  ImageCropModal,
   Input,
   Modal,
   Select,
@@ -66,6 +67,7 @@ export function MaintenancePage() {
   const [newCompanyName, setNewCompanyName] = useState('')
   const [newCompanyLogo, setNewCompanyLogo] = useState<File | null>(null)
   const [newCompanyLogoPreview, setNewCompanyLogoPreview] = useState<string | null>(null)
+  const [cropFile, setCropFile] = useState<File | null>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [creatingCompany, setCreatingCompany] = useState(false)
   const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null)
@@ -103,6 +105,11 @@ export function MaintenancePage() {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
+    setCropFile(file)
+  }
+
+  function handleLogoCropConfirm(file: File) {
+    setCropFile(null)
     setNewCompanyLogo(file)
     setNewCompanyLogoPreview(URL.createObjectURL(file))
   }
@@ -359,6 +366,15 @@ export function MaintenancePage() {
         onClose={() => setGeneratedCompanyCode(null)}
         title="Convite de empresa gerado"
         description="Envie esse código para o responsável do cliente. Ele usa em Criar conta > Tenho um código."
+      />
+
+      <ImageCropModal
+        file={cropFile}
+        open={!!cropFile}
+        onCancel={() => setCropFile(null)}
+        onConfirm={handleLogoCropConfirm}
+        shape="square"
+        title="Ajustar foto da empresa"
       />
 
       <Modal

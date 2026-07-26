@@ -195,15 +195,19 @@ export async function closeOwnTicket(ticketId: string): Promise<void> {
 }
 
 /** Hides the ticket from the caller's own side only (see 049_support_ticket_per_side_delete.sql) —
- * the row is only actually deleted once both the sender and a maintenance account have hidden it. */
+ * the row is only actually deleted once both the sender and a maintenance account have hidden it.
+ * Only allowed once the ticket is closed (encerrado) — enforced again server-side in 051, since the
+ * UI hiding the button isn't enough to stop a direct RPC call. */
 export async function deleteTicket(ticketId: string, asAdmin: boolean): Promise<void> {
   if (isSupabase) {
     const { error } = await supabase!.rpc('hide_support_ticket', { p_ticket_id: ticketId, p_as_admin: asAdmin })
-    if (error) throw new Error('Não foi possível excluir o chamado.')
+    if (error) throw new Error(error.message.includes('encerrado') ? error.message : 'Não foi possível excluir o chamado.')
     return
   }
 
   await delay(200)
+  const ticket = mockSupportTickets.find((t) => t.id === ticketId)
+  if (ticket && ticket.status !== 'encerrado') throw new Error('Só é possível excluir um chamado encerrado.')
   const idx = mockSupportTickets.findIndex((t) => t.id === ticketId)
   if (idx !== -1) mockSupportTickets.splice(idx, 1)
 }

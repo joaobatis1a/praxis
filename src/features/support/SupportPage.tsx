@@ -126,10 +126,14 @@ function SupportContact() {
 
   async function handleDelete() {
     if (!deleting) return
-    await deleteTicket(deleting.id, false)
-    setTickets((prev) => prev.filter((t) => t.id !== deleting.id))
-    setDeleting(null)
-    toast('Chamado excluído.', 'error')
+    try {
+      await deleteTicket(deleting.id, false)
+      setTickets((prev) => prev.filter((t) => t.id !== deleting.id))
+      setDeleting(null)
+      toast('Chamado excluído.', 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível excluir o chamado.', 'error')
+    }
   }
 
   return (
@@ -208,14 +212,16 @@ function SupportContact() {
                               Encerrar
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => setDeleting(ticket)}
-                            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
-                          >
-                            <Trash2 size={14} />
-                            Excluir
-                          </button>
+                          {ticket.status === 'encerrado' && (
+                            <button
+                              type="button"
+                              onClick={() => setDeleting(ticket)}
+                              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
+                            >
+                              <Trash2 size={14} />
+                              Excluir
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => setExpanded(isOpen ? null : ticket.id)}
