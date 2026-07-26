@@ -136,7 +136,7 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
       </div>
 
       {canReply && (
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
           <textarea
             value={draft}
             onChange={(e) => handleDraftChange(e.target.value)}
@@ -144,7 +144,7 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
             rows={2}
             enterKeyHint="send"
             placeholder="Escreva uma mensagem..."
-            className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-sm text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+            className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 sm:text-sm"
           />
           <Button
             type="submit"
@@ -153,6 +153,7 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
             className="shrink-0 self-end"
           >
             <Send size={16} />
+            <span className="sm:hidden">Enviar</span>
           </Button>
         </form>
       )}
