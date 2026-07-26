@@ -157,7 +157,6 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
           <Button
             ref={submitBtnRef}
             type="submit"
-            onMouseDown={(e) => e.preventDefault()}
             disabled={sending || !draft.trim()}
             className="shrink-0 self-end"
           >
