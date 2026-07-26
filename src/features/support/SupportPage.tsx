@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, ChevronDown, Mail, MessageCircle, Send, Trash2 } from 'lucide-react'
 import { Badge, Button, buttonVariants, Card, ConfirmDialog, Input, Modal, Skeleton, useToast } from '../../components/ui'
@@ -44,6 +44,14 @@ function SupportContact() {
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const submitBtnRef = useRef<HTMLButtonElement>(null)
+
+  // iOS Safari overlays the on-screen keyboard on top of this fixed-position modal instead of
+  // shrinking the viewport for it, so the submit button can end up hidden behind the keyboard
+  // with no visible cue to scroll — force it into view shortly after the keyboard finishes animating in.
+  function scrollSubmitIntoView() {
+    setTimeout(() => submitBtnRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+  }
 
   useEffect(() => {
     if (!user) return
@@ -283,7 +291,9 @@ function SupportContact() {
             label="Título"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onFocus={scrollSubmitIntoView}
             placeholder="Ex: Erro ao enviar aviso"
+            className="text-base sm:text-sm"
             required
           />
           <div className="flex flex-col gap-1.5">
@@ -294,13 +304,14 @@ function SupportContact() {
               id="support-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onFocus={scrollSubmitIntoView}
               rows={5}
               placeholder="Conte o que está acontecendo..."
-              className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-3 text-sm text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
+              className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-3 text-base text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 sm:text-sm"
             />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={sending || !title.trim() || !message.trim()}>
+            <Button ref={submitBtnRef} type="submit" disabled={sending || !title.trim() || !message.trim()}>
               <Send size={16} />
               {sending ? 'Enviando...' : 'Enviar'}
             </Button>

@@ -28,6 +28,13 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
   const lastTypingSentRef = useRef(0)
   const hideTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const submitBtnRef = useRef<HTMLButtonElement>(null)
+
+  // Same iOS Safari keyboard-overlay safety net as the "Enviar mensagem" modal — force the send
+  // button into view shortly after the keyboard finishes animating in, in case it ends up hidden.
+  function scrollSubmitIntoView() {
+    setTimeout(() => submitBtnRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+  }
 
   useEffect(() => {
     const el = scrollRef.current
@@ -141,12 +148,14 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
             value={draft}
             onChange={(e) => handleDraftChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={scrollSubmitIntoView}
             rows={2}
             enterKeyHint="send"
             placeholder="Escreva uma mensagem..."
             className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 sm:text-sm"
           />
           <Button
+            ref={submitBtnRef}
             type="submit"
             onMouseDown={(e) => e.preventDefault()}
             disabled={sending || !draft.trim()}
