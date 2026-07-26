@@ -204,6 +204,7 @@ export function ProcedureFormModal({ open, onClose, onSubmit, initialData }: Pro
             label="Duração estimada (min)"
             value={form.estimatedMinutes}
             onChange={(e) => setForm({ ...form, estimatedMinutes: Number(e.target.value) })}
+            onFocus={(e) => e.target.select()}
           />
         </div>
 
