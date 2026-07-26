@@ -80,7 +80,7 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       if (!draft.trim() || sending) return
       setSending(true)
@@ -142,10 +142,16 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
             onChange={(e) => handleDraftChange(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={2}
-            placeholder="Escreva uma mensagem... (Enter envia, Shift+Enter quebra linha)"
+            enterKeyHint="send"
+            placeholder="Escreva uma mensagem..."
             className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-sm text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20"
           />
-          <Button type="submit" disabled={sending || !draft.trim()} className="shrink-0 self-end">
+          <Button
+            type="submit"
+            onMouseDown={(e) => e.preventDefault()}
+            disabled={sending || !draft.trim()}
+            className="shrink-0 self-end"
+          >
             <Send size={16} />
           </Button>
         </form>

@@ -66,6 +66,10 @@ export function SupportAdminInbox() {
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' }, (payload) => {
         const row = payload.new as TicketRow
+        if (row.hidden_by_admin) {
+          setTickets((prev) => prev.filter((t) => t.id !== row.id))
+          return
+        }
         setTickets((prev) => prev.map((t) => (t.id === row.id ? { ...t, status: row.status, title: row.title } : t)))
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_tickets' }, (payload) => {
@@ -100,7 +104,7 @@ export function SupportAdminInbox() {
 
   async function handleDelete() {
     if (!deleting) return
-    await deleteTicket(deleting.id)
+    await deleteTicket(deleting.id, true)
     setTickets((prev) => prev.filter((t) => t.id !== deleting.id))
     setDeleting(null)
     toast('Chamado excluído.', 'error')
@@ -132,11 +136,11 @@ export function SupportAdminInbox() {
             return (
               <motion.div key={ticket.id} variants={staggerItem}>
                 <Card>
-                  <div className="flex w-full items-center justify-between gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <button
                       type="button"
                       onClick={() => setExpanded(isOpen ? null : ticket.id)}
-                      className="min-w-0 flex-1 text-left"
+                      className="min-w-0 text-left sm:flex-1"
                     >
                       <p className="text-sm font-semibold text-text-primary">
                         {ticket.userName}
@@ -149,7 +153,7 @@ export function SupportAdminInbox() {
                       </p>
                       <p className="mt-2 text-sm text-text-secondary">{ticket.title}</p>
                     </button>
-                    <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0">
                       <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
                       {ticket.status === 'aberto' && (
                         <button

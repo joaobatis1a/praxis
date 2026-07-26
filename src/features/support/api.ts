@@ -20,6 +20,8 @@ export interface TicketRow {
   title: string
   status: SupportTicketStatus
   created_at: string
+  hidden_by_user: boolean
+  hidden_by_admin: boolean
 }
 
 export interface MessageRow {
@@ -116,6 +118,7 @@ export async function listMyTickets(userId: string): Promise<SupportTicket[]> {
       .from('support_tickets')
       .select('*')
       .eq('user_id', userId)
+      .eq('hidden_by_user', false)
       .order('created_at', { ascending: false })
     if (error || !data) return []
     return attachMessages(data as TicketRow[])
@@ -127,7 +130,11 @@ export async function listMyTickets(userId: string): Promise<SupportTicket[]> {
 
 export async function listAllTickets(): Promise<SupportTicket[]> {
   if (isSupabase) {
-    const { data, error } = await supabase!.from('support_tickets').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase!
+      .from('support_tickets')
+      .select('*')
+      .eq('hidden_by_admin', false)
+      .order('created_at', { ascending: false })
     if (error || !data) return []
     return attachMessages(data as TicketRow[])
   }
@@ -187,9 +194,11 @@ export async function closeOwnTicket(ticketId: string): Promise<void> {
   if (ticket && ticket.status === 'resolvido') ticket.status = 'encerrado'
 }
 
-export async function deleteTicket(ticketId: string): Promise<void> {
+/** Hides the ticket from the caller's own side only (see 049_support_ticket_per_side_delete.sql) —
+ * the row is only actually deleted once both the sender and a maintenance account have hidden it. */
+export async function deleteTicket(ticketId: string, asAdmin: boolean): Promise<void> {
   if (isSupabase) {
-    const { error } = await supabase!.from('support_tickets').delete().eq('id', ticketId)
+    const { error } = await supabase!.rpc('hide_support_ticket', { p_ticket_id: ticketId, p_as_admin: asAdmin })
     if (error) throw new Error('Não foi possível excluir o chamado.')
     return
   }

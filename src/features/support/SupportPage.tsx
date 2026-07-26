@@ -69,6 +69,10 @@ function SupportContact() {
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_tickets' }, (payload) => {
         const row = payload.new as TicketRow
+        if (row.hidden_by_user) {
+          setTickets((prev) => prev.filter((t) => t.id !== row.id))
+          return
+        }
         setTickets((prev) => prev.map((t) => (t.id === row.id ? { ...t, status: row.status, title: row.title } : t)))
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_tickets' }, (payload) => {
@@ -122,7 +126,7 @@ function SupportContact() {
 
   async function handleDelete() {
     if (!deleting) return
-    await deleteTicket(deleting.id)
+    await deleteTicket(deleting.id, false)
     setTickets((prev) => prev.filter((t) => t.id !== deleting.id))
     setDeleting(null)
     toast('Chamado excluído.', 'error')
@@ -184,15 +188,15 @@ function SupportContact() {
                   const isOpen = expanded === ticket.id
                   return (
                     <div key={ticket.id} className="py-3 first:pt-0">
-                      <div className="flex w-full items-center justify-between gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                         <button
                           type="button"
                           onClick={() => setExpanded(isOpen ? null : ticket.id)}
-                          className="min-w-0 flex-1 text-left"
+                          className="min-w-0 text-left sm:flex-1"
                         >
                           <p className="text-sm font-medium text-text-primary">{ticket.title}</p>
                         </button>
-                        <div className="flex shrink-0 items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0">
                           <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
                           {ticket.status === 'resolvido' && (
                             <button
