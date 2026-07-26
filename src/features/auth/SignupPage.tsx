@@ -228,7 +228,10 @@ export function SignupPage() {
       <button
         type="button"
         onClick={() => {
-          const isRootStep = isSupabase ? step === 'code' : step === 'choice'
+          // step === 'code' is only the true root when there's no identity yet — with an
+          // identity (post-Google-login) it's one step further in, and needs goBack() to
+          // actually sign out so a re-attempt doesn't silently resume the same account
+          const isRootStep = isSupabase ? step === 'code' && !identity : step === 'choice'
           if (isRootStep) navigate('/')
           else goBack()
         }}
@@ -579,7 +582,7 @@ export function SignupPage() {
                   label="Código"
                   required
                   autoFocus
-                  placeholder="Ex: ABCD-1234"
+                  placeholder="Ex: ABCD1234"
                   value={maintenanceForm.code}
                   onChange={(e) => setMaintenanceForm({ ...maintenanceForm, code: e.target.value })}
                 />
@@ -609,7 +612,7 @@ export function SignupPage() {
                   label="Código"
                   required
                   autoFocus
-                  placeholder="Ex: ABCD-1234"
+                  placeholder="Ex: ABCD1234"
                   value={maintenanceForm.code}
                   onChange={(e) => setMaintenanceForm({ ...maintenanceForm, code: e.target.value })}
                 />

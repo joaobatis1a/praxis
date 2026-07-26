@@ -98,9 +98,15 @@ export function MaintenanceTeamPage() {
                       <button
                         type="button"
                         onClick={() => handleRemoveAccount(account)}
-                        disabled={removingId === account.id || accounts.length === 1}
+                        disabled={removingId === account.id || accounts.length === 1 || account.addedBy === 'seed'}
                         aria-label="Remover conta de manutenção"
-                        title={accounts.length === 1 ? 'Não é possível remover a última conta de manutenção' : undefined}
+                        title={
+                          account.addedBy === 'seed'
+                            ? 'Esta conta foi criada por seed e não pode ser removida'
+                            : accounts.length === 1
+                              ? 'Não é possível remover a última conta de manutenção'
+                              : undefined
+                        }
                         className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-error-bg hover:text-error disabled:pointer-events-none disabled:opacity-30"
                       >
                         <Trash2 size={16} />

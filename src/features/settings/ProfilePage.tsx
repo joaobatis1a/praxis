@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Camera, Eye, EyeOff, Image, KeyRound, Save, Trash2, User as UserIcon } from 'lucide-react'
+import { Award, Camera, Eye, EyeOff, Image, KeyRound, Save, Trash2, User as UserIcon } from 'lucide-react'
 import { Avatar, Badge, Button, Card, ImageCropModal, Input, Modal, Select, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
@@ -8,6 +8,7 @@ import { getUserDepartment } from '../../lib/userDepartment'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
 import { listDepartments } from '../departments/api'
+import { listCompletions } from '../procedures/api'
 import { getCompany, removeAvatar, removeNoCompanyAvatar, updateProfile, uploadAvatar, uploadNoCompanyAvatar } from './api'
 
 const roleLabels: Record<Role, string> = {
@@ -36,7 +37,7 @@ function AvatarUploadField({
   const [viewing, setViewing] = useState(false)
   const [cropFile, setCropFile] = useState<File | null>(null)
 
-  if (!isSupabase) return <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
+  if (!isSupabase) return <Avatar name={name} avatarUrl={avatarUrl} size={72} className="text-2xl" />
 
   function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -76,7 +77,7 @@ function AvatarUploadField({
   return (
     <div className="flex items-center gap-4">
       <div className="relative">
-        <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
+        <Avatar name={name} avatarUrl={avatarUrl} size={72} className="text-2xl" />
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
@@ -284,6 +285,7 @@ export function ProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [departmentsList, setDepartmentsList] = useState<string[]>([])
   const [companyName, setCompanyName] = useState<string | null>(null)
+  const [completedCount, setCompletedCount] = useState<number | null>(null)
 
   useEffect(() => {
     setName(user?.name ?? '')
@@ -299,6 +301,13 @@ export function ProfilePage() {
     if (!user) return
     getCompany()
       .then((c) => setCompanyName(c.name))
+      .catch(() => {})
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    listCompletions()
+      .then((completions) => setCompletedCount(completions.filter((c) => c.userId === user.id).length))
       .catch(() => {})
   }, [user])
 
@@ -373,23 +382,30 @@ export function ProfilePage() {
             <UserIcon size={18} className="text-primary" />
             <h2 className="text-base font-semibold text-text-primary">Dados pessoais</h2>
           </div>
-          <div className="mt-4 space-y-4">
-            <AvatarUploadField
-              name={user.name}
-              avatarUrl={user.avatarUrl}
-              onUpload={(file) => uploadAvatar(user.id, file)}
-              onRemove={() => removeAvatar(user.id)}
-              onUpdated={(avatarUrl) => setSessionUser({ ...user, avatarUrl })}
-            />
+          <div className="mt-5 space-y-5">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <AvatarUploadField
+                name={user.name}
+                avatarUrl={user.avatarUrl}
+                onUpload={(file) => uploadAvatar(user.id, file)}
+                onRemove={() => removeAvatar(user.id)}
+                onUpdated={(avatarUrl) => setSessionUser({ ...user, avatarUrl })}
+              />
+              <div>
+                <p className="text-lg font-semibold text-text-primary">{user.name}</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <Badge variant="primary">{roleLabels[user.role]}</Badge>
+                  {user.role !== 'admin' && <Badge variant="neutral">{department}</Badge>}
+                  {companyName && <Badge variant="neutral">{companyName}</Badge>}
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Nome completo" value={name} onChange={(e) => setName(e.target.value)} />
               <Input label="E-mail" value={user.email} disabled hint="O e-mail não pode ser alterado." />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="primary">{roleLabels[user.role]}</Badge>
-              {user.role !== 'admin' && <Badge variant="neutral">{department}</Badge>}
-              {companyName && <Badge variant="neutral">{companyName}</Badge>}
-            </div>
+
             {user.role === 'admin' && (
               <div className="flex flex-col gap-1.5 sm:max-w-xs">
                 <label className="text-sm font-medium text-text-primary">Departamento</label>
@@ -403,6 +419,21 @@ export function ProfilePage() {
                 />
               </div>
             )}
+
+            {completedCount !== null && (
+              <div className="flex items-center gap-3 rounded-md border border-border-strong bg-surface px-4 py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Award size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">
+                    {completedCount} {completedCount === 1 ? 'procedimento concluído' : 'procedimentos concluídos'}
+                  </p>
+                  <p className="text-xs text-text-muted">Total desde que você começou a usar o Praxis.</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <Button onClick={handleSaveProfile} disabled={savingProfile || !name.trim()}>
                 <Save size={16} />
