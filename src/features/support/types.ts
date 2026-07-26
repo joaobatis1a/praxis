@@ -1,4 +1,4 @@
-export type SupportTicketStatus = 'aberto' | 'resolvido' | 'encerrado'
+export type SupportTicketStatus = 'aberto' | 'encerrado'
 
 export interface SupportMessage {
   id: string

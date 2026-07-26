@@ -15,11 +15,10 @@ interface TicketThreadProps {
   ticketId: string
   messages: SupportMessage[]
   viewerIsOwner: boolean
-  canReply: boolean
   onSend: (message: string) => Promise<void>
 }
 
-export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSend }: TicketThreadProps) {
+export function TicketThread({ ticketId, messages, viewerIsOwner, onSend }: TicketThreadProps) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [peerTyping, setPeerTyping] = useState(false)
@@ -142,29 +141,27 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, canReply, onSe
         </AnimatePresence>
       </div>
 
-      {canReply && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
-          <textarea
-            value={draft}
-            onChange={(e) => handleDraftChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={scrollSubmitIntoView}
-            rows={2}
-            enterKeyHint="send"
-            placeholder="Escreva uma mensagem..."
-            className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 sm:text-sm"
-          />
-          <Button
-            ref={submitBtnRef}
-            type="submit"
-            disabled={sending || !draft.trim()}
-            className="shrink-0 self-end"
-          >
-            <Send size={16} />
-            <span className="sm:hidden">Enviar</span>
-          </Button>
-        </form>
-      )}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+        <textarea
+          value={draft}
+          onChange={(e) => handleDraftChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={scrollSubmitIntoView}
+          rows={2}
+          enterKeyHint="send"
+          placeholder="Escreva uma mensagem..."
+          className="w-full resize-none rounded-md border border-border-strong bg-surface-card p-2.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/20 sm:text-sm"
+        />
+        <Button
+          ref={submitBtnRef}
+          type="submit"
+          disabled={sending || !draft.trim()}
+          className="shrink-0 self-end"
+        >
+          <Send size={16} />
+          <span className="sm:hidden">Enviar</span>
+        </Button>
+      </form>
     </div>
   )
 }

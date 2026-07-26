@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, ChevronDown, RotateCcw, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, Trash2 } from 'lucide-react'
 import { Badge, Card, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
@@ -13,17 +13,15 @@ import type { SupportTicket, SupportTicketStatus } from './types'
 
 const statusLabel: Record<SupportTicketStatus, string> = {
   aberto: 'Aberto',
-  resolvido: 'Resolvido',
   encerrado: 'Encerrado',
 }
 
-const statusVariant: Record<SupportTicketStatus, 'warning' | 'success' | 'neutral'> = {
+const statusVariant: Record<SupportTicketStatus, 'warning' | 'neutral'> = {
   aberto: 'warning',
-  resolvido: 'success',
   encerrado: 'neutral',
 }
 
-const statusOrder: SupportTicketStatus[] = ['aberto', 'resolvido', 'encerrado']
+const statusOrder: SupportTicketStatus[] = ['aberto', 'encerrado']
 
 const roleLabel: Record<SupportTicket['userRole'], string> = {
   admin: 'Proprietário',
@@ -90,18 +88,21 @@ export function SupportAdminInbox() {
     try {
       const msg = await sendMessage(ticketId, { id: sender.id, name: sender.name }, text, true)
       addMessage(ticketId, msg)
+      // replying to a closed ticket reopens it server-side (trigger) — reflect that immediately
+      // instead of waiting for the realtime UPDATE event to arrive
+      setTickets((prev) => prev.map((t) => (t.id === ticketId && t.status === 'encerrado' ? { ...t, status: 'aberto' } : t)))
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.', 'error')
     }
   }
 
-  async function handleStatusChange(ticketId: string, status: SupportTicketStatus) {
+  async function handleCloseTicket(ticketId: string) {
     try {
-      await setTicketStatus(ticketId, status)
-      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status } : t)))
-      toast(status === 'resolvido' ? 'Chamado marcado como resolvido.' : 'Chamado reaberto.')
+      await setTicketStatus(ticketId, 'encerrado')
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status: 'encerrado' } : t)))
+      toast('Chamado encerrado.')
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Não foi possível atualizar o status.', 'error')
+      toast(err instanceof Error ? err.message : 'Não foi possível encerrar o chamado.', 'error')
     }
   }
 
@@ -165,21 +166,11 @@ export function SupportAdminInbox() {
                       {ticket.status === 'aberto' && (
                         <button
                           type="button"
-                          onClick={() => handleStatusChange(ticket.id, 'resolvido')}
+                          onClick={() => handleCloseTicket(ticket.id)}
                           className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-success"
                         >
                           <Check size={14} />
-                          Resolver
-                        </button>
-                      )}
-                      {ticket.status === 'resolvido' && (
-                        <button
-                          type="button"
-                          onClick={() => handleStatusChange(ticket.id, 'aberto')}
-                          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-primary"
-                        >
-                          <RotateCcw size={14} />
-                          Reabrir
+                          Encerrar
                         </button>
                       )}
                       {ticket.status === 'encerrado' && (
@@ -217,7 +208,6 @@ export function SupportAdminInbox() {
                             ticketId={ticket.id}
                             messages={ticket.messages}
                             viewerIsOwner
-                            canReply={ticket.status !== 'encerrado'}
                             onSend={(text) => handleSendMessage(ticket.id, text)}
                           />
                         </div>
