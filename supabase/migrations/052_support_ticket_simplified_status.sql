@@ -15,7 +15,7 @@ alter table public.support_tickets
 -- toggle either the ticket's own user or any maintenance account can call.
 drop function if exists public.close_own_support_ticket(uuid);
 
-create function public.set_support_ticket_status(p_ticket_id uuid, p_status text)
+create or replace function public.set_support_ticket_status(p_ticket_id uuid, p_status text)
 returns void
 language plpgsql
 security definer
@@ -49,7 +49,7 @@ create policy "support_messages_insert" on public.support_messages
     )
   );
 
-create function public.reopen_ticket_on_reply()
+create or replace function public.reopen_ticket_on_reply()
 returns trigger
 language plpgsql
 security definer
@@ -61,6 +61,7 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_reopen_ticket_on_reply on public.support_messages;
 create trigger trg_reopen_ticket_on_reply
   after insert on public.support_messages
   for each row execute function public.reopen_ticket_on_reply();

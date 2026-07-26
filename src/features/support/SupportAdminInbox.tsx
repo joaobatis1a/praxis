@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown, Trash2 } from 'lucide-react'
-import { Badge, Card, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
+import { Avatar, Badge, Card, ConfirmDialog, Skeleton, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
@@ -86,7 +86,7 @@ export function SupportAdminInbox() {
   async function handleSendMessage(ticketId: string, text: string) {
     if (!sender) return
     try {
-      const msg = await sendMessage(ticketId, { id: sender.id, name: sender.name }, text, true)
+      const msg = await sendMessage(ticketId, { id: sender.id, name: sender.name, avatarUrl: sender.avatarUrl }, text, true)
       addMessage(ticketId, msg)
       // replying to a closed ticket reopens it server-side (trigger) — reflect that immediately
       // instead of waiting for the realtime UPDATE event to arrive
@@ -141,6 +141,7 @@ export function SupportAdminInbox() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="mt-6 space-y-4">
           {sorted.map((ticket) => {
             const isOpen = expanded === ticket.id
+            const userAvatarUrl = ticket.messages.find((m) => !m.isOwner)?.senderAvatarUrl ?? null
             return (
               <motion.div key={ticket.id} variants={staggerItem}>
                 <Card>
@@ -148,18 +149,21 @@ export function SupportAdminInbox() {
                     <button
                       type="button"
                       onClick={() => setExpanded(isOpen ? null : ticket.id)}
-                      className="min-w-0 text-left sm:flex-1"
+                      className="flex min-w-0 items-start gap-3 text-left sm:flex-1"
                     >
-                      <p className="text-sm font-semibold text-text-primary">
-                        {ticket.userName}
-                        <span className="font-normal text-text-muted"> · {roleLabel[ticket.userRole]}</span>
-                      </p>
-                      <p className="text-xs text-text-muted">{ticket.userEmail}</p>
-                      <p className="mt-1 text-xs text-text-muted">
-                        {ticket.companyName}
-                        {ticket.companyNumber != null && ` (#${ticket.companyNumber})`}
-                      </p>
-                      <p className="mt-2 text-sm text-text-secondary">{ticket.title}</p>
+                      <Avatar name={ticket.userName} avatarUrl={userAvatarUrl} size={36} className="mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-text-primary">
+                          {ticket.userName}
+                          <span className="font-normal text-text-muted"> · {roleLabel[ticket.userRole]}</span>
+                        </p>
+                        <p className="text-xs text-text-muted">{ticket.userEmail}</p>
+                        <p className="mt-1 text-xs text-text-muted">
+                          {ticket.companyName}
+                          {ticket.companyNumber != null && ` (#${ticket.companyNumber})`}
+                        </p>
+                        <p className="mt-2 text-sm text-text-secondary">{ticket.title}</p>
+                      </div>
                     </button>
                     <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0">
                       <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
@@ -208,6 +212,7 @@ export function SupportAdminInbox() {
                             ticketId={ticket.id}
                             messages={ticket.messages}
                             viewerIsOwner
+                            showPeerAvatar={false}
                             onSend={(text) => handleSendMessage(ticket.id, text)}
                           />
                         </div>

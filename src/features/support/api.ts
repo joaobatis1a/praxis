@@ -29,6 +29,7 @@ export interface MessageRow {
   ticket_id: string
   sender_id: string | null
   sender_name: string
+  sender_avatar_url: string | null
   is_owner: boolean
   message: string
   created_at: string
@@ -40,6 +41,7 @@ export function rowToMessage(row: MessageRow): SupportMessage {
     ticketId: row.ticket_id,
     senderId: row.sender_id,
     senderName: row.sender_name,
+    senderAvatarUrl: row.sender_avatar_url,
     isOwner: row.is_owner,
     message: row.message,
     createdAt: row.created_at,
@@ -85,7 +87,7 @@ export async function createTicket(user: AuthUser, title: string, message: strin
 
     const { data: msgData, error: msgError } = await supabase!
       .from('support_messages')
-      .insert({ ticket_id: ticketRow.id, sender_id: user.id, sender_name: user.name, is_owner: false, message })
+      .insert({ ticket_id: ticketRow.id, sender_id: user.id, sender_name: user.name, sender_avatar_url: user.avatarUrl ?? null, is_owner: false, message })
       .select()
       .single()
     if (msgError || !msgData) throw new Error('Não foi possível enviar sua mensagem.')
@@ -106,7 +108,7 @@ export async function createTicket(user: AuthUser, title: string, message: strin
     title,
     status: 'aberto',
     createdAt: now,
-    messages: [{ id: `msg-${Date.now()}`, ticketId: id, senderId: user.id, senderName: user.name, isOwner: false, message, createdAt: now }],
+    messages: [{ id: `msg-${Date.now()}`, ticketId: id, senderId: user.id, senderName: user.name, senderAvatarUrl: user.avatarUrl ?? null, isOwner: false, message, createdAt: now }],
   }
   mockSupportTickets.unshift(ticket)
   return ticket
@@ -143,11 +145,11 @@ export async function listAllTickets(): Promise<SupportTicket[]> {
   return [...mockSupportTickets]
 }
 
-export async function sendMessage(ticketId: string, sender: { id: string; name: string }, message: string, isOwner: boolean): Promise<SupportMessage> {
+export async function sendMessage(ticketId: string, sender: { id: string; name: string; avatarUrl?: string | null }, message: string, isOwner: boolean): Promise<SupportMessage> {
   if (isSupabase) {
     const { data, error } = await supabase!
       .from('support_messages')
-      .insert({ ticket_id: ticketId, sender_id: sender.id, sender_name: sender.name, is_owner: isOwner, message })
+      .insert({ ticket_id: ticketId, sender_id: sender.id, sender_name: sender.name, sender_avatar_url: sender.avatarUrl ?? null, is_owner: isOwner, message })
       .select()
       .single()
     if (error || !data) throw new Error('Não foi possível enviar a mensagem.')
@@ -162,6 +164,7 @@ export async function sendMessage(ticketId: string, sender: { id: string; name: 
     ticketId,
     senderId: sender.id,
     senderName: sender.name,
+    senderAvatarUrl: sender.avatarUrl ?? null,
     isOwner,
     message,
     createdAt: new Date().toISOString(),

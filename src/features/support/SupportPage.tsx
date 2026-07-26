@@ -113,7 +113,7 @@ function SupportContact() {
   async function handleSendMessage(ticketId: string, text: string) {
     if (!user) return
     try {
-      const msg = await sendMessage(ticketId, { id: user.id, name: user.name }, text, false)
+      const msg = await sendMessage(ticketId, { id: user.id, name: user.name, avatarUrl: user.avatarUrl }, text, false)
       addMessage(ticketId, msg)
       // replying to a closed ticket reopens it server-side (trigger) — reflect that immediately
       // instead of waiting for the realtime UPDATE event to arrive
