@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown } from 'lucide-react'
@@ -35,10 +35,28 @@ const VIEWPORT_MARGIN = 12
 export function Select({ value, onChange, options, className, triggerClassName, ...rest }: SelectProps) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState<Position | null>(null)
+  const [minTriggerWidth, setMinTriggerWidth] = useState<number>()
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
   const selected = options.find((o) => o.value === value)
+
+  // The trigger button otherwise sizes itself to whichever option's label is currently selected —
+  // pick a short one ("Gestor") and it shrinks, then the dropdown (which copies the trigger's
+  // width) is too narrow for longer labels the next time it opens, clipping them. Measure every
+  // option's rendered width once and lock the trigger to the widest, so it stays one fixed size
+  // no matter what's selected.
+  useLayoutEffect(() => {
+    const container = measureRef.current
+    if (!container) return
+    let max = 0
+    for (const child of Array.from(container.children)) {
+      max = Math.max(max, (child as HTMLElement).offsetWidth)
+    }
+    setMinTriggerWidth(max > 0 ? max + 56 : undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.map((o) => o.label).join('|')])
 
   function computePosition() {
     const trigger = triggerRef.current
@@ -99,6 +117,13 @@ export function Select({ value, onChange, options, className, triggerClassName, 
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
+      <div ref={measureRef} aria-hidden className="pointer-events-none absolute -z-10 opacity-0" style={{ whiteSpace: 'nowrap', top: -9999, left: -9999 }}>
+        {options.map((option) => (
+          <div key={option.value} className="text-sm">
+            {option.label}
+          </div>
+        ))}
+      </div>
       <motion.button
         ref={triggerRef}
         type="button"
@@ -107,6 +132,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={rest['aria-label']}
+        style={minTriggerWidth ? { minWidth: minTriggerWidth } : undefined}
         className={cn(
           'flex h-10 items-center gap-2 rounded-md border border-border bg-surface-card px-3 text-sm text-text-primary transition-colors hover:border-border-strong focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20',
           open && 'border-primary ring-3 ring-primary/20',
