@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Camera, Eye, EyeOff, Image, KeyRound, Save, Trash2, User as UserIcon } from 'lucide-react'
-import { Avatar, Badge, Button, Card, Input, Modal, Select, useToast } from '../../components/ui'
+import { Avatar, Badge, Button, Card, ImageCropModal, Input, Modal, Select, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { getUserDepartment } from '../../lib/userDepartment'
@@ -34,13 +34,19 @@ function AvatarUploadField({
   const [uploading, setUploading] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [viewing, setViewing] = useState(false)
+  const [cropFile, setCropFile] = useState<File | null>(null)
 
   if (!isSupabase) return <Avatar name={name} avatarUrl={avatarUrl} size={64} className="text-xl" />
 
-  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+  function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
+    setCropFile(file)
+  }
+
+  async function handleCropConfirm(file: File) {
+    setCropFile(null)
     setUploading(true)
     try {
       const url = await onUpload(file)
@@ -136,6 +142,15 @@ function AvatarUploadField({
       <Modal open={viewing} onClose={() => setViewing(false)} title="Foto de perfil">
         {avatarUrl && <img src={avatarUrl} alt={name} className="mx-auto max-h-[60vh] w-auto rounded-md object-contain" />}
       </Modal>
+
+      <ImageCropModal
+        file={cropFile}
+        open={!!cropFile}
+        onCancel={() => setCropFile(null)}
+        onConfirm={handleCropConfirm}
+        shape="circle"
+        title="Ajustar foto de perfil"
+      />
     </div>
   )
 }
