@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
-import { AlertTriangle, Bell, Building2, Camera, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { AlertTriangle, Bell, Building2, Camera, Image, LogOut, Save, Tags, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, ConfirmDialog, Input, Modal, Skeleton, Switch, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
@@ -34,6 +34,8 @@ function CompanyLogoField({
   const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [viewing, setViewing] = useState(false)
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -52,6 +54,7 @@ function CompanyLogoField({
   }
 
   async function handleRemove() {
+    setMenuOpen(false)
     setUploading(true)
     try {
       await removeCompanyLogo(companyId)
@@ -65,36 +68,78 @@ function CompanyLogoField({
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative">
-        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo da empresa" className="h-full w-full object-contain p-1.5" />
-          ) : (
-            <Building2 size={22} className="text-text-muted" />
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          aria-label="Alterar logo da empresa"
-          className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-card bg-primary text-white transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
-        >
-          <Camera size={12} />
-        </button>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    <div className="relative inline-block">
+      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo da empresa" className="h-full w-full object-contain p-1.5" />
+        ) : (
+          <Building2 size={22} className="text-text-muted" />
+        )}
       </div>
-      {logoUrl && (
-        <button
-          type="button"
-          onClick={handleRemove}
-          disabled={uploading}
-          className="text-xs font-medium text-text-muted transition-colors hover:text-error disabled:pointer-events-none disabled:opacity-60"
-        >
-          Remover logo
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setMenuOpen((v) => !v)}
+        disabled={uploading}
+        aria-label="Opções da logo da empresa"
+        className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-card bg-primary text-white transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
+      >
+        <Camera size={12} />
+      </button>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -8, transition: { duration: 0.12 } }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+              className="absolute left-0 top-full z-20 mt-2 w-44 rounded-lg border border-border bg-surface-card p-1.5 shadow-[var(--shadow-level-2)]"
+            >
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    setViewing(true)
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  <Image size={16} />
+                  Ver logo
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  inputRef.current?.click()
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+              >
+                <Camera size={16} />
+                {logoUrl ? 'Trocar logo' : 'Enviar logo'}
+              </button>
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-error hover:bg-error-bg"
+                >
+                  <Trash2 size={16} />
+                  Remover logo
+                </button>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <Modal open={viewing} onClose={() => setViewing(false)} title="Logo da empresa">
+        {logoUrl && <img src={logoUrl} alt="Logo da empresa" className="mx-auto max-h-[60vh] w-auto rounded-md object-contain" />}
+      </Modal>
     </div>
   )
 }
