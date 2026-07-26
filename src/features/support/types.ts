@@ -5,6 +5,7 @@ export interface SupportMessage {
   ticketId: string
   senderId: string | null
   senderName: string
+  senderAvatarUrl: string | null
   isOwner: boolean
   message: string
   createdAt: string

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { AnimatePresence, motion } from 'framer-motion'
 import { Send } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-import { Button } from '../../../components/ui'
+import { Avatar, Button } from '../../../components/ui'
 import { isSupabase } from '../../../lib/dataSource'
 import { supabase } from '../../../lib/supabaseClient'
 import { cn } from '../../../lib/cn'
@@ -15,10 +15,15 @@ interface TicketThreadProps {
   ticketId: string
   messages: SupportMessage[]
   viewerIsOwner: boolean
+  /** Show the peer's avatar next to each of their messages — worth it when the peer can be a
+   * different person from message to message (e.g. any of several support staff replying to a
+   * company user). When the peer is always the same one person (the ticket owner, as seen from
+   * the maintenance inbox), showing it once in the ticket header is enough — pass false here. */
+  showPeerAvatar?: boolean
   onSend: (message: string) => Promise<void>
 }
 
-export function TicketThread({ ticketId, messages, viewerIsOwner, onSend }: TicketThreadProps) {
+export function TicketThread({ ticketId, messages, viewerIsOwner, showPeerAvatar = true, onSend }: TicketThreadProps) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [peerTyping, setPeerTyping] = useState(false)
@@ -109,8 +114,9 @@ export function TicketThread({ ticketId, messages, viewerIsOwner, onSend }: Tick
                 initial={{ opacity: 0, y: 10, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-                className={cn('flex', own ? 'justify-end' : 'justify-start')}
+                className={cn('flex items-end gap-2', own ? 'justify-end' : 'justify-start')}
               >
+                {!own && showPeerAvatar && <Avatar name={m.senderName} avatarUrl={m.senderAvatarUrl} size={24} className="mb-0.5" />}
                 <div
                   className={cn(
                     'max-w-[80%] rounded-lg px-3 py-2 text-sm',
