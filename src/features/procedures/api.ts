@@ -20,7 +20,7 @@ let completions: ProcedureCompletion[] = structuredClone(initialCompletions)
 const VIDEO_BUCKET = 'procedure-videos'
 const SIGNED_URL_TTL = 60 * 60
 
-interface ProcedureRow {
+export interface ProcedureRow {
   id: string
   title: string
   department: string
@@ -38,6 +38,7 @@ interface ProcedureRow {
   completed: boolean
   completed_at: string | null
   completed_by: string | null
+  created_by: string | null
 }
 
 interface CompletionRow {
@@ -49,7 +50,7 @@ interface CompletionRow {
   completed_at: string
 }
 
-async function rowToProcedure(row: ProcedureRow): Promise<Procedure> {
+export async function rowToProcedure(row: ProcedureRow): Promise<Procedure> {
   let videoUrl: string | undefined
   if (row.video_path) {
     const { data } = await supabase!.storage.from(VIDEO_BUCKET).createSignedUrl(row.video_path, SIGNED_URL_TTL)
@@ -73,6 +74,7 @@ async function rowToProcedure(row: ProcedureRow): Promise<Procedure> {
     completed: row.completed,
     completedAt: row.completed_at ?? undefined,
     completedBy: row.completed_by ?? undefined,
+    createdBy: row.created_by ?? undefined,
   }
 }
 

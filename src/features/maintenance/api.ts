@@ -45,11 +45,20 @@ export interface MaintenanceAccount {
   createdAt: string
 }
 
-interface MaintenanceAccountRow {
+export interface MaintenanceAccountRow {
   id: string
   email: string
   added_by: string | null
   created_at: string
+}
+
+export function rowToMaintenanceAccount(row: MaintenanceAccountRow): MaintenanceAccount {
+  return {
+    id: row.id,
+    email: row.email,
+    addedBy: row.added_by,
+    createdAt: row.created_at,
+  }
 }
 
 export async function listCompanies(): Promise<MaintenanceCompany[]> {
@@ -93,12 +102,7 @@ export async function deleteCompanyAsMaintenance(companyId: string): Promise<voi
 export async function listMaintenanceAccounts(): Promise<MaintenanceAccount[]> {
   const { data, error } = await supabase!.from('maintenance_accounts').select('*').order('created_at')
   if (error || !data) throw new Error('Não foi possível carregar as contas de manutenção.')
-  return (data as MaintenanceAccountRow[]).map((row) => ({
-    id: row.id,
-    email: row.email,
-    addedBy: row.added_by,
-    createdAt: row.created_at,
-  }))
+  return (data as MaintenanceAccountRow[]).map(rowToMaintenanceAccount)
 }
 
 /** Creates a brand new, empty company and returns an admin invite code for it — the client's

@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { cn } from '../../lib/cn'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
-import { deleteTicket, listAllTickets, rowToMessage, rowToTicket, sendMessage, setTicketStatus, type MessageRow, type TicketRow } from './api'
+import { deleteTicket, fetchTicket, listAllTickets, rowToMessage, rowToTicket, sendMessage, setTicketStatus, type MessageRow, type TicketRow } from './api'
 import { TicketThread } from './components/TicketThread'
 import type { SupportTicket, SupportTicketStatus } from './types'
 
@@ -71,7 +71,17 @@ export function SupportAdminInbox() {
           setTickets((prev) => prev.filter((t) => t.id !== row.id))
           return
         }
-        setTickets((prev) => prev.map((t) => (t.id === row.id ? { ...t, status: row.status, title: row.title } : t)))
+        setTickets((prev) => {
+          if (!prev.some((t) => t.id === row.id)) {
+            // was previously removed from this list (e.g. hidden, then reopened by a reply) —
+            // fetch it back with its full message history instead of trying to patch a row we don't have
+            fetchTicket(row.id).then((t) => {
+              if (t) setTickets((cur) => (cur.some((x) => x.id === t.id) ? cur : [t, ...cur]))
+            })
+            return prev
+          }
+          return prev.map((t) => (t.id === row.id ? { ...t, status: row.status, title: row.title } : t))
+        })
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_tickets' }, (payload) => {
         const oldId = (payload.old as { id: string }).id

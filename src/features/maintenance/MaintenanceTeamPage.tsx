@@ -4,9 +4,17 @@ import { Navigate } from 'react-router-dom'
 import { Button, Card, Skeleton, useToast } from '../../components/ui'
 import { KeyRound, Trash2, Wrench } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
+import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../auth/AuthContext'
 import { InviteCodeModal } from '../users/components/InviteCodeModal'
-import { generateMaintenanceInviteCode, listMaintenanceAccounts, removeMaintenanceAccount, type MaintenanceAccount } from './api'
+import {
+  generateMaintenanceInviteCode,
+  listMaintenanceAccounts,
+  removeMaintenanceAccount,
+  rowToMaintenanceAccount,
+  type MaintenanceAccount,
+  type MaintenanceAccountRow,
+} from './api'
 
 export function MaintenanceTeamPage() {
   const { isMaintenanceAccount, maintenanceChecked } = useAuth()
@@ -23,6 +31,24 @@ export function MaintenanceTeamPage() {
       setAccounts(data)
       setLoading(false)
     })
+  }, [isMaintenanceAccount])
+
+  useEffect(() => {
+    if (!isMaintenanceAccount) return
+    const channel = supabase!
+      .channel('maintenance-team-list')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'maintenance_accounts' }, (payload) => {
+        const row = payload.new as MaintenanceAccountRow
+        setAccounts((prev) => (prev.some((a) => a.id === row.id) ? prev : [...prev, rowToMaintenanceAccount(row)]))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'maintenance_accounts' }, (payload) => {
+        const oldId = (payload.old as { id: string }).id
+        setAccounts((prev) => prev.filter((a) => a.id !== oldId))
+      })
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
   }, [isMaintenanceAccount])
 
   // wait for the async maintenance check before deciding to bounce someone away — otherwise a
