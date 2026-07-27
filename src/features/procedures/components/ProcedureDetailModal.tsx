@@ -8,6 +8,7 @@ import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
 import type { Procedure } from '../../../mocks/procedures'
 import { useAuth } from '../../auth/AuthContext'
 import { deleteAttachment, listAttachments, uploadAttachment, type ProcedureAttachment } from '../api'
+import { canManageProcedure } from '../permissions'
 
 type FileKind = 'video' | 'image' | 'pdf' | 'other'
 
@@ -83,6 +84,7 @@ export function ProcedureDetailModal({
   }
 
   if (!procedure) return null
+  const canManage = canManageProcedure(procedure, user)
   const total = procedure.steps.length
   const done = procedure.completedStepIds.length
   const progress = total > 0 ? Math.round((done / total) * 100) : 0
@@ -246,32 +248,41 @@ export function ProcedureDetailModal({
               >
                 {attachment.name}
               </a>
-              <button
-                type="button"
-                onClick={() => handleAttachmentDelete(attachment)}
-                aria-label={`Remover ${attachment.name}`}
-                className="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-error"
-              >
-                <Trash2 size={14} />
-              </button>
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => handleAttachmentDelete(attachment)}
+                  aria-label={`Remover ${attachment.name}`}
+                  className="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-hover hover:text-error"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           ))}
-          <input
-            ref={attachmentInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => handleAttachmentPick(e.target.files)}
-          />
-          <button
-            type="button"
-            onClick={() => attachmentInputRef.current?.click()}
-            disabled={uploadingAttachment}
-            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-strong bg-surface py-2 text-xs font-medium text-text-muted transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
-          >
-            <FileUp size={14} />
-            {uploadingAttachment ? 'Enviando...' : 'Adicionar arquivo'}
-          </button>
+          {canManage && (
+            <>
+              <input
+                ref={attachmentInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => handleAttachmentPick(e.target.files)}
+              />
+              <button
+                type="button"
+                onClick={() => attachmentInputRef.current?.click()}
+                disabled={uploadingAttachment}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-strong bg-surface py-2 text-xs font-medium text-text-muted transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+              >
+                <FileUp size={14} />
+                {uploadingAttachment ? 'Enviando...' : 'Adicionar arquivo'}
+              </button>
+            </>
+          )}
+          {attachments.length === 0 && !canManage && (
+            <p className="text-xs text-text-muted">Nenhum anexo.</p>
+          )}
         </div>
       </div>
 
@@ -325,16 +336,18 @@ export function ProcedureDetailModal({
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => onEdit(procedure)}>
-              <Pencil size={16} />
-              Editar
-            </Button>
-            <Button variant="destructive" onClick={() => onDelete(procedure)}>
-              <Trash2 size={16} />
-              Excluir procedimento
-            </Button>
-          </div>
+          {canManage && (
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => onEdit(procedure)}>
+                <Pencil size={16} />
+                Editar
+              </Button>
+              <Button variant="destructive" onClick={() => onDelete(procedure)}>
+                <Trash2 size={16} />
+                Excluir procedimento
+              </Button>
+            </div>
+          )}
         </div>
         {!procedure.completed && !canComplete && (
           <p className="mt-1.5 text-xs text-text-muted">

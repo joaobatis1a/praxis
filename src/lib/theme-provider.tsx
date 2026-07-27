@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -58,6 +58,7 @@ function getInitialTheme(): Theme {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+  const activeTransitionRef = useRef<ReturnType<typeof document.startViewTransition> | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -75,8 +76,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    activeTransitionRef.current?.skipTransition()
+
     const transition = document.startViewTransition(() => {
       setThemeState(next)
+    })
+    activeTransitionRef.current = transition
+    transition.finished.finally(() => {
+      if (activeTransitionRef.current === transition) activeTransitionRef.current = null
     })
 
     // light -> dark: dark falls like a curtain, top to bottom.

@@ -19,6 +19,7 @@ export interface Procedure {
   estimatedMinutes: number
   updatedAt: string
   author: string
+  createdBy?: string
   steps: ProcedureStep[]
   completedStepIds: string[]
   videoUrl?: string

@@ -132,6 +132,16 @@ export async function listMyTickets(userId: string): Promise<SupportTicket[]> {
   return mockSupportTickets.filter((t) => t.userId === userId)
 }
 
+/** Refetches a single ticket with its messages — used to bring a ticket back into the admin
+ * inbox's local state after it reappears live (e.g. hidden, then reopened by the other side
+ * replying), since the realtime UPDATE payload alone carries no message history. */
+export async function fetchTicket(ticketId: string): Promise<SupportTicket | null> {
+  const { data, error } = await supabase!.from('support_tickets').select('*').eq('id', ticketId).single()
+  if (error || !data) return null
+  const [ticket] = await attachMessages([data as TicketRow])
+  return ticket ?? null
+}
+
 export async function listAllTickets(): Promise<SupportTicket[]> {
   if (isSupabase) {
     const { data, error } = await supabase!

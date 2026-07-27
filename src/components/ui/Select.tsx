@@ -1,9 +1,22 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, type Variants } from 'framer-motion'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '../../lib/cn'
-import { staggerContainer, staggerItem } from '../../lib/motionVariants'
+
+// A lighter, dropdown-scoped entrance than the shared grid staggerContainer/staggerItem
+// (src/lib/motionVariants.ts) — that pair moves each item in from y:24/scale:0.94 with a
+// bouncy spring, which is right for a page of cards but reads as a misaligned/glitchy
+// dropdown when applied to a small 2-3 item option list: each row visibly slides up and
+// overshoots into place right after opening. Options just fade in, in place, instead.
+const optionListVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.025 } },
+}
+const optionItemVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.1 } },
+}
 
 export interface SelectOption {
   value: string
@@ -155,7 +168,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
             <motion.ul
               ref={listRef}
               role="listbox"
-              variants={staggerContainer}
+              variants={optionListVariants}
               initial="hidden"
               animate="show"
               exit={{ opacity: 0, scale: 0.95, y: -6, transition: { duration: 0.12 } }}
@@ -172,7 +185,7 @@ export function Select({ value, onChange, options, className, triggerClassName, 
               {options.map((option) => {
                 const isSelected = option.value === value
                 return (
-                  <motion.li key={option.value} variants={staggerItem} role="option" aria-selected={isSelected}>
+                  <motion.li key={option.value} variants={optionItemVariants} role="option" aria-selected={isSelected}>
                     <button
                       type="button"
                       onClick={() => {

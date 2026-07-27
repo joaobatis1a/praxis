@@ -215,6 +215,13 @@ export function LoginPage() {
                   <p className="mt-2 text-xs text-white/40">Senha para todas: senha123</p>
                 </div>
               )}
+
+              <p className="mt-6 text-center text-sm text-white/50">
+                Não tem conta?{' '}
+                <Link to="/signup" className="font-medium text-[#6d94fa] hover:underline">
+                  Crie aqui
+                </Link>
+              </p>
             </>
           )}
 

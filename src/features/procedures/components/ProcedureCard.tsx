@@ -5,12 +5,13 @@ import type { Procedure } from '../../../mocks/procedures'
 
 interface ProcedureCardProps {
   procedure: Procedure
+  canManage: boolean
   onOpen: () => void
   onEdit: () => void
   onDelete: () => void
 }
 
-export function ProcedureCard({ procedure, onOpen, onEdit, onDelete }: ProcedureCardProps) {
+export function ProcedureCard({ procedure, canManage, onOpen, onEdit, onDelete }: ProcedureCardProps) {
   const total = procedure.steps.length
   const done = procedure.completedStepIds.length
   const progress = total > 0 ? Math.round((done / total) * 100) : 0
@@ -32,24 +33,26 @@ export function ProcedureCard({ procedure, onOpen, onEdit, onDelete }: Procedure
         >
           {isCompleted ? <Award size={20} /> : <ClipboardList size={20} />}
         </div>
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label={`Editar ${procedure.title}`}
-            className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-surface-hover hover:text-primary hover:opacity-100 group-hover:opacity-100"
-          >
-            <Pencil size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={`Excluir ${procedure.title}`}
-            className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-error-bg hover:text-error hover:opacity-100 group-hover:opacity-100"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
+        {canManage && (
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label={`Editar ${procedure.title}`}
+              className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-surface-hover hover:text-primary hover:opacity-100 group-hover:opacity-100"
+            >
+              <Pencil size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label={`Excluir ${procedure.title}`}
+              className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-error-bg hover:text-error hover:opacity-100 group-hover:opacity-100"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       <button type="button" onClick={onOpen} className="mt-3 text-left">

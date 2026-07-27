@@ -3,13 +3,26 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Search } from 'lucide-react'
 import type { Procedure } from '../../mocks/procedures'
 import { Button, ConfirmDialog, Select, Skeleton, useToast } from '../../components/ui'
+import { isSupabase } from '../../lib/dataSource'
+import { supabase } from '../../lib/supabaseClient'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
 import { useAuth } from '../auth/AuthContext'
 import { listDepartments } from '../departments/api'
-import { completeProcedure, createProcedure, deleteProcedure, listProcedures, toggleStep, toggleVideoWatched, updateProcedure } from './api'
+import {
+  completeProcedure,
+  createProcedure,
+  deleteProcedure,
+  listProcedures,
+  rowToProcedure,
+  toggleStep,
+  toggleVideoWatched,
+  updateProcedure,
+  type ProcedureRow,
+} from './api'
 import { ProcedureCard } from './components/ProcedureCard'
 import { ProcedureDetailModal } from './components/ProcedureDetailModal'
 import { ProcedureFormModal, type ProcedureFormValues } from './components/ProcedureFormModal'
+import { canManageProcedure } from './permissions'
 
 type FormState = { mode: 'create' } | { mode: 'edit'; procedure: Procedure } | null
 
@@ -41,6 +54,36 @@ export function ProceduresPage() {
     listDepartments().then((data) => {
       setDepartmentOptions([{ value: 'all', label: 'Todos os departamentos' }, ...data.map((d) => ({ value: d, label: d }))])
     })
+  }, [])
+
+  useEffect(() => {
+    if (!isSupabase) return
+    const channel = supabase!
+      .channel('procedures-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'procedures' }, (payload) => {
+        rowToProcedure(payload.new as ProcedureRow).then((procedure) => {
+          setProcedures((prev) => (prev.some((p) => p.id === procedure.id) ? prev : [procedure, ...prev]))
+        })
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'procedures' }, (payload) => {
+        rowToProcedure(payload.new as ProcedureRow).then((procedure) => {
+          setProcedures((prev) =>
+            prev.some((p) => p.id === procedure.id)
+              ? prev.map((p) => (p.id === procedure.id ? procedure : p))
+              : [procedure, ...prev],
+          )
+          setOpenProcedure((prev) => (prev && prev.id === procedure.id ? procedure : prev))
+        })
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'procedures' }, (payload) => {
+        const oldId = (payload.old as { id: string }).id
+        setProcedures((prev) => prev.filter((p) => p.id !== oldId))
+        setOpenProcedure((prev) => (prev && prev.id === oldId ? null : prev))
+      })
+      .subscribe()
+    return () => {
+      supabase!.removeChannel(channel)
+    }
   }, [])
 
   const visibleProcedures = useMemo(() => {
@@ -174,6 +217,7 @@ export function ProceduresPage() {
                 <motion.div key={procedure.id} variants={staggerItem} exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.15 } }} layout>
                   <ProcedureCard
                     procedure={procedure}
+                    canManage={canManageProcedure(procedure, user)}
                     onOpen={() => setOpenProcedure(procedure)}
                     onEdit={() => setFormState({ mode: 'edit', procedure })}
                     onDelete={() => setDeleting(procedure)}
