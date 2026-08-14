@@ -8,17 +8,8 @@ import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
 import type { Procedure } from '../../../mocks/procedures'
 import { useAuth } from '../../auth/AuthContext'
 import { deleteAttachment, listAttachments, uploadAttachment, type ProcedureAttachment } from '../api'
+import { inferFileKind } from '../fileKind'
 import { canManageProcedure } from '../permissions'
-
-type FileKind = 'video' | 'image' | 'pdf' | 'other'
-
-function inferFileKind(name: string | undefined): FileKind {
-  const ext = name?.split('.').pop()?.toLowerCase() ?? ''
-  if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) return 'video'
-  if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) return 'image'
-  if (ext === 'pdf') return 'pdf'
-  return 'other'
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
