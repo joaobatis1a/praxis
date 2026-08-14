@@ -1,7 +1,8 @@
-import { Award, ClipboardList, Clock, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
+import { Award, ClipboardList, Clock, FileText, Image, Pencil, Trash2, UserCheck, Video } from 'lucide-react'
 import { Badge, Card, ProgressBar } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import type { Procedure } from '../../../mocks/procedures'
+import { inferFileKind } from '../fileKind'
 
 interface ProcedureCardProps {
   procedure: Procedure
@@ -16,6 +17,9 @@ export function ProcedureCard({ procedure, canManage, onOpen, onEdit, onDelete }
   const done = procedure.completedStepIds.length
   const progress = total > 0 ? Math.round((done / total) * 100) : 0
   const isCompleted = procedure.completed
+  const fileKind = procedure.videoUrl ? inferFileKind(procedure.videoName) : null
+  const fileLabel = fileKind === 'video' ? 'Vídeo' : fileKind === 'image' ? 'Imagem' : fileKind === 'pdf' ? 'PDF' : 'Arquivo'
+  const FileIcon = fileKind === 'video' ? Video : fileKind === 'image' ? Image : FileText
 
   return (
     <Card
@@ -66,10 +70,10 @@ export function ProcedureCard({ procedure, canManage, onOpen, onEdit, onDelete }
         <Badge variant={procedure.status === 'publicado' ? 'success' : 'warning'}>
           {procedure.status === 'publicado' ? 'Publicado' : 'Rascunho'}
         </Badge>
-        {procedure.videoUrl && (
+        {fileKind && (
           <Badge variant="primary">
-            <Video size={11} />
-            Vídeo
+            <FileIcon size={11} />
+            {fileLabel}
           </Badge>
         )}
         {isCompleted && (

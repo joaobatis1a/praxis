@@ -124,7 +124,12 @@ export function ProceduresPage() {
         toast(`${updated.title} foi atualizado.`)
       } else {
         const newProcedure = await createProcedure({ ...values, author: user?.name ?? 'Você' })
-        setProcedures((prev) => [newProcedure, ...prev])
+        // dedupe against the realtime subscription below: creating with an attached file does an
+        // INSERT then an UPDATE server-side, and the UPDATE's realtime event can arrive before this
+        // optimistic add runs, already having inserted the row — without this check it doubles up.
+        setProcedures((prev) =>
+          prev.some((p) => p.id === newProcedure.id) ? prev.map((p) => (p.id === newProcedure.id ? newProcedure : p)) : [newProcedure, ...prev],
+        )
         toast(`${newProcedure.title} foi criado.`)
       }
     } catch (err) {
