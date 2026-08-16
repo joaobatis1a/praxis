@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { FileText, FileSpreadsheet, FileImage, Video, Star, History, Trash2, Pencil } from 'lucide-react'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
+import { formatLocalDate } from '../../../lib/formatDate'
 import type { DocType, LibraryDocument } from '../../../mocks/library'
 
 const typeConfig: Record<DocType, { icon: typeof FileText; color: string }> = {
@@ -13,7 +14,7 @@ const typeConfig: Record<DocType, { icon: typeof FileText; color: string }> = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return formatLocalDate(iso, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 interface DocumentCardProps {

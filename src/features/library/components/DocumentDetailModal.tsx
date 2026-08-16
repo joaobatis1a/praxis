@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Clock, ExternalLink, FileText, FileSpreadsheet, FileImage, Maximize2, Video, Star, Trash2, Pencil, X } from 'lucide-react'
 import { Badge, Button, Modal } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
+import { formatLocalDate } from '../../../lib/formatDate'
 import type { DocType, LibraryDocument } from '../../../mocks/library'
 
 const typeConfig: Record<DocType, { icon: typeof FileText; color: string; label: string }> = {
@@ -15,7 +16,7 @@ const typeConfig: Record<DocType, { icon: typeof FileText; color: string; label:
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+  return formatLocalDate(iso, { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 export function DocumentDetailModal({
