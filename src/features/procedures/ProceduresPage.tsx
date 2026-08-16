@@ -140,18 +140,26 @@ export function ProceduresPage() {
 
   async function handleDelete() {
     if (!deleting) return
-    await deleteProcedure(deleting.id)
-    setProcedures((prev) => prev.filter((p) => p.id !== deleting.id))
-    setOpenProcedure(null)
-    toast(`${deleting.title} foi excluído.`, 'error')
+    try {
+      await deleteProcedure(deleting.id)
+      setProcedures((prev) => prev.filter((p) => p.id !== deleting.id))
+      setOpenProcedure(null)
+      toast(`${deleting.title} foi excluído.`, 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível excluir o procedimento.', 'error')
+    }
   }
 
   async function handleComplete() {
     if (!completing || !user) return
-    const { procedure: updated } = await completeProcedure(completing.id, user.id, user.name)
-    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-    setOpenProcedure(null)
-    toast(`${completing.title} foi concluído! Isso já apareceu no dashboard.`)
+    try {
+      const { procedure: updated } = await completeProcedure(completing.id, user.id, user.name)
+      setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      setOpenProcedure(null)
+      toast(`${completing.title} foi concluído! Isso já apareceu no dashboard.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível concluir o procedimento.', 'error')
+    }
   }
 
   const editingInitialData: ProcedureFormValues | undefined =

@@ -279,6 +279,19 @@ export async function deleteFolder(id: string): Promise<{ tree: FolderNode[]; do
   return delay({ tree, docs })
 }
 
+async function assertUniqueTitle(title: string, excludeId?: string) {
+  const normalized = title.trim()
+  if (isSupabase) {
+    const { data, error } = await supabase!.from('library_documents').select('id, title').ilike('title', normalized)
+    if (error) return
+    const clash = (data as { id: string; title: string }[]).find((d) => d.id !== excludeId && d.title.trim().toLowerCase() === normalized.toLowerCase())
+    if (clash) throw new Error('Já existe um documento com esse título.')
+    return
+  }
+  const clash = docs.find((d) => d.id !== excludeId && d.title.trim().toLowerCase() === normalized.toLowerCase())
+  if (clash) throw new Error('Já existe um documento com esse título.')
+}
+
 export interface CreateDocumentInput {
   title: string
   type: DocType
@@ -290,6 +303,7 @@ export interface CreateDocumentInput {
 }
 
 export async function createDocument(input: CreateDocumentInput): Promise<LibraryDocument> {
+  await assertUniqueTitle(input.title)
   if (isSupabase) {
     const { data: doc, error } = await supabase!
       .from('library_documents')
@@ -355,6 +369,7 @@ export interface UpdateDocumentInput {
 }
 
 export async function updateDocument(id: string, input: UpdateDocumentInput): Promise<LibraryDocument> {
+  await assertUniqueTitle(input.title, id)
   if (isSupabase) {
     const { data: current, error: fetchError } = await supabase!.from('library_documents').select('file_path').eq('id', id).single()
     if (fetchError || !current) throw new Error('Documento não encontrado.')
