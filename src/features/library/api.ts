@@ -403,3 +403,13 @@ export async function updateDocument(id: string, input: UpdateDocumentInput): Pr
   docs = docs.map((d) => (d.id === id ? { ...d, title: input.title, type: input.type, externalLinks: input.externalLinks } : d))
   return delay(docs.find((d) => d.id === id)!)
 }
+
+export async function moveDocument(id: string, folderId: string | null): Promise<LibraryDocument> {
+  if (isSupabase) {
+    const { error } = await supabase!.from('library_documents').update({ folder_id: folderId }).eq('id', id)
+    if (error) throw new Error('Não foi possível mover o documento.')
+    return fetchDocumentById(id)
+  }
+  docs = docs.map((d) => (d.id === id ? { ...d, folderId: folderId ?? undefined } : d))
+  return delay(docs.find((d) => d.id === id)!)
+}

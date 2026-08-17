@@ -9,6 +9,7 @@ export function DocumentGridSection({
   onOpen,
   onToggleFavorite,
   onEdit,
+  onMove,
   onDelete,
 }: {
   title: string
@@ -16,6 +17,7 @@ export function DocumentGridSection({
   onOpen: (doc: LibraryDocument) => void
   onToggleFavorite: (id: string) => void
   onEdit: (doc: LibraryDocument) => void
+  onMove: (doc: LibraryDocument) => void
   onDelete: (doc: LibraryDocument) => void
 }) {
   if (documents.length === 0) return null
@@ -36,6 +38,7 @@ export function DocumentGridSection({
               onOpen={() => onOpen(doc)}
               onToggleFavorite={() => onToggleFavorite(doc.id)}
               onEdit={() => onEdit(doc)}
+              onMove={() => onMove(doc)}
               onDelete={() => onDelete(doc)}
             />
           </motion.div>

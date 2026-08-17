@@ -16,6 +16,7 @@ import {
   getFolderPath,
   getFolderTree,
   listDocuments,
+  moveDocument,
   renameFolder,
   toggleFavorite,
   updateDocument,
@@ -27,6 +28,7 @@ import { DocumentCard } from './components/DocumentCard'
 import { DocumentGridSection } from './components/DocumentGridSection'
 import { DocumentDetailModal } from './components/DocumentDetailModal'
 import { DocumentFormModal, inferTypeFromFilename, stripExtension, type DocumentFormValues } from './components/DocumentFormModal'
+import { MoveDocumentModal } from './components/MoveDocumentModal'
 
 type DocFormState = { mode: 'create' } | { mode: 'edit'; doc: LibraryDocument } | null
 
@@ -42,6 +44,7 @@ export function LibraryPage() {
   const [folderFormOpen, setFolderFormOpen] = useState(false)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const [deletingDoc, setDeletingDoc] = useState<LibraryDocument | null>(null)
+  const [movingDoc, setMovingDoc] = useState<LibraryDocument | null>(null)
   const [deletingFolder, setDeletingFolder] = useState<{ id: string; name: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -117,6 +120,19 @@ export function LibraryPage() {
     setDocs((prev) => prev.filter((d) => d.id !== deletingDoc.id))
     setOpenDoc(null)
     toast(`${deletingDoc.title} foi excluído.`, 'error')
+  }
+
+  async function handleMoveDocument(folderId: string | null) {
+    if (!movingDoc) return
+    try {
+      const updated = await moveDocument(movingDoc.id, folderId)
+      setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+      setOpenDoc((prev) => (prev && prev.id === updated.id ? updated : prev))
+      setMovingDoc(null)
+      toast(folderId ? `${updated.title} foi movido.` : `${updated.title} foi movido para a raiz da biblioteca.`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível mover o documento.', 'error')
+    }
   }
 
   async function handleFolderFormSubmit(name: string) {
@@ -251,6 +267,7 @@ export function LibraryPage() {
               onOpen={setOpenDoc}
               onToggleFavorite={handleToggleFavorite}
               onEdit={(doc) => setDocForm({ mode: 'edit', doc })}
+              onMove={setMovingDoc}
               onDelete={setDeletingDoc}
             />
             <DocumentGridSection
@@ -259,6 +276,7 @@ export function LibraryPage() {
               onOpen={setOpenDoc}
               onToggleFavorite={handleToggleFavorite}
               onEdit={(doc) => setDocForm({ mode: 'edit', doc })}
+              onMove={setMovingDoc}
               onDelete={setDeletingDoc}
             />
           </div>
@@ -302,6 +320,7 @@ export function LibraryPage() {
                       onOpen={() => setOpenDoc(doc)}
                       onToggleFavorite={() => handleToggleFavorite(doc.id)}
                       onEdit={() => setDocForm({ mode: 'edit', doc })}
+                      onMove={() => setMovingDoc(doc)}
                       onDelete={() => setDeletingDoc(doc)}
                     />
                   </motion.div>
@@ -344,6 +363,8 @@ export function LibraryPage() {
         onSubmit={handleFolderFormSubmit}
         locationLabel={locationLabel}
       />
+
+      <MoveDocumentModal document={movingDoc} tree={tree} onClose={() => setMovingDoc(null)} onMove={handleMoveDocument} />
 
       <ConfirmDialog
         open={!!deletingDoc}
