@@ -318,13 +318,15 @@ export async function createDocument(input: CreateDocumentInput): Promise<Librar
       .single()
     if (error || !doc) throw new Error('Não foi possível criar o documento.')
     const row = doc as DocumentRow
+    // the document row already exists at this point — a failure past here must not throw and
+    // hide it from the caller, or it's silently orphaned from the UI until a full reload
     const { error: versionError } = await supabase!.from('library_document_versions').insert({
       document_id: row.id,
       version: 'v1',
       author: input.author,
       note: 'Documento criado.',
     })
-    if (versionError) throw new Error('Não foi possível registrar a versão inicial.')
+    if (versionError) console.error('Não foi possível registrar a versão inicial do documento:', versionError)
     if (input.file && UPLOADABLE_TYPES.includes(input.type)) {
       const { path, name } = await uploadFile(row.id, input.file)
       const { error: fileError } = await supabase!.from('library_documents').update({ file_path: path, file_name: name }).eq('id', row.id)
