@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { FileText, FileSpreadsheet, FileImage, Video, Star, History, Trash2, Pencil } from 'lucide-react'
+import { FileText, FileSpreadsheet, FileImage, Video, Star, History, Trash2, Pencil, FolderInput } from 'lucide-react'
 import { Card } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
 import { formatLocalDate } from '../../../lib/formatDate'
@@ -22,10 +22,11 @@ interface DocumentCardProps {
   onOpen: () => void
   onToggleFavorite: () => void
   onEdit: () => void
+  onMove: () => void
   onDelete: () => void
 }
 
-export function DocumentCard({ document, onOpen, onToggleFavorite, onEdit, onDelete }: DocumentCardProps) {
+export function DocumentCard({ document, onOpen, onToggleFavorite, onEdit, onMove, onDelete }: DocumentCardProps) {
   const { icon: Icon, color } = typeConfig[document.type]
   const latestVersion = document.history[0]?.version ?? 'v1'
 
@@ -65,6 +66,14 @@ export function DocumentCard({ document, onOpen, onToggleFavorite, onEdit, onDel
             className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-surface-hover hover:text-primary hover:opacity-100 group-hover:opacity-100"
           >
             <Pencil size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onMove}
+            aria-label={`Mover ${document.title}`}
+            className="rounded-md p-1.5 text-text-muted opacity-50 transition-all hover:bg-surface-hover hover:text-primary hover:opacity-100 group-hover:opacity-100"
+          >
+            <FolderInput size={16} />
           </button>
           <button
             type="button"
