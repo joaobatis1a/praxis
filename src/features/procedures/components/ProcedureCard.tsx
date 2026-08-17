@@ -85,11 +85,11 @@ export function ProcedureCard({ procedure, canManage, onOpen, onEdit, onDelete }
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-xs text-text-muted">
-        <span className="flex items-center gap-1">
-          <UserCheck size={12} />
-          {procedure.responsible}
+        <span className="flex min-w-0 items-center gap-1">
+          <UserCheck size={12} className="shrink-0" />
+          <span className="min-w-0 truncate">{procedure.responsible}</span>
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex shrink-0 items-center gap-1">
           <Clock size={12} />
           {procedure.estimatedMinutes} min
         </span>
