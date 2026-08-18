@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Award, CheckCircle2, ClipboardList, Clock, Download, ExternalLink, FileUp, Maximize2, Paperclip, Pencil, Trash2, UserCheck, Video, X } from 'lucide-react'
 import { Badge, Button, Checkbox, Modal, ProgressBar, useToast } from '../../../components/ui'
 import { cn } from '../../../lib/cn'
+import { formatLocalDate } from '../../../lib/formatDate'
 import { staggerContainer, staggerItem } from '../../../lib/motionVariants'
 import type { Procedure } from '../../../mocks/procedures'
 import { useAuth } from '../../auth/AuthContext'
@@ -13,6 +14,12 @@ import { canManageProcedure } from '../permissions'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
+// procedure.updatedAt is a plain `date` (YYYY-MM-DD) column, unlike completedAt (timestamptz) — needs
+// the UTC-safe formatter, see formatLocalDate's doc comment.
+function formatUpdatedDate(date: string) {
+  return formatLocalDate(date, { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 export function ProcedureDetailModal({
@@ -110,7 +117,7 @@ export function ProcedureDetailModal({
           <Clock size={14} />
           ~{procedure.estimatedMinutes} min
         </span>
-        <span>Atualizado em {formatDate(procedure.updatedAt)}</span>
+        <span>Atualizado em {formatUpdatedDate(procedure.updatedAt)}</span>
       </div>
 
       {procedure.completed && (
