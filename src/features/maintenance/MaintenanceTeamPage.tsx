@@ -114,9 +114,9 @@ export function MaintenanceTeamPage() {
                 <div className="divide-y divide-border">
                   {accounts.map((account) => (
                     <div key={account.id} className="flex items-center justify-between gap-4 py-3">
-                      <div>
-                        <p className="text-sm font-medium text-text-primary">{account.email}</p>
-                        <p className="text-xs text-text-muted">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-text-primary">{account.email}</p>
+                        <p className="truncate text-xs text-text-muted">
                           Adicionado em {new Date(account.createdAt).toLocaleDateString('pt-BR')}
                           {account.addedBy ? ` por ${account.addedBy}` : ''}
                         </p>
