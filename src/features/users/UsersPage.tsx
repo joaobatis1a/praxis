@@ -60,7 +60,9 @@ export function UsersPage() {
   const [progressMember, setProgressMember] = useState<TeamMember | null>(null)
   const [procedures, setProcedures] = useState<Procedure[]>([])
   const [completions, setCompletions] = useState<ProcedureCompletion[]>([])
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [generatedInvite, setGeneratedInvite] = useState<{ code: string; expiresAt: string; role: Role; department: string } | null>(
+    null,
+  )
   const [departments, setDepartments] = useState<string[]>([])
 
   useEffect(() => {
@@ -85,8 +87,8 @@ export function UsersPage() {
   async function handleCreate(input: CreateUserInput) {
     try {
       if (isSupabase) {
-        const code = await generateInviteCode({ role: input.role, department: input.department })
-        setGeneratedCode(code)
+        const { code, expiresAt } = await generateInviteCode({ role: input.role, department: input.department })
+        setGeneratedInvite({ code, expiresAt, role: input.role, department: input.department })
         return
       }
       const newUser = await createUser(input)
@@ -95,6 +97,18 @@ export function UsersPage() {
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível criar o usuário.', 'error')
       throw err
+    }
+  }
+
+  // InviteCodeModal's countdown calls this once the shown code expires — same role/department,
+  // just a fresh code and expiry, so an invite panel left open keeps showing something valid.
+  async function handleRefreshInvite() {
+    if (!generatedInvite) return
+    try {
+      const { code, expiresAt } = await generateInviteCode({ role: generatedInvite.role, department: generatedInvite.department })
+      setGeneratedInvite({ ...generatedInvite, code, expiresAt })
+    } catch {
+      // best-effort — worst case the modal is left showing a dead code until closed and reopened
     }
   }
 
@@ -356,7 +370,12 @@ export function UsersPage() {
         onClose={() => setProgressMember(null)}
       />
 
-      <InviteCodeModal code={generatedCode} onClose={() => setGeneratedCode(null)} />
+      <InviteCodeModal
+        code={generatedInvite?.code ?? null}
+        expiresAt={generatedInvite?.expiresAt}
+        onExpire={handleRefreshInvite}
+        onClose={() => setGeneratedInvite(null)}
+      />
     </div>
   )
 }
