@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { getUserDepartment } from '../../lib/userDepartment'
 import type { Role } from '../auth/types'
 import { useAuth } from '../auth/AuthContext'
+import { isPasswordValid, PasswordRequirements } from '../auth/components/PasswordRequirements'
 import { listDepartments } from '../departments/api'
 import { listCompletions } from '../procedures/api'
 import { getCompany, removeAvatar, removeNoCompanyAvatar, updateProfile, uploadAvatar, uploadNoCompanyAvatar } from './api'
@@ -174,8 +175,8 @@ function PasswordCard() {
       toast('Informe sua senha atual.', 'error')
       return
     }
-    if (password.length < 6) {
-      toast('A senha precisa ter pelo menos 6 caracteres.', 'error')
+    if (!isPasswordValid(password)) {
+      toast('A senha não atende aos requisitos mínimos.', 'error')
       return
     }
     if (password !== confirmPassword) {
@@ -229,27 +230,30 @@ function PasswordCard() {
             }
           />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Nova senha"
-              type={showPassword ? 'text' : 'password'}
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              endAdornment={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="rounded-sm p-1.5 text-text-muted hover:text-text-primary"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              }
-            />
+            <div className="flex flex-col gap-1.5">
+              <Input
+                label="Nova senha"
+                type={showPassword ? 'text' : 'password'}
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                endAdornment={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    className="rounded-sm p-1.5 text-text-muted hover:text-text-primary"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
+              />
+              <PasswordRequirements password={password} />
+            </div>
             <Input
               label="Confirmar nova senha"
               type={showPassword ? 'text' : 'password'}
-              minLength={6}
+              minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               endAdornment={
