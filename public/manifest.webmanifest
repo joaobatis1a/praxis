@@ -1,0 +1,15 @@
+{
+  "name": "Praxis",
+  "short_name": "Praxis",
+  "description": "Gestão de procedimentos, biblioteca de conhecimento e comunicação interna para equipes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    { "src": "/favicon.png", "type": "image/png", "sizes": "150x150", "purpose": "any" },
+    { "src": "/pwa-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/pwa-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/pwa-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
