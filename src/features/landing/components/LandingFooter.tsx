@@ -1,17 +1,29 @@
+import { Link } from 'react-router-dom'
 import { Logo } from '../../../components/ui'
 
 const columns = [
   {
     title: 'Produto',
-    links: ['Solução', 'Como funciona', 'Segurança'],
+    links: [
+      { label: 'Solução', to: '#' },
+      { label: 'Como funciona', to: '#' },
+      { label: 'Segurança', to: '#' },
+    ],
   },
   {
     title: 'Empresa',
-    links: ['Sobre', 'Contato', 'Carreiras'],
+    links: [
+      { label: 'Sobre', to: '#' },
+      { label: 'Contato', to: '#' },
+      { label: 'Carreiras', to: '#' },
+    ],
   },
   {
     title: 'Legal',
-    links: ['Termos de uso', 'Privacidade'],
+    links: [
+      { label: 'Termos de uso', to: '/termos' },
+      { label: 'Privacidade', to: '/privacidade' },
+    ],
   },
 ]
 
@@ -30,10 +42,10 @@ export function LandingFooter({ className }: { className?: string }) {
               <p className="text-sm font-semibold text-text-primary">{column.title}</p>
               <ul className="mt-3 space-y-2">
                 {column.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-sm text-text-muted hover:text-text-primary">
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    <Link to={link.to} className="text-sm text-text-muted hover:text-text-primary">
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

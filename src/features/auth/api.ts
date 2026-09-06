@@ -187,36 +187,6 @@ export async function loginRequest(email: string, password: string): Promise<Aut
   return user
 }
 
-export interface SignupCompanyInput {
-  companyName: string
-  name: string
-  email: string
-  password: string
-}
-
-/** Mock/demo mode only — the real deployment doesn't allow self-service company creation
- * anymore (see createCompanyForClient in features/maintenance/api.ts), so SignupPage never
- * calls this when isSupabase is true. */
-export async function signupCompanyRequest(input: SignupCompanyInput): Promise<AuthUser> {
-  await delay(700)
-
-  if (mockUsers.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) {
-    throw new Error('Já existe uma conta com esse e-mail.')
-  }
-
-  const newUser = {
-    id: `usr-${Date.now()}`,
-    name: input.name,
-    email: input.email,
-    password: input.password,
-    role: 'admin' as const,
-  }
-  mockUsers.push(newUser)
-
-  const { password: _password, ...user } = newUser
-  return user
-}
-
 // fixed demo code — invite codes will be generated for real once there's a backend (see project memory)
 const DEMO_INVITE_CODE = 'PRAXIS2026'
 
