@@ -5,10 +5,12 @@ import { ThemeProvider } from './lib/theme-provider'
 import { AuthProvider } from './features/auth/AuthContext'
 import { ToastProvider } from './components/ui'
 import { isSupabase } from './lib/dataSource'
+import { registerServiceWorker } from './lib/registerServiceWorker'
 import App from './App.tsx'
 import './index.css'
 
 document.title = isSupabase ? 'Praxis' : 'Praxis: Demonstração'
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
