@@ -72,18 +72,12 @@ export function LandingHeader() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             to="/login"
-            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'rounded-full')}
-          >
-            Entrar
-          </Link>
-          <Link
-            to="/signup"
             className={cn(
               buttonVariants({ size: 'sm' }),
               'rounded-full shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-shadow hover:shadow-[0_0_20px_2px_rgba(79,125,249,0.45)]',
             )}
           >
-            Criar conta
+            Entrar
           </Link>
         </div>
       </div>

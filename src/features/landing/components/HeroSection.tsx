@@ -82,7 +82,7 @@ export function HeroSection() {
               </a>
             ) : (
               <Link
-                to="/signup"
+                to="/login"
                 className={cn(
                   buttonVariants({ size: 'lg' }),
                   'group shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',

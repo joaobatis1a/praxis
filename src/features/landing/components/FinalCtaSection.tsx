@@ -57,16 +57,16 @@ export function FinalCtaSection() {
           </>
         ) : (
           <>
-            <p className="mt-5 text-lg text-white/60">Crie sua conta em menos de um minuto e comece a organizar sua empresa.</p>
+            <p className="mt-5 text-lg text-white/60">Entre com uma conta de demonstração e veja o Praxis rodando de verdade.</p>
             <PulsingCta>
               <Link
-                to="/signup"
+                to="/login"
                 className={cn(
                   buttonVariants({ size: 'lg' }),
                   'group inline-flex shadow-[0_0_0_0_rgba(79,125,249,0.5)] transition-all hover:shadow-[0_0_32px_4px_rgba(79,125,249,0.4)]',
                 )}
               >
-                Criar conta gratuita
+                Entrar na demonstração
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </PulsingCta>
