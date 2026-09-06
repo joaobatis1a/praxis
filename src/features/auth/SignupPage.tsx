@@ -1,33 +1,23 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { AlertCircle, ArrowLeft, Building2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button, Input, Logo } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
-import { finishGoogleCodeSignup, signupCompanyRequest, signupMaintenanceRequest, signupWithCodeRequest, signupWithGoogle } from './api'
+import { finishGoogleCodeSignup, signupMaintenanceRequest, signupWithCodeRequest, signupWithGoogle } from './api'
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
 import { redeemMaintenanceInviteCode } from '../maintenance/api'
 
-type Step = 'choice' | 'company' | 'company-details' | 'code' | 'code-details' | 'maintenance-code' | 'maintenance-details'
+// 'code'/'code-details' and the maintenance-* steps are the only ones reachable: this whole
+// component only renders past the demo guard below when isSupabase is true, and company creation
+// there is sales-led (see createCompanyForClient in features/maintenance/api.ts), never self-service.
+type Step = 'code' | 'code-details' | 'maintenance-code' | 'maintenance-details'
 
 const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
-
-// Company creation is self-service only in the demo (mock) deployment — the real deployment is
-// sales-led, so a company only ever gets created from the maintenance panel (see
-// createCompanyForClient in features/maintenance/api.ts). isSupabase is a module-level constant,
-// so this is safe to read once here instead of inside the component.
-const initialStep: Step = isSupabase
-  ? initialOauthIntent === 'maintenance'
-    ? 'maintenance-code'
-    : 'code'
-  : initialOauthIntent === 'code'
-    ? 'code'
-    : initialOauthIntent === 'company'
-      ? 'company'
-      : 'choice'
+const initialStep: Step = initialOauthIntent === 'maintenance' ? 'maintenance-code' : 'code'
 
 function PasswordToggle({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
   return (
@@ -39,6 +29,31 @@ function PasswordToggle({ shown, onToggle }: { shown: boolean; onToggle: () => v
     >
       {shown ? <EyeOff size={16} /> : <Eye size={16} />}
     </button>
+  )
+}
+
+/** LGPD consent — required before any of the account-creation submits below go through. */
+function TermsCheckbox({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-2 text-xs text-white/50">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-4 w-4 accent-primary"
+      />
+      <span>
+        Li e aceito os{' '}
+        <Link to="/termos" target="_blank" className="text-[#6d94fa] hover:underline">
+          Termos de Uso
+        </Link>{' '}
+        e a{' '}
+        <Link to="/privacidade" target="_blank" className="text-[#6d94fa] hover:underline">
+          Política de Privacidade
+        </Link>
+        .
+      </span>
+    </label>
   )
 }
 
@@ -59,9 +74,8 @@ export function SignupPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [aceiteTermos, setAceiteTermos] = useState(false)
 
-  const [companyForm, setCompanyForm] = useState({ companyName: '', name: '', email: '', password: '' })
-  const [companyConfirmPassword, setCompanyConfirmPassword] = useState('')
   const [codeForm, setCodeForm] = useState({ name: '', email: '', password: '', code: '' })
   const [codeConfirmPassword, setCodeConfirmPassword] = useState('')
   const [googleCode, setGoogleCode] = useState('')
@@ -83,10 +97,7 @@ export function SignupPage() {
 
   function goBack() {
     setError(null)
-    if (step === 'company-details') {
-      setStep('company')
-      return
-    }
+    setAceiteTermos(false)
     if (step === 'code-details') {
       setStep('code')
       return
@@ -102,14 +113,7 @@ export function SignupPage() {
     if (pendingGoogleUser) clearPendingGoogleUser()
     if (noCompanySession) clearNoCompanySession()
     window.history.replaceState({}, '', '/signup')
-    setStep(isSupabase ? 'code' : 'choice')
-  }
-
-  function handleCompanyNext(e: FormEvent) {
-    e.preventDefault()
-    if (!companyForm.companyName.trim()) return
-    setError(null)
-    setStep('company-details')
+    setStep('code')
   }
 
   function handleCodeNext(e: FormEvent) {
@@ -126,30 +130,15 @@ export function SignupPage() {
     setStep('maintenance-details')
   }
 
-  async function handleCompanySubmit(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    if (companyForm.password !== companyConfirmPassword) {
-      setError('As senhas não coincidem.')
-      return
-    }
-    setSubmitting(true)
-    try {
-      const user = await signupCompanyRequest(companyForm)
-      setSessionUser(user)
-      navigate('/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível criar a empresa.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   async function handleCodeSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
     if (codeForm.password !== codeConfirmPassword) {
       setError('As senhas não coincidem.')
+      return
+    }
+    if (!aceiteTermos) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade.')
       return
     }
     setSubmitting(true)
@@ -167,6 +156,10 @@ export function SignupPage() {
   async function handleFinishGoogleCode(e: FormEvent) {
     e.preventDefault()
     if (!identity) return
+    if (!aceiteTermos) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade.')
+      return
+    }
     setSubmitting(true)
     setError(null)
     try {
@@ -211,6 +204,10 @@ export function SignupPage() {
     setError(null)
     if (maintenanceForm.password !== maintenanceConfirmPassword) {
       setError('As senhas não coincidem.')
+      return
+    }
+    if (!aceiteTermos) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade.')
       return
     }
     setSubmitting(true)
@@ -273,7 +270,7 @@ export function SignupPage() {
           // step === 'code' is only the true root when there's no identity yet — with an
           // identity (post-Google-login) it's one step further in, and needs goBack() to
           // actually sign out so a re-attempt doesn't silently resume the same account
-          const isRootStep = isSupabase ? step === 'code' && !identity : step === 'choice'
+          const isRootStep = step === 'code' && !identity
           if (isRootStep) navigate('/')
           else goBack()
         }}
@@ -300,146 +297,6 @@ export function SignupPage() {
           </Link>
           <p className="mt-1 text-xs text-white/40">Práxis: da ação à execução.</p>
 
-          {step === 'choice' && (
-            <>
-              <h1 className="mt-8 text-2xl font-bold text-white">Criar conta</h1>
-              <p className="mt-1 text-sm text-white/50">Como você quer começar?</p>
-
-              <div className="mt-8 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError(null)
-                    setStep('company')
-                  }}
-                  className="flex w-full items-start gap-4 rounded-lg border border-white/10 bg-white/[0.03] p-4 text-left transition-colors hover:border-primary/50 hover:bg-white/[0.06]"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-[#6d94fa]">
-                    <Building2 size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Criar empresa</p>
-                    <p className="mt-0.5 text-xs text-white/50">
-                      Sua empresa ainda não usa o Praxis. Você será o administrador.
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError(null)
-                    setStep('code')
-                  }}
-                  className="flex w-full items-start gap-4 rounded-lg border border-white/10 bg-white/[0.03] p-4 text-left transition-colors hover:border-primary/50 hover:bg-white/[0.06]"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-[#6d94fa]">
-                    <KeyRound size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Tenho um código</p>
-                    <p className="mt-0.5 text-xs text-white/50">
-                      Sua empresa já usa o Praxis. Entre com o código que seu gestor te enviou.
-                    </p>
-                  </div>
-                </button>
-              </div>
-
-              {!noCompanySession && (
-                <p className="mt-8 text-sm text-white/50">
-                  Já tem conta?{' '}
-                  <Link to="/login" className="font-medium text-[#6d94fa] hover:underline">
-                    Entrar
-                  </Link>
-                </p>
-              )}
-            </>
-          )}
-
-          {step === 'company' && !identity && (
-            <>
-              <h1 className="mt-8 text-2xl font-bold text-white">Crie sua empresa</h1>
-              <p className="mt-1 text-sm text-white/50">Você será o administrador da conta.</p>
-
-              <form onSubmit={handleCompanyNext} className="mt-6 flex flex-col gap-4">
-                <Input
-                  label="Nome da empresa"
-                  required
-                  autoFocus
-                  value={companyForm.companyName}
-                  onChange={(e) => setCompanyForm({ ...companyForm, companyName: e.target.value })}
-                />
-
-                {displayError && (
-                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {displayError}
-                  </div>
-                )}
-
-                <Button type="submit" size="lg" className="mt-2">
-                  Próximo
-                </Button>
-              </form>
-            </>
-          )}
-
-          {step === 'company-details' && !identity && (
-            <>
-              <h1 className="mt-8 text-2xl font-bold text-white">Seus dados</h1>
-              <p className="mt-1 text-sm text-white/50">
-                Criando <span className="text-white/80">{companyForm.companyName}</span>.
-              </p>
-
-              <form onSubmit={handleCompanySubmit} className="mt-6 flex flex-col gap-4">
-                <Input
-                  label="Seu nome"
-                  required
-                  autoFocus
-                  value={companyForm.name}
-                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                />
-                <Input
-                  label="E-mail"
-                  type="email"
-                  required
-                  value={companyForm.email}
-                  onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                />
-                <Input
-                  label="Senha"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  value={companyForm.password}
-                  onChange={(e) => setCompanyForm({ ...companyForm, password: e.target.value })}
-                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
-                />
-                <Input
-                  label="Confirmar senha"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  value={companyConfirmPassword}
-                  onChange={(e) => setCompanyConfirmPassword(e.target.value)}
-                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
-                />
-
-                {displayError && (
-                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {displayError}
-                  </div>
-                )}
-
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
-                  {submitting && <Loader2 size={18} className="animate-spin" />}
-                  {submitting ? 'Criando...' : 'Criar empresa'}
-                </Button>
-              </form>
-            </>
-          )}
-
           {step === 'code' && identity && (
             <>
               <h1 className="mt-8 text-2xl font-bold text-white">Só falta o código</h1>
@@ -457,6 +314,8 @@ export function SignupPage() {
                   onChange={(e) => setGoogleCode(e.target.value)}
                 />
 
+                <TermsCheckbox checked={aceiteTermos} onChange={setAceiteTermos} />
+
                 {displayError && (
                   <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
                     <AlertCircle size={16} className="shrink-0" />
@@ -464,7 +323,7 @@ export function SignupPage() {
                   </div>
                 )}
 
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                <Button type="submit" size="lg" disabled={submitting || !aceiteTermos} className="mt-2">
                   {submitting && <Loader2 size={18} className="animate-spin" />}
                   {submitting ? 'Entrando...' : 'Entrar'}
                 </Button>
@@ -597,6 +456,8 @@ export function SignupPage() {
                   endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
 
+                <TermsCheckbox checked={aceiteTermos} onChange={setAceiteTermos} />
+
                 {displayError && (
                   <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
                     <AlertCircle size={16} className="shrink-0" />
@@ -604,7 +465,7 @@ export function SignupPage() {
                   </div>
                 )}
 
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                <Button type="submit" size="lg" disabled={submitting || !aceiteTermos} className="mt-2">
                   {submitting && <Loader2 size={18} className="animate-spin" />}
                   {submitting ? 'Entrando...' : 'Entrar'}
                 </Button>
@@ -720,6 +581,8 @@ export function SignupPage() {
                   endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
                 />
 
+                <TermsCheckbox checked={aceiteTermos} onChange={setAceiteTermos} />
+
                 {displayError && (
                   <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
                     <AlertCircle size={16} className="shrink-0" />
@@ -727,7 +590,7 @@ export function SignupPage() {
                   </div>
                 )}
 
-                <Button type="submit" size="lg" disabled={submitting} className="mt-2">
+                <Button type="submit" size="lg" disabled={submitting || !aceiteTermos} className="mt-2">
                   {submitting && <Loader2 size={18} className="animate-spin" />}
                   {submitting ? 'Criando...' : 'Criar conta'}
                 </Button>
