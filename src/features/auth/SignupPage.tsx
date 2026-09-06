@@ -9,6 +9,7 @@ import { finishGoogleCodeSignup, signupMaintenanceRequest, signupWithCodeRequest
 import { LoginShowcasePanel } from './components/LoginShowcasePanel'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
 import { GoogleIcon } from './components/GoogleIcon'
+import { isPasswordValid, PasswordRequirements } from './components/PasswordRequirements'
 import { redeemMaintenanceInviteCode } from '../maintenance/api'
 
 // 'code'/'code-details' and the maintenance-* steps are the only ones reachable: this whole
@@ -133,6 +134,10 @@ export function SignupPage() {
   async function handleCodeSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!isPasswordValid(codeForm.password)) {
+      setError('A senha não atende aos requisitos mínimos.')
+      return
+    }
     if (codeForm.password !== codeConfirmPassword) {
       setError('As senhas não coincidem.')
       return
@@ -202,6 +207,10 @@ export function SignupPage() {
   async function handleMaintenanceSignup(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!isPasswordValid(maintenanceForm.password)) {
+      setError('A senha não atende aos requisitos mínimos.')
+      return
+    }
     if (maintenanceForm.password !== maintenanceConfirmPassword) {
       setError('As senhas não coincidem.')
       return
@@ -437,20 +446,23 @@ export function SignupPage() {
                   value={codeForm.email}
                   onChange={(e) => setCodeForm({ ...codeForm, email: e.target.value })}
                 />
-                <Input
-                  label="Senha"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  value={codeForm.password}
-                  onChange={(e) => setCodeForm({ ...codeForm, password: e.target.value })}
-                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
-                />
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    label="Senha"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    value={codeForm.password}
+                    onChange={(e) => setCodeForm({ ...codeForm, password: e.target.value })}
+                    endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
+                  />
+                  <PasswordRequirements password={codeForm.password} />
+                </div>
                 <Input
                   label="Confirmar senha"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  minLength={6}
+                  minLength={8}
                   value={codeConfirmPassword}
                   onChange={(e) => setCodeConfirmPassword(e.target.value)}
                   endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
@@ -562,20 +574,23 @@ export function SignupPage() {
                   value={maintenanceForm.email}
                   onChange={(e) => setMaintenanceForm({ ...maintenanceForm, email: e.target.value })}
                 />
-                <Input
-                  label="Senha"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  value={maintenanceForm.password}
-                  onChange={(e) => setMaintenanceForm({ ...maintenanceForm, password: e.target.value })}
-                  endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
-                />
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    label="Senha"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    value={maintenanceForm.password}
+                    onChange={(e) => setMaintenanceForm({ ...maintenanceForm, password: e.target.value })}
+                    endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
+                  />
+                  <PasswordRequirements password={maintenanceForm.password} />
+                </div>
                 <Input
                   label="Confirmar senha"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  minLength={6}
+                  minLength={8}
                   value={maintenanceConfirmPassword}
                   onChange={(e) => setMaintenanceConfirmPassword(e.target.value)}
                   endAdornment={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />}

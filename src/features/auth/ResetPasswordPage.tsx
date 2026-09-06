@@ -6,6 +6,7 @@ import { Button, Input, Logo, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { supabase } from '../../lib/supabaseClient'
 import { KnowledgeGraph } from '../landing/components/KnowledgeGraph'
+import { isPasswordValid, PasswordRequirements } from './components/PasswordRequirements'
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -31,8 +32,8 @@ export function ResetPasswordPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
-    if (password.length < 6) {
-      setError('A senha precisa ter pelo menos 6 caracteres.')
+    if (!isPasswordValid(password)) {
+      setError('A senha não atende aos requisitos mínimos.')
       return
     }
     if (password !== confirmPassword) {
@@ -89,30 +90,33 @@ export function ResetPasswordPage() {
               <p className="mt-1 text-sm text-white/50">Escolha uma nova senha para sua conta.</p>
 
               <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-                <Input
-                  label="Nova senha"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  autoFocus
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  endAdornment={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                      className="rounded-sm p-1.5 text-white/40 hover:text-white"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  }
-                />
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    label="Nova senha"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    autoFocus
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    endAdornment={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        className="rounded-sm p-1.5 text-white/40 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    }
+                  />
+                  <PasswordRequirements password={password} />
+                </div>
                 <Input
                   label="Confirmar nova senha"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  minLength={6}
+                  minLength={8}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   endAdornment={
