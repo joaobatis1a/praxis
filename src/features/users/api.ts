@@ -72,17 +72,24 @@ export interface GenerateInviteCodeInput {
   department: string
 }
 
-/** Supabase mode: admin/gestor generates a code instead of creating the account directly — the invitee signs up themselves via "Tenho um código". */
-export async function generateInviteCode(input: GenerateInviteCodeInput): Promise<string> {
+const INVITE_CODE_TTL_MS = 5 * 60 * 1000
+
+/** Supabase mode: admin/gestor generates a code instead of creating the account directly — the
+ * invitee signs up themselves via "Tenho um código". The code expires in 5 minutes (see
+ * migration 060) — the caller re-invokes this to mint a fresh one when InviteCodeModal's
+ * countdown hits zero, so a still-open invite panel always shows something redeemable. */
+export async function generateInviteCode(input: GenerateInviteCodeInput): Promise<{ code: string; expiresAt: string }> {
   const code = randomCode()
+  const expiresAt = new Date(Date.now() + INVITE_CODE_TTL_MS).toISOString()
   // company_id defaults to the caller's own company (public.current_company_id()) — see migration 005
   const { error } = await supabase!.from('invite_codes').insert({
     code,
     role: input.role,
     department: input.department,
+    expires_at: expiresAt,
   })
   if (error) throw new Error('Não foi possível gerar o código de convite.')
-  return code
+  return { code, expiresAt }
 }
 
 export async function setUserStatus(id: string, status: UserStatus) {

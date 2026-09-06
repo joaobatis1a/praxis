@@ -123,14 +123,24 @@ export async function createCompanyForClient(input: CreateCompanyInput): Promise
   return { code, companyId: data as string }
 }
 
-/** Generates a single-use maintenance invite code — the invitee redeems it themselves, either via
- * "Tenho um código de manutenção" in Configurações (if they already have an account) or via the
- * public signup page (if they don't). */
-export async function generateMaintenanceInviteCode(): Promise<string> {
+const MAINTENANCE_CODE_TTL_MS = 5 * 60 * 1000
+
+/** Generates a single-use maintenance invite code, valid for 5 minutes (see migration 060) — the
+ * invitee redeems it themselves, either via "Tenho um código de manutenção" in Configurações (if
+ * they already have an account) or via the public signup page (if they don't). The caller
+ * re-invokes this when InviteCodeModal's countdown hits zero, so it keeps mirroring one live,
+ * redeemable code for as long as the invite panel stays open. */
+export async function generateMaintenanceInviteCode(): Promise<{ code: string; expiresAt: string }> {
+  // best-effort: clears out any never-redeemed, now-expired codes (visible to every maintenance
+  // account, same as the select policy) so the table doesn't just accumulate dead rows —
+  // not worth failing the whole call over
+  await supabase!.from('maintenance_invite_codes').delete().lt('expires_at', new Date().toISOString())
+
   const code = randomCode()
-  const { error } = await supabase!.from('maintenance_invite_codes').insert({ code })
+  const expiresAt = new Date(Date.now() + MAINTENANCE_CODE_TTL_MS).toISOString()
+  const { error } = await supabase!.from('maintenance_invite_codes').insert({ code, expires_at: expiresAt })
   if (error) throw new Error('Não foi possível gerar o código.')
-  return code
+  return { code, expiresAt }
 }
 
 export async function removeMaintenanceAccount(email: string): Promise<void> {

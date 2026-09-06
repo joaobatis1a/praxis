@@ -22,7 +22,7 @@ export function MaintenanceTeamPage() {
   const [accounts, setAccounts] = useState<MaintenanceAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [generatingAccountCode, setGeneratingAccountCode] = useState(false)
-  const [generatedAccountCode, setGeneratedAccountCode] = useState<string | null>(null)
+  const [generatedAccountCode, setGeneratedAccountCode] = useState<{ code: string; expiresAt: string } | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -59,12 +59,23 @@ export function MaintenanceTeamPage() {
   async function handleGenerateAccountCode() {
     setGeneratingAccountCode(true)
     try {
-      const code = await generateMaintenanceInviteCode()
-      setGeneratedAccountCode(code)
+      const { code, expiresAt } = await generateMaintenanceInviteCode()
+      setGeneratedAccountCode({ code, expiresAt })
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível gerar o código.', 'error')
     } finally {
       setGeneratingAccountCode(false)
+    }
+  }
+
+  // InviteCodeModal's countdown calls this once the shown code expires, mirroring one live,
+  // redeemable code for as long as the invite modal stays open.
+  async function handleRefreshAccountCode() {
+    try {
+      const { code, expiresAt } = await generateMaintenanceInviteCode()
+      setGeneratedAccountCode({ code, expiresAt })
+    } catch {
+      // best-effort — worst case the modal is left showing a dead code until closed and reopened
     }
   }
 
@@ -147,7 +158,9 @@ export function MaintenanceTeamPage() {
       </motion.div>
 
       <InviteCodeModal
-        code={generatedAccountCode}
+        code={generatedAccountCode?.code ?? null}
+        expiresAt={generatedAccountCode?.expiresAt}
+        onExpire={handleRefreshAccountCode}
         onClose={() => setGeneratedAccountCode(null)}
         title="Código de manutenção gerado"
         description="Uso único. Resgata em Entrar > Criar conta > É um código de manutenção?"
