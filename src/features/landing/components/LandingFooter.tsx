@@ -41,13 +41,21 @@ export function LandingFooter({ className }: { className?: string }) {
             <div key={column.title}>
               <p className="text-sm font-semibold text-text-primary">{column.title}</p>
               <ul className="mt-3 space-y-2">
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    <Link to={link.to} className="text-sm text-text-muted hover:text-text-primary">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+                {column.links.map((link) =>
+                  link.to.startsWith('/') ? (
+                    <li key={link.label}>
+                      <Link to={link.to} className="text-sm text-text-muted hover:text-text-primary">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ) : (
+                    <li key={link.label}>
+                      <a href={link.to} className="text-sm text-text-muted hover:text-text-primary">
+                        {link.label}
+                      </a>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           ))}
