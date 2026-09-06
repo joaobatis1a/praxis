@@ -223,6 +223,48 @@ export function SignupPage() {
     }
   }
 
+  // The demo (mock) deployment is meant to be explored with the pre-seeded demo accounts shown
+  // on /login, not by letting anyone self-serve a real company here — block the whole flow with
+  // a clear notice instead of the signup form. The real (Supabase) deployment is sales-led for
+  // new companies but still self-service for joining one with a code, so it's unaffected.
+  if (!isSupabase) {
+    return (
+      <div className="dark relative flex h-dvh items-center justify-center overflow-hidden bg-[#050810] px-6">
+        <div className="absolute inset-0 z-0 opacity-50">
+          <KnowledgeGraph />
+        </div>
+        <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#050810] via-[#050810]/40 to-[#050810]/70" />
+
+        <Link
+          to="/"
+          className="absolute left-6 top-6 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-white/60 transition-colors hover:text-white"
+        >
+          <ArrowLeft size={16} />
+          Voltar
+        </Link>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 mx-auto w-full max-w-sm text-center"
+        >
+          <Link to="/" className="inline-flex">
+            <Logo textClassName="text-white" />
+          </Link>
+          <h1 className="mt-8 text-2xl font-bold text-white">Não é possível na demonstração</h1>
+          <p className="mt-2 text-sm text-white/50">
+            Esta é uma demonstração do Praxis — a criação de contas está desativada. Entre com uma das contas de
+            demonstração para explorar o produto.
+          </p>
+          <Button size="lg" className="mt-8" onClick={() => navigate('/login')}>
+            Ir para o login
+          </Button>
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
     <div className="dark relative flex h-dvh overflow-hidden bg-[#050810]">
       <button
