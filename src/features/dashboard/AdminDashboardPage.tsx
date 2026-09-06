@@ -7,7 +7,6 @@ import { ProgressChart } from './components/ProgressChart'
 import { ActivityFeed } from './components/ActivityFeed'
 import { RoleBreakdownCard } from './components/RoleBreakdownCard'
 import { RecentNoticesCard } from './components/RecentNoticesCard'
-import { OnboardingChecklist } from './components/OnboardingChecklist'
 import { useAuth } from '../auth/AuthContext'
 import { Skeleton } from '../../components/ui'
 import { staggerContainer, staggerItem } from '../../lib/motionVariants'
@@ -17,7 +16,6 @@ type DashboardData = Awaited<ReturnType<typeof getAdminDashboard>>
 export function AdminDashboardPage() {
   const { user } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
-  const [onboardingHidden, setOnboardingHidden] = useState(false)
 
   useEffect(() => {
     getAdminDashboard().then(setData)
@@ -33,10 +31,6 @@ export function AdminDashboardPage() {
         Olá, {user?.name.split(' ')[0]}
       </motion.h1>
       <p className="mt-1 text-sm text-text-muted">Aqui está um resumo da sua empresa hoje.</p>
-
-      {data && user?.role === 'admin' && !onboardingHidden && (
-        <OnboardingChecklist status={data.onboarding} onDismiss={() => setOnboardingHidden(true)} />
-      )}
 
       {!data ? (
         <>
