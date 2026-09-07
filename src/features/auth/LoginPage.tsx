@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { Button, Input, Logo } from '../../components/ui'
+import { Button, Input, Logo, useToast } from '../../components/ui'
 import { isSupabase } from '../../lib/dataSource'
 import { useAuth } from './AuthContext'
 import { consumeOAuthPendingFlag, requestPasswordReset } from './api'
@@ -19,6 +19,7 @@ const demoAccounts = [
 export function LoginPage() {
   const { login, loginWithGoogle, isAuthenticating, error, user, maintenanceNoCompany, noCompanySession } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -218,9 +219,21 @@ export function LoginPage() {
 
               <p className="mt-6 text-center text-sm text-white/50">
                 Não tem conta?{' '}
-                <Link to="/signup" className="font-medium text-[#6d94fa] hover:underline">
-                  Crie aqui
-                </Link>
+                {isSupabase ? (
+                  <Link to="/signup" className="font-medium text-[#6d94fa] hover:underline">
+                    Crie aqui
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toast('Esta é uma demonstração do Praxis — a criação de contas está desativada. Entre com uma das contas de demonstração acima.', 'info')
+                    }
+                    className="font-medium text-[#6d94fa] hover:underline"
+                  >
+                    Crie aqui
+                  </button>
+                )}
               </p>
             </>
           )}
