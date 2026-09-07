@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import { buttonVariants } from '../../../components/ui'
-import logoSrc from '../../../assets/logo-praxis.png'
+import logoSrc from '../../../assets/logo-praxis-mark.png'
 import { cn } from '../../../lib/cn'
 
 const navLinks = [
@@ -38,7 +38,7 @@ export function LandingHeader() {
         )}
       >
         <Link to="/" className="group inline-flex shrink-0 items-center gap-2 font-brand text-xl font-bold transition-transform hover:scale-105">
-          <img src={logoSrc} alt="" width={28} height={28} className="rounded-md" />
+          <img src={logoSrc} alt="" width={28} height={28} />
           <span className="bg-clip-text text-text-primary transition-colors duration-300 group-hover:bg-gradient-to-r group-hover:from-primary group-hover:via-[#7c6bff] group-hover:to-[#22d3ee] group-hover:text-transparent">
             Praxis
           </span>

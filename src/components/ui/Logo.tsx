@@ -1,4 +1,4 @@
-import logoSrc from '../../assets/logo-praxis.png'
+import logoSrc from '../../assets/logo-praxis-mark.png'
 import { cn } from '../../lib/cn'
 
 export interface LogoProps {
@@ -11,7 +11,7 @@ export interface LogoProps {
 export function Logo({ size = 28, showText = true, textClassName, className }: LogoProps) {
   return (
     <span className={cn('inline-flex shrink-0 items-center gap-2', className)}>
-      <img src={logoSrc} alt="Praxis" width={size} height={size} className="rounded-md" />
+      <img src={logoSrc} alt="Praxis" width={size} height={size} />
       {showText && <span className={cn('font-brand text-lg font-bold', textClassName)}>Praxis</span>}
     </span>
   )
