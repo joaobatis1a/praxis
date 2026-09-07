@@ -1,0 +1,28 @@
+name: Keep Supabase project awake
+
+# Supabase's free tier auto-pauses a project after ~7 days with no API activity — this is what
+# took the "praxis-oficial" backend down on 2026-09-07. A daily ping to the project's Auth health
+# endpoint counts as real activity and resets that clock, well within the 7-day window.
+#
+# The Supabase URL/key below are the same "publishable" anon key already shipped in every client
+# bundle of the app (VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY in .env.local) — it's meant to be
+# public, so there's nothing sensitive about hardcoding it here instead of a repo secret.
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # daily, 09:00 UTC
+  workflow_dispatch: # lets you trigger it manually from the Actions tab too
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Auth health endpoint
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://sdxzdsfcsfuvdtzczywp.supabase.co/auth/v1/health" \
+            -H "apikey: sb_publishable_JFpGSjmd95zqxK1HePXkfg_vNrZUMOE")
+          echo "Supabase health check responded with HTTP $status"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 500 ]; then
+            echo "::warning::Supabase project may be paused or unreachable (HTTP $status)"
+          fi
