@@ -15,7 +15,7 @@ import { redeemMaintenanceInviteCode } from '../maintenance/api'
 // 'code'/'code-details' and the maintenance-* steps are the only ones reachable: this whole
 // component only renders past the demo guard below when isSupabase is true, and company creation
 // there is sales-led (see createCompanyForClient in features/maintenance/api.ts), never self-service.
-type Step = 'code' | 'code-details' | 'maintenance-code' | 'maintenance-details'
+type Step = 'code' | 'code-details' | 'code-password' | 'maintenance-code' | 'maintenance-details' | 'maintenance-password'
 
 const initialOauthIntent = new URLSearchParams(window.location.search).get('oauthIntent')
 const initialStep: Step = initialOauthIntent === 'maintenance' ? 'maintenance-code' : 'code'
@@ -99,8 +99,16 @@ export function SignupPage() {
   function goBack() {
     setError(null)
     setAceiteTermos(false)
+    if (step === 'code-password') {
+      setStep('code-details')
+      return
+    }
     if (step === 'code-details') {
       setStep('code')
+      return
+    }
+    if (step === 'maintenance-password') {
+      setStep('maintenance-details')
       return
     }
     if (step === 'maintenance-details') {
@@ -124,11 +132,25 @@ export function SignupPage() {
     setStep('code-details')
   }
 
+  function handleCodeDetailsNext(e: FormEvent) {
+    e.preventDefault()
+    if (!codeForm.name.trim() || !codeForm.email.trim()) return
+    setError(null)
+    setStep('code-password')
+  }
+
   function handleMaintenanceCodeNext(e: FormEvent) {
     e.preventDefault()
     if (!maintenanceForm.code.trim()) return
     setError(null)
     setStep('maintenance-details')
+  }
+
+  function handleMaintenanceDetailsNext(e: FormEvent) {
+    e.preventDefault()
+    if (!maintenanceForm.email.trim()) return
+    setError(null)
+    setStep('maintenance-password')
   }
 
   async function handleCodeSubmit(e: FormEvent) {
@@ -431,7 +453,7 @@ export function SignupPage() {
               <h1 className="mt-8 text-2xl font-bold text-white">Seus dados</h1>
               <p className="mt-1 text-sm text-white/50">Código: <span className="text-white/80">{codeForm.code}</span></p>
 
-              <form onSubmit={handleCodeSubmit} className="mt-6 flex flex-col gap-4">
+              <form onSubmit={handleCodeDetailsNext} className="mt-6 flex flex-col gap-4">
                 <Input
                   label="Seu nome"
                   required
@@ -446,11 +468,35 @@ export function SignupPage() {
                   value={codeForm.email}
                   onChange={(e) => setCodeForm({ ...codeForm, email: e.target.value })}
                 />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" className="mt-2">
+                  Próximo
+                </Button>
+              </form>
+            </>
+          )}
+
+          {step === 'code-password' && !identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Crie sua senha</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Quase lá, <span className="text-white/80">{codeForm.name}</span>.
+              </p>
+
+              <form onSubmit={handleCodeSubmit} className="mt-6 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Input
                     label="Senha"
                     type={showPassword ? 'text' : 'password'}
                     required
+                    autoFocus
                     minLength={8}
                     value={codeForm.password}
                     onChange={(e) => setCodeForm({ ...codeForm, password: e.target.value })}
@@ -565,7 +611,7 @@ export function SignupPage() {
               <h1 className="mt-8 text-2xl font-bold text-white">Seus dados</h1>
               <p className="mt-1 text-sm text-white/50">Código: <span className="text-white/80">{maintenanceForm.code}</span></p>
 
-              <form onSubmit={handleMaintenanceSignup} className="mt-6 flex flex-col gap-4">
+              <form onSubmit={handleMaintenanceDetailsNext} className="mt-6 flex flex-col gap-4">
                 <Input
                   label="E-mail"
                   type="email"
@@ -574,11 +620,35 @@ export function SignupPage() {
                   value={maintenanceForm.email}
                   onChange={(e) => setMaintenanceForm({ ...maintenanceForm, email: e.target.value })}
                 />
+
+                {displayError && (
+                  <div role="alert" className="flex items-center gap-2 rounded-md bg-error-bg px-3 py-2 text-sm text-error-foreground">
+                    <AlertCircle size={16} className="shrink-0" />
+                    {displayError}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" className="mt-2">
+                  Próximo
+                </Button>
+              </form>
+            </>
+          )}
+
+          {step === 'maintenance-password' && !identity && (
+            <>
+              <h1 className="mt-8 text-2xl font-bold text-white">Crie sua senha</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Quase lá, <span className="text-white/80">{maintenanceForm.email}</span>.
+              </p>
+
+              <form onSubmit={handleMaintenanceSignup} className="mt-6 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Input
                     label="Senha"
                     type={showPassword ? 'text' : 'password'}
                     required
+                    autoFocus
                     minLength={8}
                     value={maintenanceForm.password}
                     onChange={(e) => setMaintenanceForm({ ...maintenanceForm, password: e.target.value })}
