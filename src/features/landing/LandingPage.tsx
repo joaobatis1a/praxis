@@ -1,31 +1,27 @@
 import { LandingHeader } from './components/LandingHeader'
-import { LandingBackground } from './components/LandingBackground'
 import { HeroSection } from './components/HeroSection'
-import { NarrativeSection } from './components/NarrativeSection'
-import { ProductTourSection } from './components/ProductTourSection'
-import { RolesSection } from './components/RolesSection'
-import { HowItWorksSection } from './components/HowItWorksSection'
-import { FinalCtaSection } from './components/FinalCtaSection'
+import { Manifesto } from './components/Manifesto'
+import { ModulesSection } from './components/ModulesSection'
+import { InsideSection } from './components/InsideSection'
+import { FirstDaySection } from './components/FirstDaySection'
+import { ClosingSection } from './components/ClosingSection'
 import { LandingFooter } from './components/LandingFooter'
-import { ScrollProgressBar } from './components/ScrollProgressBar'
-import { BackToTopButton } from './components/BackToTopButton'
 
+// Sections are sheets that alternate dark and light, each sliding up over the
+// one before it with rounded shoulders.
 export function LandingPage() {
   return (
-    <div id="top" className="dark relative min-h-screen overflow-x-clip">
-      <LandingBackground />
-      <ScrollProgressBar />
+    <div className="dark relative min-h-screen overflow-x-clip bg-[#06080d]">
       <LandingHeader />
-      <main className="relative z-10">
+      <main>
         <HeroSection />
-        <NarrativeSection />
-        <ProductTourSection />
-        <RolesSection />
-        <HowItWorksSection />
-        <FinalCtaSection />
+        <Manifesto />
+        <ModulesSection />
+        <InsideSection />
+        <FirstDaySection />
+        <ClosingSection />
       </main>
-      <LandingFooter className="relative z-10" />
-      <BackToTopButton />
+      <LandingFooter />
     </div>
   )
 }
