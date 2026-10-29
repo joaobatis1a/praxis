@@ -135,7 +135,7 @@ export function KnowledgeGraph({ className }: { className?: string }) {
             <motion.circle
               cx={node.x}
               cy={node.y}
-              r={node.r * 2.2}
+              r={node.r * 1.5}
               fill="url(#node-glow)"
               animate={
                 reducedMotion
@@ -149,10 +149,10 @@ export function KnowledgeGraph({ className }: { className?: string }) {
           <circle
             cx={node.x}
             cy={node.y}
-            r={node.r * 0.35}
+            r={node.r * 0.16}
             fill={node.label ? '#eaf1ff' : '#6d94fa'}
             stroke={node.label ? '#4f7df9' : 'none'}
-            strokeWidth={node.label ? 0.3 : 0}
+            strokeWidth={node.label ? 0.15 : 0}
           />
         </motion.g>
       ))}
