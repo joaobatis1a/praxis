@@ -76,7 +76,7 @@ npm run lint      # roda o oxlint
 
 ## Autor
 
-**João Batista da Silva Neto**
+**João Batista Neto**
 Desenvolvedor Full-stack (solo)
 
 - GitHub: [@joaobatis1a](https://github.com/joaobatis1a)
